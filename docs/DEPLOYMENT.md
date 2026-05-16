@@ -11,6 +11,7 @@
 cp packages/contracts/.env.example packages/contracts/.env
 pnpm --filter @arkscore/contracts compile
 pnpm --filter @arkscore/contracts test
+pnpm probe:fuji
 pnpm --filter @arkscore/contracts deploy:fuji
 ```
 
@@ -21,6 +22,8 @@ NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x...
 ```
 
 The deploying wallet is the first authorized scorer. Use `setScorer(address,bool)` from the owner wallet if another institutional signer should write records.
+
+`pnpm probe:fuji` checks that `FUJI_PRIVATE_KEY` is present, formatted as a 32-byte hex key, connected to Avalanche Fuji chain id `43113`, and funded with Fuji AVAX before deployment. It prints the deployer address and balance, but never prints the private key.
 
 To authorize the wallet that will click `Store on Fuji` in the dashboard:
 

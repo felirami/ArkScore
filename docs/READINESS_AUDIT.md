@@ -28,6 +28,8 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm probe:wavy` is available for the final credential handoff. It refuses placeholder Wavy credentials or demo subject-hash salts, forces live Wavy mode, and prints only non-secret scoring evidence: Wavy analysis id, risk score, composite score, subject hash, and evidence hash.
 
+`pnpm probe:fuji` is available for the Fuji deployer handoff. It refuses missing or malformed private keys, checks the live Fuji chain id, and prints only the deployer address plus AVAX balance before deployment.
+
 `.github/workflows/ci.yml` runs `pnpm verify` and `pnpm readiness` for push, pull request, and manual workflow dispatch events.
 
 `pnpm readiness` produces a non-secret live-gate report covering Vercel reachability, Railway auth, Wavy credentials, Fuji deployer configuration, and frontend deployment variables. It accepts the same Railway API, Fuji registry, and scorer aliases used by the finalization and Hardhat scripts, so the report mirrors the actual handoff flow.
