@@ -602,6 +602,7 @@ function checkFinalVerificationPath(): Check {
 
   if (
     scripts["verify:live:strict:record"] &&
+    scripts["verify:railway:live"] &&
     scripts["finalize:live:apply"] &&
     scripts["submission:evidence:write"] &&
     scripts["readiness:strict:record"]
@@ -610,7 +611,7 @@ function checkFinalVerificationPath(): Check {
       label: "Final live verification and evidence path",
       status: "pass",
       detail:
-        "strict record verifier, finalizer, readiness, and evidence scripts are registered",
+        "strict record verifier, Railway API verifier, finalizer, readiness, and evidence scripts are registered",
     };
   }
 
@@ -618,7 +619,7 @@ function checkFinalVerificationPath(): Check {
     label: "Final live verification and evidence path",
     status: "fail",
     detail:
-      "missing finalizer, strict live verifier, readiness, or evidence script",
+      "missing finalizer, Railway API verifier, strict live verifier, readiness, or evidence script",
   };
 }
 

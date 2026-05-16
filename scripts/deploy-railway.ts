@@ -67,6 +67,7 @@ function main() {
     for (const plan of commands) printCommand(plan);
     console.log(
       "\nAfter Railway prints the service URL, run:\n" +
+        "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live\n" +
         "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live",
     );
     return;
@@ -77,21 +78,27 @@ function main() {
 }
 
 function buildPreflightCommands(missingCredentials: string[]): CommandPlan[] {
-  if (allowMock || missingCredentials.length > 0) return [];
-
-  return [
+  const commands: CommandPlan[] = [
     {
-      command: ["pnpm", "probe:wavy"],
-      env: {
-        WAVY_NODE_MOCK_MODE: "false",
-        ...(wavyApiKey ? { WAVY_NODE_API_KEY: wavyApiKey } : {}),
-        ...(wavyProjectId ? { WAVY_NODE_PROJECT_ID: wavyProjectId } : {}),
-        ...(subjectHashSalt
-          ? { ARKSCORE_SUBJECT_HASH_SALT: subjectHashSalt }
-          : {}),
-      },
+      command: ["pnpm", "verify:railway"],
     },
   ];
+
+  if (allowMock || missingCredentials.length > 0) return commands;
+
+  commands.push({
+    command: ["pnpm", "probe:wavy"],
+    env: {
+      WAVY_NODE_MOCK_MODE: "false",
+      ...(wavyApiKey ? { WAVY_NODE_API_KEY: wavyApiKey } : {}),
+      ...(wavyProjectId ? { WAVY_NODE_PROJECT_ID: wavyProjectId } : {}),
+      ...(subjectHashSalt
+        ? { ARKSCORE_SUBJECT_HASH_SALT: subjectHashSalt }
+        : {}),
+    },
+  });
+
+  return commands;
 }
 
 function buildCommands(): CommandPlan[] {

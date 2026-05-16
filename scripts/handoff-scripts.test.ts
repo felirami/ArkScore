@@ -42,6 +42,10 @@ test("root package exposes Railway CLI handoff scripts", () => {
     packageJson.scripts["verify:railway"],
     "tsx scripts/verify-railway-archive.ts",
   );
+  assert.equal(
+    packageJson.scripts["verify:railway:live"],
+    "tsx scripts/verify-live.ts --skip-web --skip-contract --skip-eerc20 --strict --require-wavy",
+  );
   assert.match(packageJson.scripts.verify, /pnpm verify:railway/);
   assert.match(railwayConfig, /"\/config\/\*\*"/);
   assert.match(railwayArchiveVerifier, /pnpm", \["install"/);
@@ -79,7 +83,9 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.match(result.output, /variable set ARKSCORE_SUBJECT_HASH_SALT/);
   assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_MAX=120/);
   assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000/);
+  assert.match(result.output, /pnpm verify:railway/);
   assert.match(result.output, /pnpm probe:wavy/);
+  assert.match(result.output, /pnpm verify:railway:live/);
   assert.match(result.output, /WAVY_NODE_API_KEY='\[redacted\]'/);
   assert.match(result.output, /WAVY_NODE_PROJECT_ID='\[redacted\]'/);
   assert.match(result.output, /ARKSCORE_SUBJECT_HASH_SALT='\[redacted\]'/);
@@ -101,6 +107,7 @@ test("Railway dry run skips Wavy probe for explicit mock deployment", () => {
 
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /WAVY_NODE_MOCK_MODE=true/);
+  assert.match(result.output, /pnpm verify:railway/);
   assert.doesNotMatch(result.output, /pnpm probe:wavy/);
 });
 
@@ -123,6 +130,7 @@ test("submission evidence can render without executing live checks", () => {
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /# ArkScore Submission Evidence/);
   assert.match(result.output, /Checks skipped with `--skip-checks`/);
+  assert.match(result.output, /pnpm verify:railway:live/);
   assert.match(result.output, /pnpm verify:live:strict/);
 });
 

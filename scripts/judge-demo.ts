@@ -108,7 +108,11 @@ function main() {
     console.log("pnpm probe:wavy");
     console.log("pnpm probe:fuji");
     console.log("pnpm railway:whoami");
+    console.log("pnpm verify:railway");
     console.log("pnpm deploy:railway:apply -- --create-domain");
+    console.log(
+      "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live",
+    );
     console.log("pnpm --filter @arkscore/contracts deploy:fuji");
     console.log("pnpm --filter @arkscore/contracts scorer:fuji");
     console.log("pnpm record:fuji");

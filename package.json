@@ -28,6 +28,7 @@
     "probe:eerc20": "tsx scripts/probe-eerc20.ts",
     "probe:eerc20:strict": "tsx scripts/probe-eerc20.ts --strict",
     "record:fuji": "pnpm --filter @arkscore/contracts record-live-score:fuji",
+    "verify:railway:live": "tsx scripts/verify-live.ts --skip-web --skip-contract --skip-eerc20 --strict --require-wavy",
     "verify:live": "tsx scripts/verify-live.ts",
     "verify:live:preflight": "tsx scripts/verify-live.ts --skip-web --strict --require-wavy",
     "verify:live:preflight:record": "tsx scripts/verify-live.ts --skip-web --strict --require-wavy --require-score-record",

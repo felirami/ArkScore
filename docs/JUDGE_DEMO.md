@@ -50,7 +50,9 @@ pnpm probe:fuji
 pnpm plan:eerc20
 pnpm probe:eerc20
 pnpm railway:whoami
+pnpm verify:railway
 pnpm deploy:railway:apply -- --create-domain
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji
 pnpm record:fuji

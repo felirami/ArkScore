@@ -139,7 +139,7 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm deploy:railway:apply -- --create-domain
 ```
 
-In live mode, `deploy:railway:apply` runs `pnpm probe:wavy` before it touches Railway variables or uploads the service, so invalid Wavy credentials, inactive Fuji support, or a weak subject-hash salt fail locally first.
+In live mode, `deploy:railway:apply` runs `pnpm verify:railway` and `pnpm probe:wavy` before it touches Railway variables or uploads the service, so a broken deploy archive, invalid Wavy credentials, inactive Fuji support, or a weak subject-hash salt fail locally first.
 
 Before deploying Railway, you can prove the Wavy credentials locally without printing the API key:
 
@@ -155,6 +155,7 @@ pnpm probe:wavy
 The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow with explicit project, service, and environment targeting so a stale local Railway link cannot silently receive the deploy:
 
 ```bash
+pnpm verify:railway
 pnpm probe:wavy
 pnpm dlx @railway/cli whoami --json
 pnpm dlx @railway/cli init --name arkscore-api --json
@@ -176,6 +177,14 @@ pnpm dlx @railway/cli domain --environment production --service arkscore-api --j
 ```
 
 If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `pnpm dlx @railway/cli link --project <project-id> --environment production --service arkscore-api --json` instead of `init`.
+
+After Railway prints the service URL or generated domain, prove the deployed API before continuing to Fuji/Vercel finalization:
+
+```bash
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live
+```
+
+`verify:railway:live` is the API-only strict live gate. It skips the Vercel bundle and Fuji contract checks, then verifies Railway `/health`, production subject-hash salt mode, live Wavy mode, `/openapi.json`, score response shape, no-store score cache headers, and score rate-limit headers.
 
 ## Vercel Frontend
 
@@ -249,7 +258,7 @@ pnpm readiness:strict:record
 
 Use `pnpm audit:requirements` for a requirement-by-requirement handoff report. It exits zero while only live proofs are missing, and `pnpm audit:requirements:strict` exits non-zero until Railway, Wavy, Fuji, scorer, and score-record evidence are configured.
 
-Use `pnpm verify:railway` before `pnpm deploy:railway:apply` when you want a standalone proof that the repository-root Railway payload can install, build, and test the API with only the files Railway should receive.
+Use `pnpm verify:railway` before `pnpm deploy:railway:apply` when you want a standalone proof that the repository-root Railway payload can install, build, and test the API with only the files Railway should receive. Use `ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live` immediately after Railway deployment to prove the uploaded API is serving live Wavy responses before contract deployment and frontend finalization.
 
 Use `pnpm judge:demo` for a concise, environment-aware walkthrough before presenting to judges. It prints fallback/live mode, the click path, proof commands, and current blockers without exposing secrets.
 
