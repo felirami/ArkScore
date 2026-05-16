@@ -330,6 +330,64 @@ test("readiness strict record warns when the score record proof is missing", () 
   }
 });
 
+test("readiness strict record rejects mock score record proof even with override", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-readiness-mock-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify({
+      generatedAt: "2026-05-16T00:00:00.000Z",
+      registryAddress,
+      scorerAddress,
+      subjectHash:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      institution: "bankaool",
+      source: "mock",
+      chainId: 43113,
+      transactionHash:
+        "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      blockNumber: 12345,
+      wavy: {
+        analysisId: "mock-live-123",
+        evidenceHash:
+          "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        riskScore: 18,
+      },
+      composite: {
+        creditScore: 82,
+        decision: "APPROVE_BANKAOOL_LOAN",
+        decisionEnum: 2,
+      },
+      stored: {
+        submitter: scorerAddress,
+        updatedAt: "1710000000",
+      },
+    }),
+  );
+
+  try {
+    const result = runScript(
+      "scripts/readiness-check.ts",
+      ["--skip-external", "--strict", "--require-score-record"],
+      {
+        ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+        ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+        ARKSCORE_SCORER_ADDRESS: scorerAddress,
+        ARKSCORE_ALLOW_MOCK_RECORD: "true",
+      },
+    );
+
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /\[warn\] Latest Fuji score record:/);
+    assert.match(result.output, /source is mock, expected wavy/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("readiness treats the default score record artifact path as optional until strict record", () => {
   const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
     ARKSCORE_SCORE_RECORD_ARTIFACT:

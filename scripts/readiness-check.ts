@@ -67,7 +67,8 @@ const skipExternal =
 const skipCliAuth =
   process.argv.includes("--skip-cli-auth") ||
   combinedEnv.ARKSCORE_READINESS_SKIP_CLI_AUTH === "true";
-const allowMockRecord = combinedEnv.ARKSCORE_ALLOW_MOCK_RECORD === "true";
+const allowMockRecord =
+  !strict && combinedEnv.ARKSCORE_ALLOW_MOCK_RECORD === "true";
 const webUrl =
   normalizeBaseUrl(firstConfiguredValue([combinedEnv.ARKSCORE_WEB_URL])) ??
   "https://arkscore-seven.vercel.app";
