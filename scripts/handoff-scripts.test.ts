@@ -959,6 +959,31 @@ test("Fuji registry deployer refuses malformed private key with project error", 
   assert.doesNotMatch(result.output, /CreditScoreRegistry deployed/);
 });
 
+test("Fuji score recorder refuses local API URLs before touching Fuji", () => {
+  const result = runPnpm(
+    [
+      "--filter",
+      "@arkscore/contracts",
+      "exec",
+      "hardhat",
+      "run",
+      "scripts/record-live-score.ts",
+      "--network",
+      "fuji",
+    ],
+    {
+      ARKSCORE_API_URL: "http://localhost:4000",
+      NEXT_PUBLIC_API_BASE_URL: "http://127.0.0.1:4000",
+      FUJI_PRIVATE_KEY: "",
+    },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /public HTTPS Railway API URL/);
+  assert.doesNotMatch(result.output, /Set FUJI_PRIVATE_KEY/);
+  assert.doesNotMatch(result.output, /Submitted recordScore/);
+});
+
 test("live verifier proves registry getScore readback ABI", async () => {
   const result = await runLiveVerifierWithMockRegistry();
 

@@ -57,7 +57,7 @@ ARKSCORE_INSTITUTION=bankaool \
 pnpm record:fuji
 ```
 
-`pnpm record:fuji` uses the configured `FUJI_PRIVATE_KEY` signer, requires that signer to be authorized with `isScorer`, fetches `/api/score/:address`, refuses `source: "mock"` unless `ARKSCORE_ALLOW_MOCK_RECORD=true`, calls `recordScore`, verifies `hasScore(subjectHash)` and `getScore(subjectHash)` match the live Wavy risk score, composite score, decision, evidence hash, analysis id, and institution, then writes `packages/contracts/deployments/fuji/LatestScoreRecord.json` as non-secret submission evidence. Set `ARKSCORE_SCORE_RECORD_ARTIFACT` only when you want that proof written to a custom path.
+`pnpm record:fuji` uses the configured `FUJI_PRIVATE_KEY` signer, requires that signer to be authorized with `isScorer`, requires `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` to be a public HTTPS Railway API URL, fetches `/api/score/:address`, refuses `source: "mock"` unless `ARKSCORE_ALLOW_MOCK_RECORD=true`, calls `recordScore`, verifies `hasScore(subjectHash)` and `getScore(subjectHash)` match the live Wavy risk score, composite score, decision, evidence hash, analysis id, and institution, then writes `packages/contracts/deployments/fuji/LatestScoreRecord.json` as non-secret submission evidence. Set `ARKSCORE_SCORE_RECORD_ARTIFACT` only when you want that proof written to a custom path.
 
 ## Railway API
 
