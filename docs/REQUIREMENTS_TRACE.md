@@ -9,7 +9,7 @@ Status date: May 16, 2026
 | Vercel deployment | Production alias `https://arkscore-seven.vercel.app` maps to deployment `dpl_FY1yb92NTbchJWeCE7oomtPBvWzQ`; public `curl -I` returns HTTP 200. | Ready |
 | Judge-usable dashboard | Browser smoke test on production confirms `Fetch Wavy score` renders `Mock Wavy trace`, `Wavy risk`, and `Evidence hash` with no console errors. | Ready in hosted demo fallback |
 | Railway-ready backend | Root `railway.toml` builds and starts `@arkscore/api`; `.railwayignore` excludes unrelated workspaces while retaining `apps/api` and `packages/shared`; simulated pruned Railway archive installs, builds, and tests successfully. | Ready, not deployed |
-| Express score API | `apps/api/src/routes/score.ts` exposes `GET /api/score/:address`; `apps/api/src/app.test.ts` covers health, Bankaool score response, and invalid institution handling. | Ready |
+| Express score API | `apps/api/src/routes/score.ts` exposes `GET /api/score/:address`; `apps/api/src/routes/openapi.ts` exposes `/openapi.json`; `apps/api/src/app.test.ts` covers health, OpenAPI, Bankaool score response, and invalid institution handling. | Ready |
 | Wavy Node integration | `apps/api/src/services/wavy-node.ts` calls `/projects/:projectId/addresses/scan-risk` with `x-api-key` and Fuji `chainId=43113`; mock mode is deterministic when credentials are absent. | Live-ready, credentials pending |
 | Solidity `CreditScoreRegistry` | `packages/contracts/contracts/CreditScoreRegistry.sol`; Hardhat tests pass for authorized score storage and rejected unauthorized writes. | Ready, not deployed |
 | Avalanche Fuji config | `packages/contracts/hardhat.config.ts` uses `https://api.avax-test.network/ext/bc/C/rpc` and chain id `43113`. | Ready |

@@ -9,7 +9,7 @@ ArkScore evaluates an EVM wallet with Wavy Node traceability and AI risk scoring
 ## What Is Built
 
 - Next.js 15 App Router dashboard with Tailwind CSS, shadcn-style UI primitives, wagmi, viem, and Avalanche Fuji wallet support.
-- Railway-ready Express API with `GET /api/score/:address`.
+- Railway-ready Express API with `GET /api/score/:address` and `GET /openapi.json`.
 - Wavy Node live integration using `GET /v1/projects/:projectId/addresses/scan-risk`.
 - Deterministic mock mode for judging before real Wavy credentials are added.
 - Hardhat 3 Solidity `^0.8.24` contract and tests for storing Wavy-backed score records on Fuji.
@@ -95,7 +95,7 @@ Use Node.js 22.19.0. The repository pins Node 22 because the verified Next.js 15
 
 See `docs/READINESS_AUDIT.md` and `docs/REQUIREMENTS_TRACE.md` for the current judge-readiness checklist and remaining credential-dependent deployment items.
 
-`pnpm readiness` checks local configuration gates without printing secrets. `pnpm smoke:web` confirms the hosted Vercel demo is public and includes the judge-facing score flow. `pnpm deploy:railway` prints the Railway project/env/deploy commands, and `pnpm deploy:railway:apply` runs them once Railway auth and Wavy credentials are available. `pnpm verify:live` checks reachable deployments; use `pnpm verify:live:strict` after Railway, Wavy Node, Fuji, and Vercel environment variables are all configured. `pnpm finalize:live` prints the final Vercel env/deploy commands, and `pnpm finalize:live:apply` applies them.
+`pnpm readiness` checks local configuration gates without printing secrets. `pnpm smoke:web` confirms the hosted Vercel demo is public and includes the judge-facing score flow. `pnpm deploy:railway` prints the Railway project/env/deploy commands, and `pnpm deploy:railway:apply` runs them once Railway auth and Wavy credentials are available. `pnpm verify:live` checks reachable deployments; use `pnpm verify:live:strict` after Railway, Wavy Node, Fuji, and Vercel environment variables are all configured. The Railway API publishes its integration contract at `/openapi.json`. `pnpm finalize:live` prints the final Vercel env/deploy commands, and `pnpm finalize:live:apply` applies them.
 
 ## Submission Placeholders
 

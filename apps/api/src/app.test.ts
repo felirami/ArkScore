@@ -23,6 +23,26 @@ test("health reports mock scoring mode when credentials are absent", async () =>
   });
 });
 
+test("openapi document describes the public scoring contract", async () => {
+  await withTestServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/openapi.json`);
+    const payload = (await response.json()) as {
+      openapi: string;
+      paths: Record<string, unknown>;
+      components: {
+        schemas: Record<string, unknown>;
+      };
+    };
+
+    assert.equal(response.status, 200);
+    assert.match(payload.openapi, /^3\./);
+    assert.ok(payload.paths["/health"]);
+    assert.ok(payload.paths["/api/score/{address}"]);
+    assert.ok(payload.components.schemas.ScoreApiResponse);
+    assert.ok(payload.components.schemas.WavyRiskResult);
+  });
+});
+
 test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
   await withTestServer(async (baseUrl) => {
     const response = await fetch(

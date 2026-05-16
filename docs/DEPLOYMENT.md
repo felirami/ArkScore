@@ -131,6 +131,7 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:appl
 
 ```bash
 curl https://your-railway-api.up.railway.app/health
+curl https://your-railway-api.up.railway.app/openapi.json
 curl "https://your-railway-api.up.railway.app/api/score/0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045?institution=bankaool"
 pnpm readiness
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app \

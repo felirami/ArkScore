@@ -5,6 +5,7 @@ import morgan from "morgan";
 import { getAllowedOrigins } from "./config/env.js";
 import { HttpError } from "./lib/http-error.js";
 import { healthRouter } from "./routes/health.js";
+import { openApiRouter } from "./routes/openapi.js";
 import { scoreRouter } from "./routes/score.js";
 
 export function createApp() {
@@ -33,6 +34,7 @@ export function createApp() {
     app.use(morgan("tiny"));
   }
 
+  app.use(openApiRouter);
   app.use(healthRouter);
   app.use(scoreRouter);
 
