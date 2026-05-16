@@ -416,7 +416,7 @@ test("submission evidence full mode includes monorepo verification", () => {
     `#!/usr/bin/env node
 const args = process.argv.slice(2).join(" ");
 if (args === "--silent verify") {
-  console.log("[pass] Full monorepo verification completed");
+  console.log("[pass] Full monorepo verification completed   ");
 } else if (args === "--silent verify:railway") {
   console.log("[pass] Railway payload install/build/test completed");
 } else if (args === "--silent smoke:web") {
@@ -464,6 +464,10 @@ if (args === "--silent verify") {
       /PASS: Full repo verification \(`pnpm --silent verify`\)/,
     );
     assert.match(output, /\[pass\] Full monorepo verification completed/);
+    assert.doesNotMatch(
+      output,
+      /\[pass\] Full monorepo verification completed +$/m,
+    );
     assert.match(
       output,
       /PASS: Railway archive verifier \(`pnpm --silent verify:railway`\)/,

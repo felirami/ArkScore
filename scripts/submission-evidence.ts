@@ -348,8 +348,8 @@ function runCommand(command: string, commandArgs: string[]): ShellResult {
     encoding: "utf8",
     env: process.env,
   });
-  const output = stripAnsi(
-    [result.stdout, result.stderr].filter(Boolean).join("\n"),
+  const output = stripTrailingLineWhitespace(
+    stripAnsi([result.stdout, result.stderr].filter(Boolean).join("\n")),
   );
 
   return {
@@ -745,4 +745,8 @@ function stableStringify(value: unknown): string {
 
 function stripAnsi(value: string) {
   return value.replace(/\u001B\[[0-9;]*m/g, "");
+}
+
+function stripTrailingLineWhitespace(value: string) {
+  return value.replace(/[ \t]+$/gm, "");
 }
