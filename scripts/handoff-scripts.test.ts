@@ -1132,6 +1132,30 @@ test("live verifier fails when the latest Fuji score record differs on-chain", a
   );
 });
 
+test("live verifier rejects mock latest Fuji score record artifacts", async () => {
+  const result = await runLiveVerifierWithMockScoreRecord({
+    source: "mock",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Fuji score record proof: .*source is mock, expected wavy/,
+  );
+});
+
+test("live verifier rejects local API URLs in score record artifacts", async () => {
+  const result = await runLiveVerifierWithMockScoreRecord({
+    apiUrl: "http://localhost:4000",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Fuji score record proof: .*public HTTPS Railway apiUrl/,
+  );
+});
+
 test("live verifier preflight skips Vercel and proves API plus registry", async () => {
   const result = await runLivePreflightVerifierWithMocks();
 
@@ -1484,6 +1508,8 @@ async function runLiveVerifierWithMockRegistry(
 }
 
 type ScoreRecordRpcOptions = {
+  apiUrl?: string;
+  source?: string;
   storedEvidenceHash?: string;
 };
 
@@ -1501,13 +1527,13 @@ async function runLiveVerifierWithMockScoreRecord(
   const storedEvidenceHash = options.storedEvidenceHash ?? evidenceHash;
   const artifact = {
     generatedAt: "2026-05-16T00:00:00.000Z",
-    apiUrl: "https://arkscore-api.up.railway.app",
+    apiUrl: options.apiUrl ?? "https://arkscore-api.up.railway.app",
     registryAddress,
     scorerAddress,
     subjectHash,
     requestedWallet: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     institution: "bankaool",
-    source: "wavy",
+    source: options.source ?? "wavy",
     chainId: 43113,
     transactionHash:
       "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",

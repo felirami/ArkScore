@@ -33,6 +33,7 @@ type ScoreResponse = {
 };
 
 type ScoreRecordProof = {
+  apiUrl?: string;
   blockNumber?: number | null;
   chainId?: number;
   composite?: {
@@ -996,8 +997,35 @@ function validateScoreRecordProof(
   proof: ScoreRecordProof,
   registry: string,
 ): string | undefined {
-  if (proof.registryAddress?.toLowerCase() !== registry.toLowerCase()) {
+  if (proof.source !== "wavy") {
+    return `${scoreRecordArtifactPath} source is ${proof.source ?? "unknown"}, expected wavy`;
+  }
+
+  if (proof.chainId !== 43113) {
+    return `${scoreRecordArtifactPath} chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  }
+
+  if (!proof.apiUrl || !isPublicHttpsUrl(proof.apiUrl)) {
+    return `${scoreRecordArtifactPath} is missing a public HTTPS Railway apiUrl`;
+  }
+
+  if (!proof.registryAddress || !isAddress(proof.registryAddress)) {
+    return `${scoreRecordArtifactPath} is missing a valid registryAddress`;
+  }
+
+  if (proof.registryAddress.toLowerCase() !== registry.toLowerCase()) {
     return `${scoreRecordArtifactPath} registry address does not match configured registry`;
+  }
+
+  if (!proof.scorerAddress || !isAddress(proof.scorerAddress)) {
+    return `${scoreRecordArtifactPath} is missing a valid scorerAddress`;
+  }
+
+  if (
+    scorerAddress &&
+    proof.scorerAddress.toLowerCase() !== scorerAddress.toLowerCase()
+  ) {
+    return `${scoreRecordArtifactPath} scorerAddress does not match configured scorer`;
   }
 
   if (!proof.subjectHash || !isBytes32(proof.subjectHash)) {
@@ -1040,16 +1068,14 @@ function validateScoreRecordProof(
     return `${scoreRecordArtifactPath} is missing the stored submitter`;
   }
 
+  if (
+    proof.stored.submitter.toLowerCase() !== proof.scorerAddress.toLowerCase()
+  ) {
+    return `${scoreRecordArtifactPath} stored submitter does not match scorerAddress`;
+  }
+
   if (!proof.stored.updatedAt || !/^\d+$/.test(proof.stored.updatedAt)) {
     return `${scoreRecordArtifactPath} is missing the stored update timestamp`;
-  }
-
-  if (requireWavy && proof.source !== "wavy") {
-    return `${scoreRecordArtifactPath} source is ${proof.source ?? "unknown"}, expected wavy`;
-  }
-
-  if (proof.chainId !== undefined && proof.chainId !== 43113) {
-    return `${scoreRecordArtifactPath} chainId is ${proof.chainId}, expected 43113`;
   }
 
   return undefined;
