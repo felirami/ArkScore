@@ -1,5 +1,37 @@
 import { existsSync, readFileSync } from "node:fs";
 
+type ScoreRecordProof = {
+  apiUrl?: string;
+  chainId?: number;
+  composite?: {
+    creditScore?: number;
+    decision?: string;
+    decisionEnum?: number;
+  };
+  institution?: string;
+  registryAddress?: string;
+  scorerAddress?: string;
+  source?: string;
+  stored?: {
+    submitter?: string;
+    updatedAt?: string;
+  };
+  subjectHash?: string;
+  transactionHash?: string;
+  wavy?: {
+    analysisId?: string;
+    evidenceHash?: string;
+    riskScore?: number;
+  };
+};
+
+type ScoreRecordEvidence = {
+  error?: string;
+  exists: boolean;
+  path: string;
+  proof?: ScoreRecordProof;
+};
+
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
@@ -42,7 +74,13 @@ function main() {
   const liveApiReady = Boolean(apiUrl);
   const registryReady = Boolean(registryAddress && isAddress(registryAddress));
   const scorerReady = Boolean(scorerAddress && isAddress(scorerAddress));
-  const scoreRecordReady = existsSync(scoreRecordArtifactPath);
+  const scoreRecordEvidence = readScoreRecordEvidence({
+    registryAddress: registryReady ? registryAddress : undefined,
+    scorerAddress: scorerReady ? scorerAddress : undefined,
+  });
+  const scoreRecordReady = Boolean(
+    scoreRecordEvidence.exists && !scoreRecordEvidence.error,
+  );
   const eerc20Ready = Boolean(eerc20Address && isAddress(eerc20Address));
   const liveModeReady =
     liveApiReady && registryReady && scorerReady && scoreRecordReady;
@@ -51,6 +89,8 @@ function main() {
     apiUrlConfigured: Boolean(configuredApiUrl),
     registryReady,
     scorerReady,
+    scoreRecordError: scoreRecordEvidence.error,
+    scoreRecordExists: scoreRecordEvidence.exists,
     scoreRecordReady,
   });
 
@@ -67,7 +107,7 @@ function main() {
     `- Authorized scorer: ${scorerReady ? scorerAddress : "not configured yet"}`,
   );
   console.log(
-    `- Latest score record proof: ${scoreRecordReady ? scoreRecordArtifactPath : "not recorded yet"}`,
+    `- Latest score record proof: ${scoreRecordReady ? scoreRecordArtifactPath : scoreRecordEvidence.exists ? `${scoreRecordArtifactPath} is not valid final proof` : "not recorded yet"}`,
   );
   console.log(
     `- Optional eERC20: ${eerc20Ready ? eerc20Address : "not configured"}`,
@@ -146,6 +186,8 @@ function currentBlockers(input: {
   apiUrlConfigured: boolean;
   registryReady: boolean;
   scorerReady: boolean;
+  scoreRecordError?: string;
+  scoreRecordExists: boolean;
   scoreRecordReady: boolean;
 }) {
   const blockers: string[] = [];
@@ -182,11 +224,139 @@ function currentBlockers(input: {
     blockers.push("Authorized scorer address is missing.");
   }
 
-  if (!input.scoreRecordReady) {
+  if (!input.scoreRecordReady && input.scoreRecordExists) {
+    blockers.push(
+      `Latest Fuji score record artifact is invalid: ${input.scoreRecordError ?? "validation failed"}`,
+    );
+  } else if (!input.scoreRecordReady) {
     blockers.push("Latest Fuji score record artifact is missing.");
   }
 
   return blockers;
+}
+
+function readScoreRecordEvidence(input: {
+  registryAddress?: string;
+  scorerAddress?: string;
+}): ScoreRecordEvidence {
+  if (!existsSync(scoreRecordArtifactPath)) {
+    return { exists: false, path: scoreRecordArtifactPath };
+  }
+
+  try {
+    const proof = JSON.parse(
+      readFileSync(scoreRecordArtifactPath, "utf8"),
+    ) as ScoreRecordProof;
+    const error = validateScoreRecordProof(proof, input);
+
+    return {
+      error,
+      exists: true,
+      path: scoreRecordArtifactPath,
+      proof,
+    };
+  } catch (error) {
+    return {
+      error: `invalid JSON: ${error instanceof Error ? error.message : "parse failed"}`,
+      exists: true,
+      path: scoreRecordArtifactPath,
+    };
+  }
+}
+
+function validateScoreRecordProof(
+  proof: ScoreRecordProof,
+  input: { registryAddress?: string; scorerAddress?: string },
+) {
+  if (proof.source !== "wavy") {
+    return `source is ${proof.source ?? "unknown"}, expected wavy`;
+  }
+
+  if (proof.chainId !== 43113) {
+    return `chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  }
+
+  if (!proof.apiUrl || !isPublicHttpsUrl(proof.apiUrl)) {
+    return "missing a public HTTPS Railway apiUrl";
+  }
+
+  if (!proof.registryAddress || !isAddress(proof.registryAddress)) {
+    return "missing a valid registryAddress";
+  }
+
+  if (
+    input.registryAddress &&
+    proof.registryAddress.toLowerCase() !== input.registryAddress.toLowerCase()
+  ) {
+    return "registryAddress does not match configured registry";
+  }
+
+  if (!proof.scorerAddress || !isAddress(proof.scorerAddress)) {
+    return "missing a valid scorerAddress";
+  }
+
+  if (
+    input.scorerAddress &&
+    proof.scorerAddress.toLowerCase() !== input.scorerAddress.toLowerCase()
+  ) {
+    return "scorerAddress does not match configured scorer";
+  }
+
+  if (!proof.subjectHash || !isBytes32(proof.subjectHash)) {
+    return "missing a valid subjectHash";
+  }
+
+  if (!proof.transactionHash || !isBytes32(proof.transactionHash)) {
+    return "missing a valid transactionHash";
+  }
+
+  if (!proof.wavy?.evidenceHash || !isBytes32(proof.wavy.evidenceHash)) {
+    return "missing a valid Wavy evidence hash";
+  }
+
+  if (!isScore(proof.wavy.riskScore)) {
+    return "missing a valid Wavy risk score";
+  }
+
+  if (!proof.wavy.analysisId) {
+    return "missing the Wavy analysis id";
+  }
+
+  if (!isScore(proof.composite?.creditScore)) {
+    return "missing a valid composite score";
+  }
+
+  if (
+    typeof proof.composite?.decisionEnum !== "number" ||
+    proof.composite.decisionEnum < 0 ||
+    proof.composite.decisionEnum > 3
+  ) {
+    return "missing a valid decision enum";
+  }
+
+  if (!proof.composite.decision) {
+    return "missing the institutional decision";
+  }
+
+  if (!proof.institution) {
+    return "missing the institution";
+  }
+
+  if (!proof.stored?.submitter || !isAddress(proof.stored.submitter)) {
+    return "missing the stored submitter";
+  }
+
+  if (
+    proof.stored.submitter.toLowerCase() !== proof.scorerAddress.toLowerCase()
+  ) {
+    return "stored submitter does not match scorerAddress";
+  }
+
+  if (!proof.stored.updatedAt || !/^\d+$/.test(proof.stored.updatedAt)) {
+    return "missing the stored update timestamp";
+  }
+
+  return undefined;
 }
 
 function readRegistryDeployment(): { address?: string } | undefined {
@@ -283,4 +453,12 @@ function isLocalHostname(hostname: string): boolean {
 
 function isAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function isBytes32(value: string): boolean {
+  return /^0x[a-fA-F0-9]{64}$/.test(value);
+}
+
+function isScore(value: unknown): boolean {
+  return typeof value === "number" && value >= 0 && value <= 100;
 }

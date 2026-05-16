@@ -23,17 +23,23 @@ type DeploymentTargets = {
 };
 
 type ScoreRecordProof = {
+  apiUrl?: string;
   blockNumber?: number | null;
   chainId?: number;
   composite?: {
     creditScore?: number;
     decision?: string;
+    decisionEnum?: number;
   };
   generatedAt?: string;
   institution?: string;
   registryAddress?: string;
   scorerAddress?: string;
   source?: string;
+  stored?: {
+    submitter?: string;
+    updatedAt?: string;
+  };
   subjectHash?: string;
   transactionHash?: string;
   wavy?: {
@@ -43,6 +49,13 @@ type ScoreRecordProof = {
   };
 };
 
+type ScoreRecordEvidence = {
+  error?: string;
+  exists: boolean;
+  path: string;
+  proof?: ScoreRecordProof;
+};
+
 type ReportInput = {
   generatedAt: string;
   gitCommit: string;
@@ -50,7 +63,7 @@ type ReportInput = {
   gitStatus: string;
   checkResults: CommandResult[];
   deploymentTargets: DeploymentTargets;
-  scoreRecordProof?: ScoreRecordProof;
+  scoreRecordEvidence: ScoreRecordEvidence;
   requireEerc20: boolean;
 };
 
@@ -79,6 +92,7 @@ function main() {
   const gitBranch = commandText("git", ["branch", "--show-current"]);
   const gitStatus = gitStatusWithoutOutput(outputPath);
   const checkResults = skipChecks ? [] : runChecks();
+  const scoreRecordEvidence = readScoreRecordEvidence();
   const markdown = renderReport({
     generatedAt,
     gitCommit,
@@ -86,7 +100,7 @@ function main() {
     gitStatus,
     checkResults,
     deploymentTargets: getDeploymentTargets(),
-    scoreRecordProof: readScoreRecordProof(),
+    scoreRecordEvidence,
     requireEerc20: env.ARKSCORE_REQUIRE_EERC20 === "true",
   });
 
@@ -99,7 +113,7 @@ function main() {
   }
 
   const failedChecks = checkResults.filter((result) => result.exitCode !== 0);
-  if (failedChecks.length > 0) {
+  if (failedChecks.length > 0 || scoreRecordEvidence.error) {
     process.exitCode = 1;
   }
 }
@@ -187,7 +201,7 @@ Generated: ${input.generatedAt}
 - Railway backend: ${renderUrlOrTbd(input.deploymentTargets.apiUrl, "TBD until Railway auth and Wavy credentials are configured")}
 - Avalanche Fuji \`CreditScoreRegistry\`: ${renderAddressOrTbd(input.deploymentTargets.registryAddress, "TBD until FUJI_PRIVATE_KEY is funded and deployed")}
 - Optional eERC20 demo contract: ${renderAddressOrTbd(input.deploymentTargets.eerc20DemoAddress, "TBD unless the EncryptedERC demo is deployed")}
-${renderScoreRecordProof(input.scoreRecordProof)}
+${renderScoreRecordProof(input.scoreRecordEvidence)}
 
 ## Evidence Summary
 
@@ -365,17 +379,24 @@ function readRegistryDeployment(): { address?: string } | undefined {
   }
 }
 
-function readScoreRecordProof(): ScoreRecordProof | undefined {
+function readScoreRecordEvidence(): ScoreRecordEvidence {
   const path =
     firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
     defaultScoreRecordArtifactPath;
 
-  if (!existsSync(path)) return undefined;
+  if (!existsSync(path)) return { exists: false, path };
 
   try {
-    return JSON.parse(readFileSync(path, "utf8")) as ScoreRecordProof;
-  } catch {
-    return undefined;
+    const proof = JSON.parse(readFileSync(path, "utf8")) as ScoreRecordProof;
+    const error = validateScoreRecordProof(proof);
+
+    return { error, exists: true, path, proof };
+  } catch (error) {
+    return {
+      error: `invalid JSON: ${error instanceof Error ? error.message : "parse failed"}`,
+      exists: true,
+      path,
+    };
   }
 }
 
@@ -438,10 +459,16 @@ function renderAddressOrTbd(value: string | undefined, fallback: string) {
   return value ? `\`${value}\`` : `\`${fallback}\``;
 }
 
-function renderScoreRecordProof(proof: ScoreRecordProof | undefined) {
-  if (!proof) {
+function renderScoreRecordProof(evidence: ScoreRecordEvidence) {
+  if (!evidence.exists) {
     return "- Latest Fuji score record: `TBD until pnpm record:fuji writes LatestScoreRecord.json`";
   }
+
+  if (evidence.error || !evidence.proof) {
+    return `- Latest Fuji score record: \`invalid at ${evidence.path}: ${evidence.error ?? "validation failed"}; run pnpm record:fuji\``;
+  }
+
+  const { proof } = evidence;
 
   return [
     "- Latest Fuji score record:",
@@ -454,6 +481,92 @@ function renderScoreRecordProof(proof: ScoreRecordProof | undefined) {
     `  - Decision: \`${proof.composite?.decision ?? "unknown"}\` for \`${proof.institution ?? "unknown"}\``,
     `  - Source: \`${proof.source ?? "unknown"}\` on chain \`${proof.chainId ?? "unknown"}\``,
   ].join("\n");
+}
+
+function validateScoreRecordProof(proof: ScoreRecordProof): string | undefined {
+  if (proof.source !== "wavy") {
+    return `source is ${proof.source ?? "unknown"}, expected wavy`;
+  }
+
+  if (proof.chainId !== 43113) {
+    return `chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  }
+
+  if (!proof.apiUrl || !isPublicHttpsUrl(proof.apiUrl)) {
+    return "missing a public HTTPS Railway apiUrl";
+  }
+
+  if (!proof.registryAddress || !isAddress(proof.registryAddress)) {
+    return "missing a valid registryAddress";
+  }
+
+  if (!proof.scorerAddress || !isAddress(proof.scorerAddress)) {
+    return "missing a valid scorerAddress";
+  }
+
+  if (!proof.subjectHash || !isBytes32(proof.subjectHash)) {
+    return "missing a valid subjectHash";
+  }
+
+  if (!proof.transactionHash || !isBytes32(proof.transactionHash)) {
+    return "missing a valid transactionHash";
+  }
+
+  if (!proof.wavy?.evidenceHash || !isBytes32(proof.wavy.evidenceHash)) {
+    return "missing a valid Wavy evidence hash";
+  }
+
+  if (!isScore(proof.wavy.riskScore)) {
+    return "missing a valid Wavy risk score";
+  }
+
+  if (!proof.wavy.analysisId) {
+    return "missing the Wavy analysis id";
+  }
+
+  if (!isScore(proof.composite?.creditScore)) {
+    return "missing a valid composite score";
+  }
+
+  if (
+    typeof proof.composite?.decisionEnum !== "number" ||
+    proof.composite.decisionEnum < 0 ||
+    proof.composite.decisionEnum > 3
+  ) {
+    return "missing a valid decision enum";
+  }
+
+  if (!proof.composite?.decision) {
+    return "missing the institutional decision";
+  }
+
+  if (!proof.institution) {
+    return "missing the institution";
+  }
+
+  if (!proof.stored?.submitter || !isAddress(proof.stored.submitter)) {
+    return "missing the stored submitter";
+  }
+
+  if (
+    proof.stored.submitter.toLowerCase() !== proof.scorerAddress.toLowerCase()
+  ) {
+    return "stored submitter does not match scorerAddress";
+  }
+
+  if (!proof.stored.updatedAt || !/^\d+$/.test(proof.stored.updatedAt)) {
+    return "missing the stored update timestamp";
+  }
+
+  return undefined;
+}
+
+function isBytes32(value: string): boolean {
+  return /^0x[a-fA-F0-9]{64}$/.test(value);
+}
+
+function isScore(value: unknown): boolean {
+  return typeof value === "number" && value >= 0 && value <= 100;
 }
 
 function stripAnsi(value: string) {

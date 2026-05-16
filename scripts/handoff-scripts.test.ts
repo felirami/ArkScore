@@ -205,29 +205,7 @@ test("submission evidence includes the latest Fuji score record proof", () => {
   const tempDir = mkdtempSync(join(tmpdir(), "arkscore-evidence-"));
   const artifactPath = join(tempDir, "LatestScoreRecord.json");
 
-  writeFileSync(
-    artifactPath,
-    JSON.stringify({
-      transactionHash:
-        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      blockNumber: 12345,
-      subjectHash:
-        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      institution: "bankaool",
-      source: "wavy",
-      chainId: 43113,
-      wavy: {
-        analysisId: "wavy-live-123",
-        evidenceHash:
-          "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        riskScore: 18,
-      },
-      composite: {
-        creditScore: 82,
-        decision: "APPROVE_BANKAOOL_LOAN",
-      },
-    }),
-  );
+  writeFileSync(artifactPath, JSON.stringify(validScoreRecordProof()));
 
   try {
     const result = runScript(
@@ -243,6 +221,33 @@ test("submission evidence includes the latest Fuji score record proof", () => {
     assert.match(result.output, /wavy-live-123/);
     assert.match(result.output, /APPROVE_BANKAOOL_LOAN/);
     assert.match(result.output, /Scores: Wavy `18\/100`, composite `82\/100`/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("submission evidence refuses an invalid latest Fuji score record proof", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-evidence-mock-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify(validScoreRecordProof({ source: "mock" })),
+  );
+
+  try {
+    const result = runScript(
+      "scripts/submission-evidence.ts",
+      ["--skip-checks"],
+      {
+        ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      },
+    );
+
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /Latest Fuji score record/);
+    assert.match(result.output, /invalid at .*source is mock, expected wavy/);
+    assert.match(result.output, /run pnpm record:fuji/);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -519,14 +524,19 @@ test("judge demo runbook treats local API URLs as fallback blockers", () => {
 test("judge demo runbook renders live proof mode when configured", () => {
   const tempDir = mkdtempSync(join(tmpdir(), "arkscore-judge-demo-"));
   const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
 
-  writeFileSync(artifactPath, "{}");
+  writeFileSync(
+    artifactPath,
+    JSON.stringify(validScoreRecordProof({ registryAddress, scorerAddress })),
+  );
 
   try {
     const result = runScript("scripts/judge-demo.ts", [], {
       ARKSCORE_API_URL: "https://arkscore-api.up.railway.app/",
-      ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
-      ARKSCORE_SCORER_ADDRESS: "0x4444444444444444444444444444444444444444",
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ARKSCORE_SCORER_ADDRESS: scorerAddress,
       ARKSCORE_EERC20_DEMO_ADDRESS:
         "0x3333333333333333333333333333333333333333",
       ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
@@ -545,6 +555,45 @@ test("judge demo runbook renders live proof mode when configured", () => {
     );
     assert.match(result.output, /None detected by local configuration/);
     assert.match(result.output, /verify:live:strict:eerc20:record/);
+    assert.doesNotMatch(result.output, /live-key/);
+    assert.doesNotMatch(result.output, /bbbbbbbbbbbbbbbb/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("judge demo runbook treats invalid score record proof as a live blocker", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-judge-demo-mock-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify(
+      validScoreRecordProof({ registryAddress, scorerAddress, source: "mock" }),
+    ),
+  );
+
+  try {
+    const result = runScript("scripts/judge-demo.ts", [], {
+      ARKSCORE_API_URL: "https://arkscore-api.up.railway.app/",
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ARKSCORE_SCORER_ADDRESS: scorerAddress,
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      WAVY_NODE_API_KEY: "ApiKey live-key",
+      WAVY_NODE_PROJECT_ID: "project-live",
+      ARKSCORE_SUBJECT_HASH_SALT: "production-subject-hash-salt-for-judge-demo",
+      FUJI_PRIVATE_KEY:
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /judge-usable fallback/);
+    assert.match(result.output, /Latest Fuji score record artifact is invalid/);
+    assert.match(result.output, /source is mock, expected wavy/);
+    assert.doesNotMatch(result.output, /final live oracle proof path/);
+    assert.doesNotMatch(result.output, /None detected by local configuration/);
     assert.doesNotMatch(result.output, /live-key/);
     assert.doesNotMatch(result.output, /bbbbbbbbbbbbbbbb/);
   } finally {
@@ -1833,6 +1882,50 @@ function createOpenApiFixture(serverUrl: string) {
           },
         },
       },
+    },
+  };
+}
+
+function validScoreRecordProof(
+  input: {
+    apiUrl?: string;
+    registryAddress?: string;
+    scorerAddress?: string;
+    source?: string;
+  } = {},
+) {
+  const registryAddress =
+    input.registryAddress ?? "0x1111111111111111111111111111111111111111";
+  const scorerAddress =
+    input.scorerAddress ?? "0x4444444444444444444444444444444444444444";
+
+  return {
+    generatedAt: "2026-05-16T00:00:00.000Z",
+    apiUrl: input.apiUrl ?? "https://arkscore-api.up.railway.app",
+    registryAddress,
+    scorerAddress,
+    subjectHash:
+      "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    institution: "bankaool",
+    source: input.source ?? "wavy",
+    chainId: 43113,
+    transactionHash:
+      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    blockNumber: 12345,
+    wavy: {
+      analysisId: "wavy-live-123",
+      evidenceHash:
+        "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      riskScore: 18,
+    },
+    composite: {
+      creditScore: 82,
+      decision: "APPROVE_BANKAOOL_LOAN",
+      decisionEnum: 2,
+    },
+    stored: {
+      submitter: scorerAddress,
+      updatedAt: "1710000000",
     },
   };
 }
