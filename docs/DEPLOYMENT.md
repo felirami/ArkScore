@@ -99,6 +99,8 @@ RAILWAY_TOKEN=
 
 Live scoring follows the Wavy Node quickstart sequence: register the wallet for project monitoring, then run the risk scan.
 
+`WAVY_NODE_CHAIN_ID` must stay `43113` for Avalanche Fuji so the Wavy score, Railway API response, and Fuji registry proof all describe the same network.
+
 Registration uses a deterministic non-PII `foreign_user_id` based on the wallet address:
 
 ```text
@@ -140,7 +142,7 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm deploy:railway:apply -- --create-domain
 ```
 
-In live mode, `deploy:railway:apply` runs `pnpm verify:railway` and `pnpm probe:wavy` before it touches Railway variables or uploads the service, so a broken deploy archive, invalid Wavy credentials, inactive Fuji support, or a weak subject-hash salt fail locally first. It also forces the deployed Railway variable `WAVY_NODE_MOCK_MODE=false` unless `RAILWAY_ALLOW_MOCK=true` is explicitly set for a temporary mock deployment.
+In live mode, `deploy:railway:apply` runs `pnpm verify:railway` and `pnpm probe:wavy` before it touches Railway variables or uploads the service, so a broken deploy archive, invalid Wavy credentials, non-Fuji `WAVY_NODE_CHAIN_ID`, inactive Fuji support, or a weak subject-hash salt fail locally first. It also forces the deployed Railway variable `WAVY_NODE_MOCK_MODE=false` unless `RAILWAY_ALLOW_MOCK=true` is explicitly set for a temporary mock deployment.
 
 Before deploying Railway, you can prove the Wavy credentials locally without printing the API key:
 
@@ -151,9 +153,9 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm probe:wavy
 ```
 
-`probe:wavy` forces `WAVY_NODE_MOCK_MODE=false`, checks Wavy Node `/chains` for the configured `WAVY_NODE_CHAIN_ID`, scores `ARKSCORE_TEST_WALLET` or the default demo wallet, and prints the active supported chain, Wavy analysis id, live risk score, traceability provider, wallet-risk scan type, AI risk scale, address registration mode, composite score, subject hash, and evidence hash.
+`probe:wavy` forces `WAVY_NODE_MOCK_MODE=false`, requires `WAVY_NODE_CHAIN_ID=43113`, checks Wavy Node `/chains` for Avalanche Fuji, scores `ARKSCORE_TEST_WALLET` or the default demo wallet, and prints the active supported chain, Wavy analysis id, live risk score, traceability provider, wallet-risk scan type, AI risk scale, address registration mode, composite score, subject hash, and evidence hash.
 
-The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow with explicit project, service, and environment targeting so a stale local Railway link cannot silently receive the deploy:
+The helper refuses non-Fuji `WAVY_NODE_CHAIN_ID` values before Railway mutation, and refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow with explicit project, service, and environment targeting so a stale local Railway link cannot silently receive the deploy:
 
 ```bash
 pnpm verify:railway
@@ -263,7 +265,7 @@ Use `pnpm verify:railway` before `pnpm deploy:railway:apply` when you want a sta
 
 Use `pnpm judge:demo` for a concise, environment-aware walkthrough before presenting to judges. It prints fallback/live mode, the click path, proof commands, and current blockers without exposing secrets.
 
-Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. Use `pnpm readiness:strict:record` after `pnpm record:fuji` to additionally require the non-secret `LatestScoreRecord.json` proof, and to require that proof to be Wavy-backed even if a temporary mock record was allowed earlier. The readiness gate accepts `ARKSCORE_WEB_URL` for the submitted frontend URL, `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the public HTTPS Railway API, `NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL` for the browser Fuji RPC, and the same registry/scorer aliases accepted by `finalize:live`. Use `--skip-cli-auth` only for deterministic local tests where Vercel/Railway CLI auth should be skipped while the configured web URL is still probed.
+Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. Use `pnpm readiness:strict:record` after `pnpm record:fuji` to additionally require the non-secret `LatestScoreRecord.json` proof, and to require that proof to be Wavy-backed even if a temporary mock record was allowed earlier. The readiness gate accepts `ARKSCORE_WEB_URL` for the submitted frontend URL, `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the public HTTPS Railway API, `NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL` for the browser Fuji RPC, the Wavy Node Fuji chain id `43113`, and the same registry/scorer aliases accepted by `finalize:live`. Use `--skip-cli-auth` only for deterministic local tests where Vercel/Railway CLI auth should be skipped while the configured web URL is still probed.
 
 Use `pnpm plan:eerc20` before the optional EncryptedERC handoff. It checks the local `../EncryptedERC` checkout, official standalone/converter deploy scripts, Circom availability, Fuji deployer key shape, and configured ArkScore eERC20 address, then prints the Fuji deploy/probe/final-verifier commands with secrets redacted.
 

@@ -28,6 +28,8 @@ const wavyProjectId = env.WAVY_NODE_PROJECT_ID;
 const subjectHashSalt = env.ARKSCORE_SUBJECT_HASH_SALT;
 const allowMock = env.RAILWAY_ALLOW_MOCK === "true";
 const wavyMockMode = allowMock ? "true" : "false";
+const fujiChainId = 43113;
+const wavyChainId = parseWavyChainId(env.WAVY_NODE_CHAIN_ID);
 
 main();
 
@@ -55,6 +57,12 @@ function main() {
   if (!allowMock && env.WAVY_NODE_MOCK_MODE === "true") {
     console.log(
       "[warn] Ignoring WAVY_NODE_MOCK_MODE=true. Railway live deployment forces WAVY_NODE_MOCK_MODE=false unless RAILWAY_ALLOW_MOCK=true.\n",
+    );
+  }
+
+  if (wavyChainId !== fujiChainId) {
+    fail(
+      `WAVY_NODE_CHAIN_ID must be Avalanche Fuji chain id ${fujiChainId} for ArkScore deployment.`,
     );
   }
 
@@ -102,6 +110,7 @@ function buildPreflightCommands(missingCredentials: string[]): CommandPlan[] {
       ...(subjectHashSalt
         ? { ARKSCORE_SUBJECT_HASH_SALT: subjectHashSalt }
         : {}),
+      WAVY_NODE_CHAIN_ID: String(wavyChainId),
     },
   });
 
@@ -145,7 +154,7 @@ function buildCommands(): CommandPlan[] {
     PORT: env.PORT ?? "4000",
     ALLOWED_ORIGINS: webUrl,
     WAVY_NODE_BASE_URL: env.WAVY_NODE_BASE_URL ?? "https://api.wavynode.com/v1",
-    WAVY_NODE_CHAIN_ID: env.WAVY_NODE_CHAIN_ID ?? "43113",
+    WAVY_NODE_CHAIN_ID: String(wavyChainId),
     WAVY_NODE_TIMEOUT_MS: env.WAVY_NODE_TIMEOUT_MS ?? "15000",
     WAVY_NODE_AUTO_REGISTER: env.WAVY_NODE_AUTO_REGISTER ?? "true",
     WAVY_NODE_FOREIGN_USER_PREFIX:
@@ -321,6 +330,16 @@ function hasUsableValue(value: string | undefined): value is string {
     !value.includes("wavy_replace") &&
     !value.includes("your-"),
   );
+}
+
+function parseWavyChainId(value: string | undefined): number {
+  const chainId = Number(value ?? String(fujiChainId));
+
+  if (!Number.isInteger(chainId) || chainId <= 0) {
+    fail("WAVY_NODE_CHAIN_ID must be a positive integer.");
+  }
+
+  return chainId;
 }
 
 function shellEscape(value: string) {

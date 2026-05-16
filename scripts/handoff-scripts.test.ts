@@ -151,6 +151,20 @@ test("Railway live dry run overrides stale local mock mode", () => {
   assert.match(result.output, /pnpm probe:wavy/);
 });
 
+test("Railway deploy refuses non-Fuji Wavy chain IDs", () => {
+  const result = runScript("scripts/deploy-railway.ts", [], {
+    WAVY_NODE_API_KEY: "ApiKey super-secret-key",
+    WAVY_NODE_PROJECT_ID: "project-secret-id",
+    ARKSCORE_SUBJECT_HASH_SALT: "salt-secret-value",
+    WAVY_NODE_CHAIN_ID: "1",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /WAVY_NODE_CHAIN_ID must be Avalanche Fuji/);
+  assert.doesNotMatch(result.output, /@railway\/cli variable set/);
+  assert.doesNotMatch(result.output, /@railway\/cli up/);
+});
+
 test("Railway dry run skips Wavy probe for explicit mock deployment", () => {
   const result = runScript("scripts/deploy-railway.ts", [], {
     WAVY_NODE_API_KEY: "",
@@ -176,6 +190,19 @@ test("Railway apply refuses missing live credentials unless mock is explicit", (
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /Refusing to deploy Railway API/);
   assert.doesNotMatch(result.output, /railway up/);
+});
+
+test("Wavy probe refuses non-Fuji chain IDs before live calls", () => {
+  const result = runScript("scripts/probe-wavy.ts", [], {
+    WAVY_NODE_API_KEY: "ApiKey super-secret-key",
+    WAVY_NODE_PROJECT_ID: "project-secret-id",
+    ARKSCORE_SUBJECT_HASH_SALT: "salt-secret-value-long-enough-for-prod",
+    WAVY_NODE_CHAIN_ID: "1",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /WAVY_NODE_CHAIN_ID must be Avalanche Fuji/);
+  assert.doesNotMatch(result.output, /Wavy credentials accepted/);
 });
 
 test("submission evidence can render without executing live checks", () => {
@@ -504,6 +531,26 @@ test("readiness reports the default public Fuji RPC URL", () => {
     result.output,
     /using default https:\/\/api\.avax-test\.network\/ext\/bc\/C\/rpc/,
   );
+});
+
+test("readiness reports the default Wavy Node Fuji chain ID", () => {
+  const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
+    WAVY_NODE_CHAIN_ID: "",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\[pass\] Wavy Node chain ID:/);
+  assert.match(result.output, /using default 43113/);
+});
+
+test("readiness warns when Wavy Node chain ID is not Fuji", () => {
+  const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
+    WAVY_NODE_CHAIN_ID: "1",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\[warn\] Wavy Node chain ID:/);
+  assert.match(result.output, /WAVY_NODE_CHAIN_ID must be 43113/);
 });
 
 test("readiness warns when the frontend Fuji RPC URL is local-only", () => {

@@ -45,6 +45,7 @@ const strict = process.argv.includes("--strict");
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const defaultFujiRpcUrl = "https://api.avax-test.network/ext/bc/C/rpc";
+const fujiChainId = 43113;
 const rootEnv = readEnvFile(".env");
 const contractEnv = readEnvFile("packages/contracts/.env");
 const webEnv = readEnvFile("apps/web/.env.local");
@@ -128,6 +129,7 @@ async function main() {
       ["WAVY_NODE_API_KEY", "WAVY_NODE_PROJECT_ID"],
       "required for live Wavy Node source=wavy responses",
     ),
+    checkWavyChainId(),
     checkSecretPresence(
       "Subject hash salt",
       ["ARKSCORE_SUBJECT_HASH_SALT"],
@@ -298,6 +300,35 @@ function checkFrontendFujiRpcUrl(): Check {
     label: "Frontend Fuji RPC URL",
     status: "pass",
     detail: `${detail}; source ${key}`,
+  };
+}
+
+function checkWavyChainId(): Check {
+  const key = "WAVY_NODE_CHAIN_ID";
+  const value = combinedEnv[key]?.trim();
+  const detail =
+    "required so Wavy Node scores the same Avalanche Fuji network stored by the oracle";
+
+  if (!value) {
+    return {
+      label: "Wavy Node chain ID",
+      status: "pass",
+      detail: `${detail}; using default ${fujiChainId}`,
+    };
+  }
+
+  if (Number(value) === fujiChainId && Number.isInteger(Number(value))) {
+    return {
+      label: "Wavy Node chain ID",
+      status: "pass",
+      detail: `${detail}; source ${key}`,
+    };
+  }
+
+  return {
+    label: "Wavy Node chain ID",
+    status: "warn",
+    detail: `${detail}; ${key} must be ${fujiChainId}`,
   };
 }
 

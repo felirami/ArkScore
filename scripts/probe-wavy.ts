@@ -4,6 +4,7 @@ type Institution = "arkangeles" | "bankaool";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const demoSubjectHashSalt = "arkscore-demo-subject-hash-salt";
+const fujiChainId = 43113;
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("apps/api/.env"),
@@ -115,10 +116,14 @@ function parseInstitution(value: string | undefined): Institution {
 }
 
 function parseChainId(value: string | undefined): number {
-  const chainId = Number(value ?? "43113");
+  const chainId = Number(value ?? String(fujiChainId));
 
   if (!Number.isInteger(chainId) || chainId <= 0) {
     fail("WAVY_NODE_CHAIN_ID must be a positive integer.");
+  }
+
+  if (chainId !== fujiChainId) {
+    fail(`WAVY_NODE_CHAIN_ID must be Avalanche Fuji chain id ${fujiChainId}.`);
   }
 
   return chainId;
