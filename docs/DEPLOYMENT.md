@@ -45,7 +45,7 @@ To authorize the wallet that will click `Store on Fuji` in the dashboard:
 ARKSCORE_SCORER_ADDRESS=0x... pnpm --filter @arkscore/contracts scorer:fuji
 ```
 
-Set `SCORER_AUTHORIZED=false` to revoke a scorer.
+`scorer:fuji` requires a valid `FUJI_PRIVATE_KEY` owner key, checks that the connected network is Fuji `43113`, sends `setScorer(address,bool)`, then reads `isScorer(address)` back and fails if the post-transaction state does not match the requested authorization. Set `SCORER_AUTHORIZED=false` to revoke a scorer; any other non-empty value must be `true` or `false`.
 
 After Railway is deployed with live Wavy credentials, prove the full oracle path from API response to Fuji storage:
 

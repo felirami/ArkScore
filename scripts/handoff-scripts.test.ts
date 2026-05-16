@@ -1135,6 +1135,84 @@ test("Fuji registry deployer refuses malformed private key with project error", 
   assert.doesNotMatch(result.output, /CreditScoreRegistry deployed/);
 });
 
+test("Fuji scorer authorizer refuses missing private key before network calls", () => {
+  const result = runPnpm(
+    [
+      "--filter",
+      "@arkscore/contracts",
+      "exec",
+      "hardhat",
+      "run",
+      "scripts/set-scorer.ts",
+      "--network",
+      "fuji",
+    ],
+    {
+      FUJI_PRIVATE_KEY: "",
+      ARKSCORE_SCORER_ADDRESS: "0x1111111111111111111111111111111111111111",
+      ARKSCORE_REGISTRY_ADDRESS: "0x2222222222222222222222222222222222222222",
+    },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /FUJI_PRIVATE_KEY is required/);
+  assert.doesNotMatch(result.output, /Updating scorer/);
+});
+
+test("Fuji scorer authorizer refuses malformed private key with project error", () => {
+  const result = runPnpm(
+    [
+      "--filter",
+      "@arkscore/contracts",
+      "exec",
+      "hardhat",
+      "run",
+      "scripts/set-scorer.ts",
+      "--network",
+      "fuji",
+    ],
+    {
+      FUJI_PRIVATE_KEY: "0x1234",
+      ARKSCORE_SCORER_ADDRESS: "0x1111111111111111111111111111111111111111",
+      ARKSCORE_REGISTRY_ADDRESS: "0x2222222222222222222222222222222222222222",
+    },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /FUJI_PRIVATE_KEY must be a 32-byte 0x-prefixed hex private key/,
+  );
+  assert.doesNotMatch(result.output, /Invalid config/);
+  assert.doesNotMatch(result.output, /Updating scorer/);
+});
+
+test("Fuji scorer authorizer refuses invalid authorization flag before network calls", () => {
+  const result = runPnpm(
+    [
+      "--filter",
+      "@arkscore/contracts",
+      "exec",
+      "hardhat",
+      "run",
+      "scripts/set-scorer.ts",
+      "--network",
+      "fuji",
+    ],
+    {
+      FUJI_PRIVATE_KEY:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      SCORER_AUTHORIZED: "maybe",
+      ARKSCORE_SCORER_ADDRESS: "0x1111111111111111111111111111111111111111",
+      ARKSCORE_REGISTRY_ADDRESS: "0x2222222222222222222222222222222222222222",
+    },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /SCORER_AUTHORIZED must be true or false/);
+  assert.doesNotMatch(result.output, /Updating scorer/);
+});
+
 test("Fuji score recorder refuses local API URLs before touching Fuji", () => {
   const result = runPnpm(
     [

@@ -9,18 +9,17 @@ type DeploymentArtifact = {
 type CreditScoreRegistryInstance = {
   setScorer: (
     scorer: string,
-    authorized: boolean
+    authorized: boolean,
   ) => Promise<{ hash: string; wait: () => Promise<unknown> }>;
   isScorer: (scorer: string) => Promise<boolean>;
 };
 
-async function main() {
-  const { ethers } = await network.create();
-  const [owner] = await ethers.getSigners();
+const fujiChainId = 43113;
+const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
 
-  if (!owner) {
-    throw new Error("No owner signer available.");
-  }
+async function main() {
+  console.log("# ArkScore Fuji Scorer Authorization\n");
+  validateFujiPrivateKey();
 
   const registryAddress =
     process.env.CREDIT_SCORE_REGISTRY_ADDRESS ??
@@ -29,11 +28,27 @@ async function main() {
     readRegistryDeployment()?.address;
   const scorerAddress =
     process.env.SCORER_ADDRESS ?? process.env.ARKSCORE_SCORER_ADDRESS;
-  const authorized = process.env.SCORER_AUTHORIZED !== "false";
+  const authorized = parseAuthorized(process.env.SCORER_AUTHORIZED);
+
+  const { ethers } = await network.create();
+  const providerNetwork = await ethers.provider.getNetwork();
+  const chainId = Number(providerNetwork.chainId);
+
+  if (chainId !== fujiChainId) {
+    throw new Error(
+      `Expected Avalanche Fuji chain id ${fujiChainId}, received ${chainId}.`,
+    );
+  }
+
+  const [owner] = await ethers.getSigners();
+
+  if (!owner) {
+    throw new Error("No owner signer available from FUJI_PRIVATE_KEY.");
+  }
 
   if (!registryAddress || !ethers.isAddress(registryAddress)) {
     throw new Error(
-      "Set CREDIT_SCORE_REGISTRY_ADDRESS, REGISTRY_ADDRESS, ARKSCORE_REGISTRY_ADDRESS, or deploy first."
+      "Set CREDIT_SCORE_REGISTRY_ADDRESS, REGISTRY_ADDRESS, ARKSCORE_REGISTRY_ADDRESS, or deploy first.",
     );
   }
 
@@ -43,7 +58,7 @@ async function main() {
 
   const registry = (await ethers.getContractAt(
     "CreditScoreRegistry",
-    registryAddress
+    registryAddress,
   )) as unknown as CreditScoreRegistryInstance;
   const tx = await registry.setScorer(scorerAddress, authorized);
 
@@ -57,7 +72,35 @@ async function main() {
   await tx.wait();
 
   const isAuthorized = await registry.isScorer(scorerAddress);
+  if (isAuthorized !== authorized) {
+    throw new Error(
+      `Scorer authorization mismatch after tx: expected ${authorized}, got ${isAuthorized}.`,
+    );
+  }
+
   console.log(`confirmed=${isAuthorized}`);
+}
+
+function validateFujiPrivateKey() {
+  const privateKey = process.env.FUJI_PRIVATE_KEY?.trim();
+
+  if (!privateKey) {
+    throw new Error("FUJI_PRIVATE_KEY is required to update Fuji scorers.");
+  }
+
+  if (!privateKeyRegex.test(privateKey)) {
+    throw new Error(
+      "FUJI_PRIVATE_KEY must be a 32-byte 0x-prefixed hex private key.",
+    );
+  }
+}
+
+function parseAuthorized(value: string | undefined) {
+  if (value === undefined || value === "") return true;
+  if (value === "true") return true;
+  if (value === "false") return false;
+
+  throw new Error("SCORER_AUTHORIZED must be true or false.");
 }
 
 function readRegistryDeployment(): DeploymentArtifact | undefined {
@@ -65,7 +108,7 @@ function readRegistryDeployment(): DeploymentArtifact | undefined {
     process.cwd(),
     "deployments",
     "fuji",
-    "CreditScoreRegistry.json"
+    "CreditScoreRegistry.json",
   );
 
   if (!existsSync(path)) return undefined;
