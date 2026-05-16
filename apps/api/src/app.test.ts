@@ -191,11 +191,20 @@ test("score endpoint rate limits repeated clients", async () => {
     let response: Response | undefined;
 
     for (let index = 0; index < requestCount; index += 1) {
-      response = await fetch(`${baseUrl}/api/score/${demoWallet}`, {
-        headers: {
-          "x-forwarded-for": "203.0.113.10",
+      const currentResponse = await fetch(
+        `${baseUrl}/api/score/${demoWallet}`,
+        {
+          headers: {
+            "x-forwarded-for": "203.0.113.10",
+          },
         },
-      });
+      );
+
+      if (index < requestCount - 1) {
+        await currentResponse.arrayBuffer();
+      }
+
+      response = currentResponse;
     }
 
     assert(response);

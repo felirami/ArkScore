@@ -9,7 +9,10 @@ type CommandResult = {
   command: string;
   exitCode: number;
   output: string;
+  status: CommandStatus;
 };
+
+type CommandStatus = "fail" | "pass" | "warn";
 
 type ShellResult = {
   exitCode: number;
@@ -168,6 +171,7 @@ function runChecks(): CommandResult[] {
       ...check,
       exitCode: result.exitCode,
       output: result.output,
+      status: classifyCommandResult(result.output, result.exitCode),
     };
   });
 }
@@ -179,7 +183,7 @@ function renderReport(input: ReportInput) {
       : input.checkResults
           .map(
             (result) =>
-              `- ${result.exitCode === 0 ? "PASS" : "FAIL"}: ${result.label} (\`${result.command}\`)`,
+              `- ${formatCommandStatus(result.status)}: ${result.label} (\`${result.command}\`)`,
           )
           .join("\n");
 
@@ -192,6 +196,7 @@ function renderReport(input: ReportInput) {
 
 - Command: \`${result.command}\`
 - Exit code: \`${result.exitCode}\`
+- Status: \`${formatCommandStatus(result.status)}\`
 
 \`\`\`\`text
 ${result.output.trim() || "(no output)"}
@@ -238,6 +243,29 @@ ${checkSummary}
 ${renderFinalHandoffCommands(input.requireEerc20)}
 \`\`\`
 ${checkDetails}`;
+}
+
+function classifyCommandResult(
+  output: string,
+  exitCode: number,
+): CommandStatus {
+  if (exitCode !== 0) return "fail";
+
+  return outputHasWarnings(output) ? "warn" : "pass";
+}
+
+function outputHasWarnings(output: string) {
+  return (
+    /\[warn\]/i.test(output) ||
+    /Warnings:\s*[1-9]\d*/i.test(output) ||
+    /## Current Blockers[\s\S]*\n- (?!None detected by local configuration\.)/.test(
+      output,
+    )
+  );
+}
+
+function formatCommandStatus(status: CommandStatus) {
+  return status.toUpperCase();
 }
 
 function renderFinalHandoffCommands(requireEerc20: boolean) {

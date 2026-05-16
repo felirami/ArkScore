@@ -316,6 +316,86 @@ test("submission evidence can render without executing live checks", () => {
   assert.match(result.output, /pnpm verify:live:strict/);
 });
 
+test("submission evidence marks warning-bearing checks as WARN", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-evidence-warn-"));
+  const fakeBin = join(tempDir, "bin");
+  const fakePnpmPath = join(fakeBin, "pnpm");
+
+  mkdirSync(fakeBin, { recursive: true });
+  writeFileSync(
+    fakePnpmPath,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2).join(" ");
+if (args === "--silent verify:railway") {
+  console.log("[pass] Railway payload install/build/test completed");
+} else if (args === "--silent smoke:web") {
+  console.log("[pass] Hosted demo smoke");
+} else if (args === "--silent verify:live") {
+  console.log("[pass] Vercel web");
+  console.log("[warn] Railway API: missing ARKSCORE_API_URL");
+} else if (args === "--silent audit:requirements") {
+  console.log("## Summary");
+  console.log("- Warnings: 4");
+} else if (args === "--silent judge:demo") {
+  console.log("## Current Blockers");
+  console.log("- Railway API URL is missing.");
+} else if (args === "--silent readiness") {
+  console.log("[warn] Wavy Node credentials: missing WAVY_NODE_API_KEY");
+} else {
+  console.error("unexpected pnpm args: " + args);
+  process.exit(1);
+}
+`,
+  );
+  chmodSync(fakePnpmPath, 0o755);
+
+  try {
+    const result = spawnSync(
+      join(process.cwd(), "node_modules", ".bin", "tsx"),
+      ["scripts/submission-evidence.ts"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${fakeBin}${delimiter}${process.env.PATH ?? ""}`,
+          ARKSCORE_SCORE_RECORD_ARTIFACT: join(
+            tempDir,
+            "missing-score-record.json",
+          ),
+        },
+      },
+    );
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
+
+    assert.equal(result.status, 0, output);
+    assert.match(
+      output,
+      /PASS: Railway archive verifier \(`pnpm --silent verify:railway`\)/,
+    );
+    assert.match(
+      output,
+      /PASS: Hosted demo smoke \(`pnpm --silent smoke:web`\)/,
+    );
+    assert.match(
+      output,
+      /WARN: Live deployment verifier \(`pnpm --silent verify:live`\)/,
+    );
+    assert.match(
+      output,
+      /WARN: Requirements audit \(`pnpm --silent audit:requirements`\)/,
+    );
+    assert.match(
+      output,
+      /WARN: Judge demo runbook \(`pnpm --silent judge:demo`\)/,
+    );
+    assert.match(output, /WARN: Readiness gate \(`pnpm --silent readiness`\)/);
+    assert.match(output, /- Status: `WARN`/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("submission evidence renders configured public deployment targets only", () => {
   const result = runScript(
     "scripts/submission-evidence.ts",
