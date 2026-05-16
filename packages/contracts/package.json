@@ -1,0 +1,30 @@
+{
+  "name": "@arkscore/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:fuji": "hardhat run scripts/deploy-credit-score-registry.ts --network fuji",
+    "lint": "echo \"Solidity linting not configured yet\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "17.4.2",
+    "ethers": "6.16.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "4.0.11",
+    "@nomicfoundation/hardhat-ethers-chai-matchers": "3.0.8",
+    "@nomicfoundation/hardhat-mocha": "3.0.19",
+    "@types/chai": "5.2.3",
+    "@types/node": "25.8.0",
+    "@types/mocha": "10.0.10",
+    "chai": "6.2.2",
+    "hardhat": "3.4.5",
+    "mocha": "11.7.5",
+    "typescript": "6.0.3"
+  }
+}

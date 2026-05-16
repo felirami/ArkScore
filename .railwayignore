@@ -1,0 +1,17 @@
+.git
+node_modules
+**/node_modules
+.next
+**/.next
+out
+**/out
+artifacts
+cache
+typechain-types
+.env
+.env.*
+*.log
+*.tsbuildinfo
+apps/web
+packages/contracts
+docs

@@ -1,0 +1,16 @@
+.git
+node_modules
+**/node_modules
+.next
+**/.next
+out
+**/out
+dist
+**/dist
+artifacts
+cache
+typechain-types
+.env
+.env.*
+*.log
+*.tsbuildinfo

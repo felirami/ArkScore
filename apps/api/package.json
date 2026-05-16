@@ -1,0 +1,35 @@
+{
+  "name": "@arkscore/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsup src/server.ts --format esm --clean",
+    "start": "node dist/server.js",
+    "lint": "eslint src --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_ENV=test WAVY_NODE_MOCK_MODE=true tsx --test src/app.test.ts && tsc --noEmit"
+  },
+  "dependencies": {
+    "@arkscore/shared": "workspace:*",
+    "cors": "2.8.6",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "helmet": "8.1.0",
+    "morgan": "1.10.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.4",
+    "@types/cors": "2.8.19",
+    "@types/express": "5.0.6",
+    "@types/morgan": "1.9.10",
+    "@types/node": "25.8.0",
+    "eslint": "9.39.4",
+    "tsup": "8.5.1",
+    "tsx": "4.22.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.59.3"
+  }
+}
