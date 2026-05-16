@@ -37,6 +37,10 @@ type OpenApiSchema = {
   properties?: Record<string, unknown>;
 };
 
+type OpenApiOperation = {
+  responses?: Record<string, unknown>;
+};
+
 type OpenApiResponse = {
   openapi?: string;
   info?: {
@@ -375,6 +379,11 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     const openApi = (await openApiResponse
       .json()
       .catch(() => null)) as OpenApiResponse | null;
+    const scoreOperation = getOpenApiOperation(
+      openApi,
+      "/api/score/{address}",
+      "get",
+    );
     const healthSchema = getOpenApiSchema(openApi, "HealthResponse");
     const scoreSchema = getOpenApiSchema(openApi, "ScoreApiResponse");
     const wavySchema = getOpenApiSchema(openApi, "WavyRiskResult");
@@ -386,6 +395,11 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       openApi?.info?.title === "ArkScore API" &&
       Boolean(openApi?.paths?.["/health"]) &&
       Boolean(openApi?.paths?.["/api/score/{address}"]) &&
+      operationHasResponse(scoreOperation, "400") &&
+      operationHasResponse(scoreOperation, "404") &&
+      operationHasResponse(scoreOperation, "502") &&
+      operationHasResponse(scoreOperation, "504") &&
+      operationHasResponse(scoreOperation, "500") &&
       schemaRequires(healthSchema, "wavyCredentialsConfigured") &&
       schemaHasProperty(healthSchema, "wavyCredentialsConfigured") &&
       schemaRequires(healthSchema, "subjectHashSaltConfigured") &&
@@ -783,6 +797,31 @@ function getOpenApiSchema(
   name: string,
 ): OpenApiSchema | undefined {
   return openApi?.components?.schemas?.[name];
+}
+
+function getOpenApiOperation(
+  openApi: OpenApiResponse | null | undefined,
+  path: string,
+  method: string,
+): OpenApiOperation | undefined {
+  const pathItem = openApi?.paths?.[path];
+
+  if (!pathItem || typeof pathItem !== "object") {
+    return undefined;
+  }
+
+  const operation = (pathItem as Record<string, unknown>)[method];
+
+  return operation && typeof operation === "object"
+    ? (operation as OpenApiOperation)
+    : undefined;
+}
+
+function operationHasResponse(
+  operation: OpenApiOperation | undefined,
+  statusCode: string,
+): boolean {
+  return Boolean(operation?.responses?.[statusCode]);
 }
 
 function schemaRequires(

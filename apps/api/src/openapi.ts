@@ -101,8 +101,29 @@ export const openApiDocument = {
               },
             },
           },
+          "404": {
+            description:
+              "Wavy Node returned no risk result for the requested wallet.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
           "502": {
             description: "Wavy Node request failed in live mode.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+          "504": {
+            description: "Wavy Node request timed out in live mode.",
             content: {
               "application/json": {
                 schema: {

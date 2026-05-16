@@ -12,6 +12,10 @@ type OpenApiSchema = {
   properties?: Record<string, unknown>;
 };
 
+type OpenApiOperation = {
+  responses?: Record<string, unknown>;
+};
+
 type StringSchema = {
   pattern?: string;
 };
@@ -51,11 +55,19 @@ test("openapi document describes the public scoring contract", async () => {
     const subjectHashSchema = scoreSchema?.properties?.subjectHash as
       | StringSchema
       | undefined;
+    const scoreOperation = payload.paths["/api/score/{address}"] as
+      | { get?: OpenApiOperation }
+      | undefined;
 
     assert.equal(response.status, 200);
     assert.match(payload.openapi, /^3\./);
     assert.ok(payload.paths["/health"]);
     assert.ok(payload.paths["/api/score/{address}"]);
+    assert.ok(scoreOperation?.get?.responses?.["400"]);
+    assert.ok(scoreOperation?.get?.responses?.["404"]);
+    assert.ok(scoreOperation?.get?.responses?.["502"]);
+    assert.ok(scoreOperation?.get?.responses?.["504"]);
+    assert.ok(scoreOperation?.get?.responses?.["500"]);
     assert.ok(healthSchema);
     assert.ok(scoreSchema);
     assert.ok(wavySchema);
