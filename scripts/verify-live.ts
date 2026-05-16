@@ -79,7 +79,7 @@ main().catch((error: unknown) => {
 async function main() {
   const checks: Check[] = [];
 
-  checks.push(await verifyWeb(webUrl));
+  checks.push(...(await verifyWeb(webUrl)));
   checks.push(...(await verifyApi(apiUrl)));
   checks.push(...(await verifyContract(registryAddress)));
 
@@ -106,45 +106,161 @@ async function main() {
   }
 }
 
-async function verifyWeb(url: string | undefined): Promise<Check> {
+async function verifyWeb(url: string | undefined): Promise<Check[]> {
   if (!url) {
-    return {
-      label: "Vercel web",
-      status: "warn",
-      detail: "missing ARKSCORE_WEB_URL",
-    };
+    return [
+      {
+        label: "Vercel web",
+        status: "warn",
+        detail: "missing ARKSCORE_WEB_URL",
+      },
+    ];
   }
+
+  const checks: Check[] = [];
 
   try {
     const response = await fetch(url);
     const html = await response.text();
 
     if (!response.ok) {
-      return {
-        label: "Vercel web",
-        status: "fail",
-        detail: `${url} returned ${response.status}`,
-      };
-    }
-
-    return html.includes("ArkScore")
-      ? {
-          label: "Vercel web",
-          status: "pass",
-          detail: `${url} returned ${response.status} and ArkScore HTML`,
-        }
-      : {
+      return [
+        {
           label: "Vercel web",
           status: "fail",
-          detail: `${url} returned ${response.status} but ArkScore text was missing`,
-        };
+          detail: `${url} returned ${response.status}`,
+        },
+      ];
+    }
+
+    const hasArkScoreHtml = html.includes("ArkScore");
+
+    checks.push(
+      hasArkScoreHtml
+        ? {
+            label: "Vercel web",
+            status: "pass",
+            detail: `${url} returned ${response.status} and ArkScore HTML`,
+          }
+        : {
+            label: "Vercel web",
+            status: "fail",
+            detail: `${url} returned ${response.status} but ArkScore text was missing`,
+          },
+    );
+
+    if (hasArkScoreHtml) {
+      checks.push(...(await verifyWebPublicConfig(url, html)));
+    }
   } catch (error) {
-    return {
-      label: "Vercel web",
-      status: "fail",
-      detail: error instanceof Error ? error.message : `could not reach ${url}`,
-    };
+    return [
+      {
+        label: "Vercel web",
+        status: "fail",
+        detail:
+          error instanceof Error ? error.message : `could not reach ${url}`,
+      },
+    ];
   }
+
+  return checks;
+}
+
+async function verifyWebPublicConfig(
+  url: string,
+  html: string,
+): Promise<Check[]> {
+  const expected = expectedPublicWebConfig();
+  if (expected.length === 0) return [];
+
+  const scripts = getScriptSources(html);
+
+  if (scripts.length === 0) {
+    return expected.map(({ label, value }) => ({
+      label,
+      status: "fail",
+      detail: `could not inspect Next.js chunks for ${redactPublicValue(value)}`,
+    }));
+  }
+
+  try {
+    const bundleText = `${html}\n${await fetchBundles(scripts, url)}`;
+
+    return expected.map(({ label, value }) =>
+      bundleContainsValue(bundleText, value)
+        ? {
+            label,
+            status: "pass",
+            detail: `hosted bundle contains ${redactPublicValue(value)}`,
+          }
+        : {
+            label,
+            status: "fail",
+            detail: `hosted bundle is missing ${redactPublicValue(value)}; redeploy Vercel after setting public env vars`,
+          },
+    );
+  } catch (error) {
+    return expected.map(({ label, value }) => ({
+      label,
+      status: "fail",
+      detail: `${error instanceof Error ? error.message : "bundle inspection failed"} while checking ${redactPublicValue(value)}`,
+    }));
+  }
+}
+
+function expectedPublicWebConfig(): Array<{ label: string; value: string }> {
+  const expected: Array<{ label: string; value: string }> = [];
+
+  if (apiUrl) {
+    expected.push({
+      label: "Vercel web API config",
+      value: apiUrl,
+    });
+  }
+
+  if (registryAddress && isAddress(registryAddress)) {
+    expected.push({
+      label: "Vercel web registry config",
+      value: registryAddress,
+    });
+  }
+
+  return expected;
+}
+
+function getScriptSources(html: string): string[] {
+  return [...html.matchAll(/<script[^>]+src="([^"]+)"/g)]
+    .map((match) => match[1] ?? "")
+    .filter(Boolean);
+}
+
+async function fetchBundles(scripts: string[], baseUrl: string) {
+  const chunks = await Promise.all(
+    scripts.map(async (src) => {
+      const url = new URL(src, baseUrl);
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`${url.toString()} returned ${response.status}`);
+      }
+
+      return response.text();
+    }),
+  );
+
+  return chunks.join("\n");
+}
+
+function bundleContainsValue(bundleText: string, value: string): boolean {
+  const bundle = bundleText.toLowerCase();
+  const normalized = value.toLowerCase();
+  const escaped = normalized.replaceAll("/", "\\/");
+
+  return bundle.includes(normalized) || bundle.includes(escaped);
+}
+
+function redactPublicValue(value: string): string {
+  return isAddress(value) ? value : value.replace(/^https?:\/\//, "");
 }
 
 async function verifyApi(url: string | undefined): Promise<Check[]> {

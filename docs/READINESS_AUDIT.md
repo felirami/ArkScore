@@ -36,11 +36,11 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, subject hash, subject status, evidence hash, scorer status, and Store on Fuji flow.
 
-`pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict` to prove the Railway health, production subject-hash salt, OpenAPI, score response, live Wavy source, Fuji registry bytecode and ABI, and authorized scorer.
+`pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict` to prove the hosted Vercel bundle contains the configured Railway API URL and Fuji registry address, plus Railway health, production subject-hash salt, OpenAPI, score response, live Wavy source, Fuji registry bytecode and ABI, and authorized scorer.
 
 `pnpm deploy:railway` is a dry-run Railway deploy planner. `pnpm deploy:railway:apply -- --create-domain` creates or links the Railway project, sets non-secret and Wavy variables, uploads the API, and can generate the service domain when Railway auth is available.
 
-`pnpm finalize:live` is a dry-run finalizer for the Vercel handoff. `pnpm finalize:live:apply` sets `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false`, deploys production, then runs strict live verification.
+`pnpm finalize:live` is a dry-run finalizer for the Vercel handoff. `pnpm finalize:live:apply` sets `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false`, deploys production, then runs strict live verification against the static bundle and live services.
 
 `pnpm --filter @arkscore/contracts scorer:fuji` authorizes or revokes the wallet that will submit score records from the dashboard. Strict live verification checks `ARKSCORE_SCORER_ADDRESS` with `isScorer(address)`.
 

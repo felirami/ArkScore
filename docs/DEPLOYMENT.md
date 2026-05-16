@@ -165,6 +165,8 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:appl
 
 `finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, sets public Vercel env values, redeploys the frontend, and runs strict live verification. It also accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during strict verification.
 
+The strict verifier fetches the hosted Vercel page plus its Next.js chunks and proves the production bundle contains the configured Railway API URL and Fuji registry address. If either value is missing from the static bundle, redeploy Vercel after setting the public env vars.
+
 ## Final Smoke Test
 
 ```bash
@@ -180,5 +182,5 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
 
-Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable, checks the Railway health, production subject-hash salt, OpenAPI, and score response shape, and verifies that the Fuji registry address has bytecode plus callable `owner()` and `hasScore(bytes32)` functions.
+Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable and rebuilt with the live public env values, checks the Railway health, production subject-hash salt, OpenAPI, and score response shape, and verifies that the Fuji registry address has bytecode plus callable `owner()` and `hasScore(bytes32)` functions.
 Set `ARKSCORE_SCORER_ADDRESS` or `SCORER_ADDRESS` before the strict run to prove the dashboard signing wallet is authorized to store score records.
