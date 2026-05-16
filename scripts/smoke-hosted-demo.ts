@@ -17,6 +17,8 @@ const requiredBundleText = [
   "Wavy risk",
   "Subject hash",
   "Evidence hash",
+  "Traceability",
+  "AI risk scale",
   "Scorer status",
   "Subject status",
   "Store on Fuji",
