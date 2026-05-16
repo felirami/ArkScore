@@ -6,7 +6,7 @@ Status date: May 16, 2026
 
 - Monorepo scaffolded with pnpm workspaces, Node.js 22.19.0 pinning, shared TypeScript configs, and environment examples.
 - Next.js 15 App Router dashboard builds as a static Vercel export and includes Avalanche Fuji wallet connection, Wavy score intake, composite scoring, institutional decisioning, and on-chain write flow.
-- Dashboard reads `isScorer(connectedWallet)` from the Fuji registry and disables score storage until the connected wallet is authorized.
+- Dashboard reads `isScorer(connectedWallet)` and `hasScore(subjectHash)` from the Fuji registry, disables score storage until the connected wallet is authorized, and labels the on-chain action as store or update based on subject status.
 - The Fuji registry stores score records by backend-derived `subjectHash`, so the raw scored wallet address is not included in contract calldata or `ScoreRecorded` events.
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
 - API tests cover `/health`, subject-hash salt health reporting, `/openapi.json` privacy fields, a Bankaool score response, invalid institution rejection in mock mode, and the live Wavy Node adapter request shape.
@@ -15,8 +15,8 @@ Status date: May 16, 2026
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
-- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_3rX6XXQ9pF6DTq7RnhUkrZULqY1C`.
-- Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, subject hash, and evidence hash while Railway credentials are pending.
+- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_Dbn2zK9FHe9jE3HYayap5vjnRkXn`.
+- Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, subject hash, subject status, and evidence hash while Railway credentials are pending.
 
 ## Verified Locally
 
@@ -30,7 +30,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm readiness` produces a non-secret live-gate report covering Vercel reachability, Railway auth, Wavy credentials, Fuji deployer configuration, and frontend deployment variables. It accepts the same Railway API, Fuji registry, and scorer aliases used by the finalization and Hardhat scripts, so the report mirrors the actual handoff flow.
 
-`pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, subject hash, evidence hash, scorer status, and Store on Fuji flow.
+`pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, subject hash, subject status, evidence hash, scorer status, and Store on Fuji flow.
 
 `pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict` to prove the Railway health, production subject-hash salt, OpenAPI, score response, live Wavy source, Fuji registry, and authorized scorer.
 

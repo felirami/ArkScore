@@ -18,6 +18,7 @@ const requiredBundleText = [
   "Subject hash",
   "Evidence hash",
   "Scorer status",
+  "Subject status",
   "Store on Fuji",
 ];
 

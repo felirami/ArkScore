@@ -10,7 +10,7 @@ import {
   ShieldAlert,
   UploadCloud,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isAddress } from "viem";
 import {
   decisionContractEnum,
@@ -68,6 +68,21 @@ export function ScoreDashboard() {
     useWaitForTransactionReceipt({
       hash: transactionHash,
     });
+  const {
+    data: hasStoredScore,
+    isLoading: isCheckingStoredScore,
+    isError: isStoredScoreCheckError,
+    refetch: refetchStoredScore,
+  } = useReadContract({
+    address: creditScoreRegistryAddress,
+    abi: creditScoreRegistryAbi,
+    functionName: "hasScore",
+    args: score ? [score.subjectHash] : undefined,
+    chainId: avalancheFuji.id,
+    query: {
+      enabled: Boolean(creditScoreRegistryAddress && score?.subjectHash),
+    },
+  });
 
   const canSubmitToRegistry = useMemo(
     () =>
@@ -79,6 +94,12 @@ export function ScoreDashboard() {
       ),
     [isAuthorizedScorer, isConnected, score],
   );
+
+  useEffect(() => {
+    if (isConfirmed) {
+      void refetchStoredScore();
+    }
+  }, [isConfirmed, refetchStoredScore]);
 
   async function handleScoreWallet() {
     setError(null);
@@ -307,6 +328,22 @@ export function ScoreDashboard() {
                     </span>
                   </span>
                 ) : null}
+                <span className="mt-2 flex flex-wrap items-center gap-2">
+                  <span>Subject status:</span>
+                  <Badge
+                    tone={storedScoreTone({
+                      hasRegistry: Boolean(creditScoreRegistryAddress),
+                      hasStoredScore,
+                    })}
+                  >
+                    {storedScoreStatusLabel({
+                      hasRegistry: Boolean(creditScoreRegistryAddress),
+                      hasStoredScore,
+                      isCheckingStoredScore,
+                      isStoredScoreCheckError,
+                    })}
+                  </Badge>
+                </span>
               </div>
               <Button
                 onClick={handleStoreOnChain}
@@ -332,7 +369,9 @@ export function ScoreDashboard() {
                   ? "Switch to Fuji"
                   : isCheckingScorer
                     ? "Checking scorer"
-                    : "Store on Fuji"}
+                    : hasStoredScore
+                      ? "Update Fuji record"
+                      : "Store on Fuji"}
               </Button>
             </div>
 
@@ -407,6 +446,16 @@ function scorerTone(isAuthorizedScorer: boolean | undefined) {
   return "info";
 }
 
+function storedScoreTone(input: {
+  hasRegistry: boolean;
+  hasStoredScore: boolean | undefined;
+}) {
+  if (!input.hasRegistry) return "warning";
+  if (input.hasStoredScore === true) return "success";
+  if (input.hasStoredScore === false) return "info";
+  return "info";
+}
+
 function scorerStatusLabel(input: {
   connectedAddress: string | undefined;
   isAuthorizedScorer: boolean | undefined;
@@ -419,6 +468,20 @@ function scorerStatusLabel(input: {
   if (input.isAuthorizedScorer === true) return "Authorized";
   if (input.isAuthorizedScorer === false) return "Not authorized";
   return "Unknown";
+}
+
+function storedScoreStatusLabel(input: {
+  hasRegistry: boolean;
+  hasStoredScore: boolean | undefined;
+  isCheckingStoredScore: boolean;
+  isStoredScoreCheckError: boolean;
+}) {
+  if (!input.hasRegistry) return "Set registry";
+  if (input.isCheckingStoredScore) return "Checking Fuji";
+  if (input.isStoredScoreCheckError) return "Check failed";
+  if (input.hasStoredScore === true) return "Stored on Fuji";
+  if (input.hasStoredScore === false) return "Not stored";
+  return "Awaiting score";
 }
 
 function shortAddress(address: string): string {
