@@ -493,6 +493,33 @@ test("readiness warns when the frontend API URL is local-only", () => {
   );
 });
 
+test("readiness reports the default public Fuji RPC URL", () => {
+  const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
+    NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: "",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\[pass\] Frontend Fuji RPC URL:/);
+  assert.match(
+    result.output,
+    /using default https:\/\/api\.avax-test\.network\/ext\/bc\/C\/rpc/,
+  );
+});
+
+test("readiness warns when the frontend Fuji RPC URL is local-only", () => {
+  const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
+    NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: "http://localhost:9650/ext/bc/C/rpc",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\[warn\] Frontend Fuji RPC URL:/);
+  assert.match(result.output, /public HTTPS/);
+  assert.match(
+    result.output,
+    /invalid value in NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL/,
+  );
+});
+
 test("requirements audit maps repo readiness without leaking secrets", () => {
   const result = runScript("scripts/audit-requirements.ts", [], {
     WAVY_NODE_API_KEY: "ApiKey should-not-print",

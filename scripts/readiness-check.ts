@@ -44,6 +44,7 @@ type ScoreRecordProof = {
 const strict = process.argv.includes("--strict");
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const defaultFujiRpcUrl = "https://api.avax-test.network/ext/bc/C/rpc";
 const rootEnv = readEnvFile(".env");
 const contractEnv = readEnvFile("packages/contracts/.env");
 const webEnv = readEnvFile("apps/web/.env.local");
@@ -148,6 +149,7 @@ async function main() {
       ],
       "required to point Vercel at the public HTTPS Railway API during finalization",
     ),
+    checkFrontendFujiRpcUrl(),
     checkAddressPresence(
       "Frontend registry address",
       registryCandidates,
@@ -268,6 +270,35 @@ function checkPublicHttpsUrlPresence(
   detail: string,
 ): Check {
   return checkCandidatePresence(label, candidates, detail, isPublicHttpsUrl);
+}
+
+function checkFrontendFujiRpcUrl(): Check {
+  const key = "NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL";
+  const value = normalizeBaseUrl(combinedEnv[key]);
+  const detail =
+    "required so the Vercel dashboard can read and write Avalanche Fuji from the browser";
+
+  if (!value) {
+    return {
+      label: "Frontend Fuji RPC URL",
+      status: "pass",
+      detail: `${detail}; using default ${defaultFujiRpcUrl}`,
+    };
+  }
+
+  if (!hasUsableValue(value) || !isPublicHttpsUrl(value)) {
+    return {
+      label: "Frontend Fuji RPC URL",
+      status: "warn",
+      detail: `${detail}; invalid value in ${key}`,
+    };
+  }
+
+  return {
+    label: "Frontend Fuji RPC URL",
+    status: "pass",
+    detail: `${detail}; source ${key}`,
+  };
 }
 
 function checkAddressPresence(
