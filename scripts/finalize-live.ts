@@ -13,24 +13,31 @@ const env = {
   ...process.env,
 };
 const apiUrl = normalizeBaseUrl(
-  env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL,
+  firstConfiguredValue([env.ARKSCORE_API_URL, env.NEXT_PUBLIC_API_BASE_URL]),
 );
-const registryAddress =
-  env.ARKSCORE_REGISTRY_ADDRESS ??
-  env.CREDIT_SCORE_REGISTRY_ADDRESS ??
-  env.REGISTRY_ADDRESS ??
-  env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
-  readRegistryDeployment()?.address;
-const eerc20DemoAddress =
-  env.ARKSCORE_EERC20_DEMO_ADDRESS ??
-  env.EERC20_DEMO_ADDRESS ??
-  env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS;
+const registryAddress = firstConfiguredValue([
+  env.ARKSCORE_REGISTRY_ADDRESS,
+  env.CREDIT_SCORE_REGISTRY_ADDRESS,
+  env.REGISTRY_ADDRESS,
+  env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS,
+  readRegistryDeployment()?.address,
+]);
+const eerc20DemoAddress = firstConfiguredValue([
+  env.ARKSCORE_EERC20_DEMO_ADDRESS,
+  env.EERC20_DEMO_ADDRESS,
+  env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS,
+]);
 const requireEerc20 = env.ARKSCORE_REQUIRE_EERC20 === "true";
 const requireScoreRecord = env.ARKSCORE_REQUIRE_SCORE_RECORD === "true";
-const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
+const scorerAddress = firstConfiguredValue([
+  env.ARKSCORE_SCORER_ADDRESS,
+  env.SCORER_ADDRESS,
+]);
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
 const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
-const webUrl = env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app";
+const webUrl =
+  normalizeBaseUrl(firstConfiguredValue([env.ARKSCORE_WEB_URL])) ??
+  "https://arkscore-seven.vercel.app";
 const scoreRecordArtifactPath =
   env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
@@ -313,6 +320,10 @@ function readRegistryDeployment(): DeploymentArtifact | undefined {
 function normalizeBaseUrl(value: string | undefined): string | undefined {
   if (!value?.trim()) return undefined;
   return value.trim().replace(/\/$/, "");
+}
+
+function firstConfiguredValue(values: Array<string | undefined>) {
+  return values.find((value) => value?.trim())?.trim();
 }
 
 function isAddress(value: string): boolean {

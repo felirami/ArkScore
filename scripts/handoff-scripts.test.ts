@@ -442,6 +442,43 @@ test("Vercel finalizer dry run prints public env and strict verification command
   assert.doesNotMatch(result.output, /should-not-print/);
 });
 
+test("Vercel finalizer ignores empty primary aliases and uses fallback env", () => {
+  const apiUrl = "https://arkscore-api.up.railway.app";
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: "",
+    NEXT_PUBLIC_API_BASE_URL: `${apiUrl}/`,
+    ARKSCORE_REGISTRY_ADDRESS: "",
+    CREDIT_SCORE_REGISTRY_ADDRESS: registryAddress,
+    ARKSCORE_SCORER_ADDRESS: "",
+    SCORER_ADDRESS: scorerAddress,
+    ARKSCORE_WEB_URL: "",
+    VERCEL_SCOPE: "arkscore-scope",
+    VERCEL_PROJECT_NAME: "arkscore-project",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(
+    result.output,
+    new RegExp(`NEXT_PUBLIC_API_BASE_URL production --value ${apiUrl}`),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS production --value ${registryAddress}`,
+    ),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:preflight`,
+    ),
+  );
+  assert.doesNotMatch(result.output, /Missing ARKSCORE_API_URL/);
+  assert.doesNotMatch(result.output, /Missing registry address/);
+});
+
 test("Vercel finalizer dry run prints strict eERC20 verification when required", () => {
   const apiUrl = "https://arkscore-api.up.railway.app";
   const registryAddress = "0x1111111111111111111111111111111111111111";
@@ -813,6 +850,27 @@ test("live verifier preflight skips Vercel and proves API plus registry", async 
   assert.match(
     result.output,
     /Fuji scorer authorization: 0x4444444444444444444444444444444444444444 is authorized/,
+  );
+});
+
+test("live verifier preflight ignores empty primary aliases", async () => {
+  const result = await runLivePreflightVerifierWithMocks({
+    useFallbackAliases: true,
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Railway API health: .*returned ok/);
+  assert.match(
+    result.output,
+    /Fuji registry bytecode: .*has deployed bytecode/,
+  );
+  assert.doesNotMatch(
+    result.output,
+    /missing ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL/,
+  );
+  assert.doesNotMatch(
+    result.output,
+    /missing ARKSCORE_REGISTRY_ADDRESS or NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS/,
   );
 });
 
@@ -1266,7 +1324,9 @@ async function runLiveVerifierWithMockScoreRecord(
   }
 }
 
-async function runLivePreflightVerifierWithMocks() {
+async function runLivePreflightVerifierWithMocks(
+  options: { useFallbackAliases?: boolean } = {},
+) {
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const scorerAddress = "0x4444444444444444444444444444444444444444";
   const apiServer = await listen((request, response) => {
@@ -1406,15 +1466,29 @@ async function runLivePreflightVerifierWithMocks() {
   });
 
   try {
+    const verifierEnv: Record<string, string> = options.useFallbackAliases
+      ? {
+          ARKSCORE_API_URL: "",
+          NEXT_PUBLIC_API_BASE_URL: apiServer.url,
+          FUJI_RPC_URL: rpcServer.url,
+          ARKSCORE_REGISTRY_ADDRESS: "",
+          CREDIT_SCORE_REGISTRY_ADDRESS: "",
+          REGISTRY_ADDRESS: "",
+          NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS: registryAddress,
+          ARKSCORE_SCORER_ADDRESS: "",
+          SCORER_ADDRESS: scorerAddress,
+        }
+      : {
+          ARKSCORE_API_URL: apiServer.url,
+          FUJI_RPC_URL: rpcServer.url,
+          ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+          ARKSCORE_SCORER_ADDRESS: scorerAddress,
+        };
+
     return await runScriptAsync(
       "scripts/verify-live.ts",
       ["--skip-web", "--strict", "--require-wavy"],
-      {
-        ARKSCORE_API_URL: apiServer.url,
-        FUJI_RPC_URL: rpcServer.url,
-        ARKSCORE_REGISTRY_ADDRESS: registryAddress,
-        ARKSCORE_SCORER_ADDRESS: scorerAddress,
-      },
+      verifierEnv,
     );
   } finally {
     await apiServer.close();
