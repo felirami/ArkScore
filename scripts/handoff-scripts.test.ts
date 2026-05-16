@@ -172,6 +172,25 @@ test("submission evidence renders configured public deployment targets only", ()
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
 });
 
+test("submission evidence ignores local API URLs as deployment targets", () => {
+  const result = runScript(
+    "scripts/submission-evidence.ts",
+    ["--skip-checks"],
+    {
+      ARKSCORE_API_URL: "http://localhost:4000",
+      NEXT_PUBLIC_API_BASE_URL: "http://127.0.0.1:4000",
+    },
+  );
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(
+    result.output,
+    /Railway backend: `TBD until Railway auth and Wavy credentials are configured`/,
+  );
+  assert.doesNotMatch(result.output, /Railway backend: http:\/\/localhost/);
+  assert.doesNotMatch(result.output, /Railway backend: http:\/\/127\.0\.0\.1/);
+});
+
 test("submission evidence includes the latest Fuji score record proof", () => {
   const tempDir = mkdtempSync(join(tmpdir(), "arkscore-evidence-"));
   const artifactPath = join(tempDir, "LatestScoreRecord.json");
@@ -340,6 +359,21 @@ test("readiness probes the configured production web URL", async () => {
   } finally {
     await webServer.close();
   }
+});
+
+test("readiness warns when the frontend API URL is local-only", () => {
+  const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
+    ARKSCORE_API_URL: "http://localhost:4000",
+    NEXT_PUBLIC_API_BASE_URL: "http://127.0.0.1:4000",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\[warn\] Frontend API URL:/);
+  assert.match(result.output, /public HTTPS Railway API/);
+  assert.match(
+    result.output,
+    /invalid value in ARKSCORE_API_URL, NEXT_PUBLIC_API_BASE_URL/,
+  );
 });
 
 test("requirements audit maps repo readiness without leaking secrets", () => {
@@ -692,6 +726,18 @@ test("Vercel finalizer refuses missing API URL before printing deploy commands",
 
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /Missing ARKSCORE_API_URL/);
+  assert.doesNotMatch(result.output, /vercel deploy/);
+});
+
+test("Vercel finalizer refuses local API URLs before printing deploy commands", () => {
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: "",
+    NEXT_PUBLIC_API_BASE_URL: "http://localhost:4000",
+    ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /public HTTPS Railway API URL/);
   assert.doesNotMatch(result.output, /vercel deploy/);
 });
 

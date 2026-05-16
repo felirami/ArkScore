@@ -136,7 +136,7 @@ async function main() {
       ["FUJI_PRIVATE_KEY"],
       "required to deploy CreditScoreRegistry to Avalanche Fuji",
     ),
-    checkUrlPresence(
+    checkPublicHttpsUrlPresence(
       "Frontend API URL",
       [
         { key: "ARKSCORE_API_URL", value: combinedEnv.ARKSCORE_API_URL },
@@ -145,7 +145,7 @@ async function main() {
           value: combinedEnv.NEXT_PUBLIC_API_BASE_URL,
         },
       ],
-      "required to point Vercel at the Railway API during finalization",
+      "required to point Vercel at the public HTTPS Railway API during finalization",
     ),
     checkAddressPresence(
       "Frontend registry address",
@@ -261,12 +261,12 @@ function checkSecretPresence(
       };
 }
 
-function checkUrlPresence(
+function checkPublicHttpsUrlPresence(
   label: string,
   candidates: Candidate[],
   detail: string,
 ): Check {
-  return checkCandidatePresence(label, candidates, detail, isUrl);
+  return checkCandidatePresence(label, candidates, detail, isPublicHttpsUrl);
 }
 
 function checkAddressPresence(
@@ -649,14 +649,30 @@ function isScore(value: unknown): boolean {
   return typeof value === "number" && value >= 0 && value <= 100;
 }
 
-function isUrl(value: string): boolean {
+function isPublicHttpsUrl(value: string): boolean {
   try {
     const url = new URL(value);
 
-    return url.protocol === "http:" || url.protocol === "https:";
+    return url.protocol === "https:" && !isLocalHostname(url.hostname);
   } catch {
     return false;
   }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  return (
+    value === "localhost" ||
+    value === "::1" ||
+    value.endsWith(".local") ||
+    value === "0.0.0.0" ||
+    /^127\./.test(value) ||
+    /^10\./.test(value) ||
+    /^192\.168\./.test(value) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+    /^169\.254\./.test(value)
+  );
 }
 
 function icon(status: CheckStatus): string {

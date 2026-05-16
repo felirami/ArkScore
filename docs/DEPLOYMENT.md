@@ -196,7 +196,7 @@ cp apps/web/.env.local.example apps/web/.env.local
 pnpm --filter @arkscore/web build
 ```
 
-For production, set the same public values in Vercel. `NEXT_PUBLIC_API_BASE_URL` must point to the Railway API URL, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS` must point to the deployed Fuji registry, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false` keeps the final dashboard in live Wavy mode.
+For production, set the same public values in Vercel. `NEXT_PUBLIC_API_BASE_URL` must point to the public HTTPS Railway API URL, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS` must point to the deployed Fuji registry, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false` keeps the final dashboard in live Wavy mode. Local development URLs such as `http://localhost:4000` are intentionally rejected by the finalizer and readiness gate for production handoff.
 
 Vercel variables:
 
@@ -262,7 +262,7 @@ Use `pnpm verify:railway` before `pnpm deploy:railway:apply` when you want a sta
 
 Use `pnpm judge:demo` for a concise, environment-aware walkthrough before presenting to judges. It prints fallback/live mode, the click path, proof commands, and current blockers without exposing secrets.
 
-Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. Use `pnpm readiness:strict:record` after `pnpm record:fuji` to additionally require the non-secret `LatestScoreRecord.json` proof. The readiness gate accepts `ARKSCORE_WEB_URL` for the submitted frontend URL, `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`. Use `--skip-cli-auth` only for deterministic local tests where Vercel/Railway CLI auth should be skipped while the configured web URL is still probed.
+Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. Use `pnpm readiness:strict:record` after `pnpm record:fuji` to additionally require the non-secret `LatestScoreRecord.json` proof. The readiness gate accepts `ARKSCORE_WEB_URL` for the submitted frontend URL, `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the public HTTPS Railway API, and the same registry/scorer aliases accepted by `finalize:live`. Use `--skip-cli-auth` only for deterministic local tests where Vercel/Railway CLI auth should be skipped while the configured web URL is still probed.
 
 Use `pnpm plan:eerc20` before the optional EncryptedERC handoff. It checks the local `../EncryptedERC` checkout, official standalone/converter deploy scripts, Circom availability, Fuji deployer key shape, and configured ArkScore eERC20 address, then prints the Fuji deploy/probe/final-verifier commands with secrets redacted.
 

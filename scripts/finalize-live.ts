@@ -59,6 +59,12 @@ function main() {
     fail("Missing ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL.");
   }
 
+  if (!isPublicHttpsUrl(apiUrl)) {
+    fail(
+      "ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL must be a public HTTPS Railway API URL before Vercel finalization.",
+    );
+  }
+
   if (!registryAddress || !isAddress(registryAddress)) {
     fail(
       "Missing registry address. Set ARKSCORE_REGISTRY_ADDRESS, CREDIT_SCORE_REGISTRY_ADDRESS, REGISTRY_ADDRESS, or deploy Fuji contract first.",
@@ -341,6 +347,32 @@ function normalizeRelativePath(value: string) {
 
 function isAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" && !isLocalHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  return (
+    value === "localhost" ||
+    value === "::1" ||
+    value.endsWith(".local") ||
+    value === "0.0.0.0" ||
+    /^127\./.test(value) ||
+    /^10\./.test(value) ||
+    /^192\.168\./.test(value) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+    /^169\.254\./.test(value)
+  );
 }
 
 function shellEscape(value: string) {

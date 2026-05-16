@@ -310,12 +310,10 @@ function getDeploymentTargets(): DeploymentTargets {
     webUrl:
       normalizeBaseUrl(env.ARKSCORE_WEB_URL) ??
       "https://arkscore-seven.vercel.app",
-    apiUrl: normalizeBaseUrl(
-      firstConfiguredValue([
-        env.ARKSCORE_API_URL,
-        env.NEXT_PUBLIC_API_BASE_URL,
-      ]),
-    ),
+    apiUrl: firstPublicHttpsUrl([
+      env.ARKSCORE_API_URL,
+      env.NEXT_PUBLIC_API_BASE_URL,
+    ]),
     registryAddress: firstValidAddress([
       env.ARKSCORE_REGISTRY_ADDRESS,
       env.CREDIT_SCORE_REGISTRY_ADDRESS,
@@ -381,6 +379,14 @@ function firstValidAddress(values: Array<string | undefined>) {
   return values.find((value) => value && isAddress(value));
 }
 
+function firstPublicHttpsUrl(values: Array<string | undefined>) {
+  return values
+    .map((value) => normalizeBaseUrl(value))
+    .find((value): value is string =>
+      Boolean(value && isPublicHttpsUrl(value)),
+    );
+}
+
 function firstConfiguredValue(values: Array<string | undefined>) {
   return values.find((value) => value?.trim())?.trim();
 }
@@ -392,6 +398,32 @@ function normalizeBaseUrl(value: string | undefined): string | undefined {
 
 function isAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" && !isLocalHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  return (
+    value === "localhost" ||
+    value === "::1" ||
+    value.endsWith(".local") ||
+    value === "0.0.0.0" ||
+    /^127\./.test(value) ||
+    /^10\./.test(value) ||
+    /^192\.168\./.test(value) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+    /^169\.254\./.test(value)
+  );
 }
 
 function renderUrlOrTbd(value: string | undefined, fallback: string) {
