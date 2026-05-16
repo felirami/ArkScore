@@ -7,6 +7,15 @@ import type { ScoreApiResponse } from "@arkscore/shared";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 
+type OpenApiSchema = {
+  required?: string[];
+  properties?: Record<string, unknown>;
+};
+
+type StringSchema = {
+  pattern?: string;
+};
+
 test("health reports mock scoring mode when credentials are absent", async () => {
   await withTestServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/health`);
@@ -32,16 +41,29 @@ test("openapi document describes the public scoring contract", async () => {
       openapi: string;
       paths: Record<string, unknown>;
       components: {
-        schemas: Record<string, unknown>;
+        schemas: Record<string, OpenApiSchema>;
       };
     };
+    const healthSchema = payload.components.schemas.HealthResponse;
+    const scoreSchema = payload.components.schemas.ScoreApiResponse;
+    const wavySchema = payload.components.schemas.WavyRiskResult;
+    const subjectHashSchema = scoreSchema?.properties?.subjectHash as
+      | StringSchema
+      | undefined;
 
     assert.equal(response.status, 200);
     assert.match(payload.openapi, /^3\./);
     assert.ok(payload.paths["/health"]);
     assert.ok(payload.paths["/api/score/{address}"]);
-    assert.ok(payload.components.schemas.ScoreApiResponse);
-    assert.ok(payload.components.schemas.WavyRiskResult);
+    assert.ok(healthSchema);
+    assert.ok(scoreSchema);
+    assert.ok(wavySchema);
+    assert.ok(healthSchema.required?.includes("subjectHashSaltConfigured"));
+    assert.ok(healthSchema.properties?.subjectHashSaltConfigured);
+    assert.ok(scoreSchema.required?.includes("subjectHash"));
+    assert.equal(subjectHashSchema?.pattern, "^0x[a-fA-F0-9]{64}$");
+    assert.ok(!wavySchema.required?.includes("subjectHash"));
+    assert.ok(!wavySchema.properties?.subjectHash);
   });
 });
 

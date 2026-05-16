@@ -213,7 +213,6 @@ export const openApiDocument = {
         required: [
           "analysisId",
           "address",
-          "subjectHash",
           "chainId",
           "riskScore",
           "riskLevel",
@@ -231,12 +230,6 @@ export const openApiDocument = {
           address: {
             type: "string",
             pattern: "^0x[a-fA-F0-9]{40}$",
-          },
-          subjectHash: {
-            type: "string",
-            pattern: "^0x[a-fA-F0-9]{64}$",
-            description:
-              "Privacy-preserving wallet subject identifier used as the Fuji registry key.",
           },
           chainId: {
             type: "integer",
@@ -313,6 +306,7 @@ export const openApiDocument = {
         type: "object",
         required: [
           "address",
+          "subjectHash",
           "chainId",
           "institution",
           "source",
@@ -325,6 +319,12 @@ export const openApiDocument = {
           address: {
             type: "string",
             pattern: "^0x[a-fA-F0-9]{40}$",
+          },
+          subjectHash: {
+            type: "string",
+            pattern: "^0x[a-fA-F0-9]{64}$",
+            description:
+              "Privacy-preserving wallet subject identifier used as the Fuji registry key.",
           },
           chainId: {
             type: "integer",

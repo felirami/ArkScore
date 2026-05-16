@@ -26,6 +26,11 @@ type ScoreResponse = {
   };
 };
 
+type OpenApiSchema = {
+  required?: string[];
+  properties?: Record<string, unknown>;
+};
+
 type OpenApiResponse = {
   openapi?: string;
   info?: {
@@ -33,7 +38,7 @@ type OpenApiResponse = {
   };
   paths?: Record<string, unknown>;
   components?: {
-    schemas?: Record<string, unknown>;
+    schemas?: Record<string, OpenApiSchema>;
   };
 };
 
@@ -208,21 +213,30 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     const openApi = (await openApiResponse
       .json()
       .catch(() => null)) as OpenApiResponse | null;
+    const healthSchema = getOpenApiSchema(openApi, "HealthResponse");
+    const scoreSchema = getOpenApiSchema(openApi, "ScoreApiResponse");
+    const wavySchema = getOpenApiSchema(openApi, "WavyRiskResult");
     const contractValid =
       openApiResponse.ok &&
       Boolean(openApi?.openapi?.match(/^3\./)) &&
       openApi.info?.title === "ArkScore API" &&
       Boolean(openApi.paths?.["/health"]) &&
       Boolean(openApi.paths?.["/api/score/{address}"]) &&
-      Boolean(openApi.components?.schemas?.ScoreApiResponse) &&
-      Boolean(openApi.components?.schemas?.WavyRiskResult);
+      schemaRequires(healthSchema, "subjectHashSaltConfigured") &&
+      schemaHasProperty(healthSchema, "subjectHashSaltConfigured") &&
+      schemaRequires(scoreSchema, "subjectHash") &&
+      schemaHasProperty(scoreSchema, "subjectHash") &&
+      schemaPattern(scoreSchema, "subjectHash") === "^0x[a-fA-F0-9]{64}$" &&
+      Boolean(wavySchema) &&
+      !schemaRequires(wavySchema, "subjectHash") &&
+      !schemaHasProperty(wavySchema, "subjectHash");
 
     checks.push(
       contractValid
         ? {
             label: "Railway API OpenAPI",
             status: "pass",
-            detail: `${url}/openapi.json documents health and score endpoints`,
+            detail: `${url}/openapi.json documents health, score, and privacy hash fields`,
           }
         : {
             label: "Railway API OpenAPI",
@@ -450,6 +464,42 @@ function readRegistryDeployment(): { address?: string } | undefined {
 function normalizeBaseUrl(value: string | undefined): string | undefined {
   if (!value?.trim()) return undefined;
   return value.trim().replace(/\/$/, "");
+}
+
+function getOpenApiSchema(
+  openApi: OpenApiResponse | null | undefined,
+  name: string,
+): OpenApiSchema | undefined {
+  return openApi?.components?.schemas?.[name];
+}
+
+function schemaRequires(
+  schema: OpenApiSchema | undefined,
+  property: string,
+): boolean {
+  return schema?.required?.includes(property) ?? false;
+}
+
+function schemaHasProperty(
+  schema: OpenApiSchema | undefined,
+  property: string,
+): boolean {
+  return Boolean(schema?.properties?.[property]);
+}
+
+function schemaPattern(
+  schema: OpenApiSchema | undefined,
+  property: string,
+): string | undefined {
+  const propertySchema = schema?.properties?.[property];
+
+  if (!propertySchema || typeof propertySchema !== "object") {
+    return undefined;
+  }
+
+  const { pattern } = propertySchema as { pattern?: unknown };
+
+  return typeof pattern === "string" ? pattern : undefined;
 }
 
 function isAddress(value: string): boolean {

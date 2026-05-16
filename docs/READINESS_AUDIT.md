@@ -9,7 +9,7 @@ Status date: May 16, 2026
 - Dashboard reads `isScorer(connectedWallet)` from the Fuji registry and disables score storage until the connected wallet is authorized.
 - The Fuji registry stores score records by backend-derived `subjectHash`, so the raw scored wallet address is not included in contract calldata or `ScoreRecorded` events.
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
-- API tests cover `/health`, subject-hash salt health reporting, `/openapi.json`, a Bankaool score response, invalid institution rejection in mock mode, and the live Wavy Node adapter request shape.
+- API tests cover `/health`, subject-hash salt health reporting, `/openapi.json` privacy fields, a Bankaool score response, invalid institution rejection in mock mode, and the live Wavy Node adapter request shape.
 - Simulated Railway archive install/build/test passes with `.railwayignore` applied, confirming the pruned backend workspace can deploy from the repository root.
 - Wavy Node adapter is live-ready for the official register-then-scan flow: `POST /v1/projects/:projectId/addresses`, then `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113`, with backend-derived subject hashing and deterministic mock mode for judge demos before credentials are added.
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
