@@ -8,6 +8,7 @@
     "build": "hardhat compile",
     "test": "hardhat test",
     "deploy:fuji": "hardhat run scripts/deploy-credit-score-registry.ts --network fuji",
+    "scorer:fuji": "hardhat run scripts/set-scorer.ts --network fuji",
     "lint": "echo \"Solidity linting not configured yet\"",
     "typecheck": "tsc --noEmit"
   },

@@ -31,6 +31,8 @@ The API endpoint test suite passes in mock mode and is included in `pnpm verify`
 
 `pnpm finalize:live` is a dry-run finalizer for the Vercel handoff. `pnpm finalize:live:apply` sets `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false`, deploys production, then runs strict live verification.
 
+`pnpm --filter @arkscore/contracts scorer:fuji` authorizes or revokes the wallet that will submit score records from the dashboard. Strict live verification checks `ARKSCORE_SCORER_ADDRESS` with `isScorer(address)`.
+
 ## Pending Credentials
 
 - `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` for live Wavy Node traceability and AI risk scoring.
@@ -38,6 +40,7 @@ The API endpoint test suite passes in mock mode and is included in `pnpm verify`
 - `FUJI_PRIVATE_KEY` for an Avalanche Fuji funded deployer account.
 - Deployed `CreditScoreRegistry` address for `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`.
 - `NEXT_PUBLIC_API_BASE_URL` on Vercel must be set to the Railway API URL before the live Wavy-backed flow replaces hosted demo fallback mode.
+- `ARKSCORE_SCORER_ADDRESS` should be set to the dashboard signing wallet and authorized before the final Store on Fuji demo.
 
 ## Deployment Targets
 

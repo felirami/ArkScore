@@ -14,6 +14,7 @@ Status date: May 16, 2026
 | Solidity `CreditScoreRegistry` | `packages/contracts/contracts/CreditScoreRegistry.sol`; Hardhat tests pass for authorized score storage and rejected unauthorized writes. | Ready, not deployed |
 | Avalanche Fuji config | `packages/contracts/hardhat.config.ts` uses `https://api.avax-test.network/ext/bc/C/rpc` and chain id `43113`. | Ready |
 | On-chain dashboard write | `apps/web/src/components/score-dashboard.tsx` calls `recordScore` through wagmi/viem when `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS` is configured. | Ready, contract address pending |
+| Authorized scorer setup | `packages/contracts/scripts/set-scorer.ts` can authorize the dashboard signing wallet; `scripts/verify-live.ts` can prove `ARKSCORE_SCORER_ADDRESS` is authorized. | Ready, signer address pending |
 | Arkangeles and Bankaool copy | Dashboard and docs explicitly use Arkangeles IFC equity issuance and Bankaool credit underwriting language. | Ready |
 | Optional eERC20 path | `docs/EERC20_DEMO.md` points to Ava Labs EncryptedERC standalone/converter deployment flow. | Documented, not deployed |
 
@@ -23,5 +24,6 @@ Status date: May 16, 2026
 - Live `/health` response from the Railway API.
 - Live Wavy Node score response with `source: "wavy"` after `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` are configured.
 - Fuji `CreditScoreRegistry` address from `pnpm --filter @arkscore/contracts deploy:fuji`; the deploy script writes `packages/contracts/deployments/fuji/CreditScoreRegistry.json`.
+- Authorized scorer proof from `ARKSCORE_SCORER_ADDRESS=0x... pnpm --filter @arkscore/contracts scorer:fuji` and `pnpm verify:live:strict`.
 - Vercel environment update for `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, followed by a production redeploy through `pnpm finalize:live:apply`.
 - Final `pnpm verify:live:strict` run proving the public frontend, Railway API, live Wavy `source: "wavy"` response, and Fuji registry contract are all reachable.

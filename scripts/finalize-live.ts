@@ -18,6 +18,7 @@ const registryAddress =
   env.ARKSCORE_REGISTRY_ADDRESS ??
   env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
   readRegistryDeployment()?.address;
+const scorerAddress = env.ARKSCORE_SCORER_ADDRESS;
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
 const webUrl = env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app";
 
@@ -60,6 +61,7 @@ function main() {
     ...process.env,
     ARKSCORE_API_URL: apiUrl,
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
     ARKSCORE_WEB_URL: webUrl
   };
 
@@ -67,9 +69,7 @@ function main() {
     console.log("Dry run. Re-run `pnpm finalize:live:apply` to apply.\n");
     for (const command of envCommands) printCommand(command);
     printCommand(deployCommand);
-    console.log(
-      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} pnpm verify:live:strict`
-    );
+    console.log(`${renderVerifyEnv()} pnpm verify:live:strict`);
     return;
   }
 
@@ -112,6 +112,16 @@ function run(command: string[], commandEnv = process.env) {
 
 function printCommand(command: string[]) {
   console.log(`$ ${command.map(shellEscape).join(" ")}`);
+}
+
+function renderVerifyEnv() {
+  return Object.entries({
+    ARKSCORE_API_URL: apiUrl,
+    ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {})
+  })
+    .map(([key, value]) => `${key}=${shellEscape(value)}`)
+    .join(" ");
 }
 
 function readEnvFile(path: string): Record<string, string> {

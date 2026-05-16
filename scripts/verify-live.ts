@@ -50,6 +50,7 @@ const fujiRpcUrl =
   env.FUJI_RPC_URL ?? "https://api.avax-test.network/ext/bc/C/rpc";
 const testWallet =
   env.ARKSCORE_TEST_WALLET ?? "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+const scorerAddress = env.ARKSCORE_SCORER_ADDRESS;
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -267,7 +268,57 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
     });
   }
 
+  checks.push(...(await verifyScorer(address, scorerAddress)));
+
   return checks;
+}
+
+async function verifyScorer(
+  registry: string,
+  scorer: string | undefined
+): Promise<Check[]> {
+  if (!scorer || !isAddress(scorer)) {
+    return [
+      {
+        label: "Fuji scorer authorization",
+        status: "warn",
+        detail:
+          "missing ARKSCORE_SCORER_ADDRESS to prove the dashboard signer is authorized"
+      }
+    ];
+  }
+
+  try {
+    const encodedScorer = scorer.slice(2).padStart(64, "0");
+    const call = await rpc<string>("eth_call", [
+      { to: registry, data: `0x73c4502c${encodedScorer}` },
+      "latest"
+    ]);
+    const authorized = BigInt(call) === 1n;
+
+    return [
+      authorized
+        ? {
+            label: "Fuji scorer authorization",
+            status: "pass",
+            detail: `${scorer} is authorized`
+          }
+        : {
+            label: "Fuji scorer authorization",
+            status: "fail",
+            detail: `${scorer} is not authorized`
+          }
+    ];
+  } catch (error) {
+    return [
+      {
+        label: "Fuji scorer authorization",
+        status: "fail",
+        detail:
+          error instanceof Error ? error.message : "isScorer(address) failed"
+      }
+    ];
+  }
 }
 
 async function rpc<T>(method: string, params: unknown[]): Promise<T> {

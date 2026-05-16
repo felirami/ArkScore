@@ -59,6 +59,11 @@ async function main() {
       ["NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS"],
       "required to enable Store on Fuji"
     ),
+    checkSecretPresence(
+      "Demo scorer address",
+      ["ARKSCORE_SCORER_ADDRESS"],
+      "required to prove the dashboard signer can store scores on Fuji"
+    ),
     checkRailwayAuth()
   ];
 

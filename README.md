@@ -86,6 +86,7 @@ pnpm verify
 pnpm readiness
 pnpm verify:live
 pnpm deploy:railway
+pnpm --filter @arkscore/contracts scorer:fuji
 pnpm finalize:live
 ```
 
