@@ -19,6 +19,7 @@ import {
 } from "@arkscore/shared";
 import {
   useConnection,
+  useReadContract,
   useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract
@@ -44,6 +45,20 @@ export function ScoreDashboard() {
   const [isScoring, setIsScoring] = useState(false);
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const {
+    data: isAuthorizedScorer,
+    isLoading: isCheckingScorer,
+    isError: isScorerCheckError
+  } = useReadContract({
+    address: creditScoreRegistryAddress,
+    abi: creditScoreRegistryAbi,
+    functionName: "isScorer",
+    args: connectedAddress ? [connectedAddress] : undefined,
+    chainId: avalancheFuji.id,
+    query: {
+      enabled: Boolean(creditScoreRegistryAddress && connectedAddress)
+    }
+  });
+  const {
     writeContract,
     data: transactionHash,
     error: writeError,
@@ -55,8 +70,14 @@ export function ScoreDashboard() {
     });
 
   const canSubmitToRegistry = useMemo(
-    () => Boolean(score && creditScoreRegistryAddress && isConnected),
-    [isConnected, score]
+    () =>
+      Boolean(
+        score &&
+          creditScoreRegistryAddress &&
+          isConnected &&
+          isAuthorizedScorer === true
+      ),
+    [isAuthorizedScorer, isConnected, score]
   );
 
   async function handleScoreWallet() {
@@ -89,6 +110,11 @@ export function ScoreDashboard() {
 
   function handleStoreOnChain() {
     if (!score || !creditScoreRegistryAddress) return;
+
+    if (isAuthorizedScorer !== true) {
+      setError("Connect an authorized scorer wallet before storing on Fuji.");
+      return;
+    }
 
     if (chainId !== avalancheFuji.id) {
       switchChain({ chainId: avalancheFuji.id });
@@ -185,6 +211,19 @@ export function ScoreDashboard() {
             <span className="font-mono text-[var(--foreground)]">
               {connectedAddress ? shortAddress(connectedAddress) : "Not connected"}
             </span>
+            {creditScoreRegistryAddress ? (
+              <span className="mt-2 flex items-center gap-2">
+                <span>Scorer status:</span>
+                <Badge tone={scorerTone(isAuthorizedScorer)}>
+                  {scorerStatusLabel({
+                    connectedAddress,
+                    isAuthorizedScorer,
+                    isCheckingScorer,
+                    isScorerCheckError
+                  })}
+                </Badge>
+              </span>
+            ) : null}
           </div>
         </div>
       </section>
@@ -248,6 +287,19 @@ export function ScoreDashboard() {
                     ? shortAddress(creditScoreRegistryAddress)
                     : "Set contract address"}
                 </span>
+                {creditScoreRegistryAddress && connectedAddress ? (
+                  <span className="mt-1 block">
+                    Scorer:{" "}
+                    <span className="font-mono text-[var(--foreground)]">
+                      {shortAddress(connectedAddress)}
+                    </span>{" "}
+                    <span className="text-[var(--muted-foreground)]">
+                      {isAuthorizedScorer === true
+                        ? "authorized"
+                        : "not authorized"}
+                    </span>
+                  </span>
+                ) : null}
               </div>
               <Button
                 onClick={handleStoreOnChain}
@@ -264,7 +316,9 @@ export function ScoreDashboard() {
                 )}
                 {chainId !== avalancheFuji.id && isConnected
                   ? "Switch to Fuji"
-                  : "Store on Fuji"}
+                  : isCheckingScorer
+                    ? "Checking scorer"
+                    : "Store on Fuji"}
               </Button>
             </div>
 
@@ -327,6 +381,26 @@ function decisionTone(decision: ScoreApiResponse["composite"]["decision"]) {
   if (decision === "DECLINE") return "danger";
   if (decision === "REVIEW_REQUIRED") return "warning";
   return "success";
+}
+
+function scorerTone(isAuthorizedScorer: boolean | undefined) {
+  if (isAuthorizedScorer === true) return "success";
+  if (isAuthorizedScorer === false) return "warning";
+  return "info";
+}
+
+function scorerStatusLabel(input: {
+  connectedAddress: string | undefined;
+  isAuthorizedScorer: boolean | undefined;
+  isCheckingScorer: boolean;
+  isScorerCheckError: boolean;
+}) {
+  if (!input.connectedAddress) return "Connect wallet";
+  if (input.isCheckingScorer) return "Checking Fuji";
+  if (input.isScorerCheckError) return "Check failed";
+  if (input.isAuthorizedScorer === true) return "Authorized";
+  if (input.isAuthorizedScorer === false) return "Not authorized";
+  return "Unknown";
 }
 
 function shortAddress(address: string): string {

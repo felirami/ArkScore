@@ -14,7 +14,7 @@ Status date: May 16, 2026
 | Solidity `CreditScoreRegistry` | `packages/contracts/contracts/CreditScoreRegistry.sol`; Hardhat tests pass for authorized score storage and rejected unauthorized writes. | Ready, not deployed |
 | Avalanche Fuji config | `packages/contracts/hardhat.config.ts` uses `https://api.avax-test.network/ext/bc/C/rpc` and chain id `43113`. | Ready |
 | On-chain dashboard write | `apps/web/src/components/score-dashboard.tsx` calls `recordScore` through wagmi/viem when `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS` is configured. | Ready, contract address pending |
-| Authorized scorer setup | `packages/contracts/scripts/set-scorer.ts` can authorize the dashboard signing wallet; `scripts/verify-live.ts` can prove `ARKSCORE_SCORER_ADDRESS` is authorized. | Ready, signer address pending |
+| Authorized scorer setup | `packages/contracts/scripts/set-scorer.ts` can authorize the dashboard signing wallet; `apps/web/src/components/score-dashboard.tsx` displays connected-wallet scorer status; `scripts/verify-live.ts` can prove `ARKSCORE_SCORER_ADDRESS` is authorized. | Ready, signer address pending |
 | Arkangeles and Bankaool copy | Dashboard and docs explicitly use Arkangeles IFC equity issuance and Bankaool credit underwriting language. | Ready |
 | Optional eERC20 path | `docs/EERC20_DEMO.md` points to Ava Labs EncryptedERC standalone/converter deployment flow. | Documented, not deployed |
 

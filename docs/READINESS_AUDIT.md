@@ -6,6 +6,7 @@ Status date: May 16, 2026
 
 - Monorepo scaffolded with pnpm workspaces, Node.js 22.19.0 pinning, shared TypeScript configs, and environment examples.
 - Next.js 15 App Router dashboard builds as a static Vercel export and includes Avalanche Fuji wallet connection, Wavy score intake, composite scoring, institutional decisioning, and on-chain write flow.
+- Dashboard reads `isScorer(connectedWallet)` from the Fuji registry and disables score storage until the connected wallet is authorized.
 - Express API builds for Railway and exposes `GET /health` plus `GET /api/score/:address`.
 - API tests cover `/health`, a Bankaool score response, and invalid institution rejection in mock mode.
 - Simulated Railway archive install/build/test passes with `.railwayignore` applied, confirming the pruned backend workspace can deploy from the repository root.
