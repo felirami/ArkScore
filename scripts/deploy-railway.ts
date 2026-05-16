@@ -24,6 +24,7 @@ const webUrl = normalizeBaseUrl(
 );
 const wavyApiKey = env.WAVY_NODE_API_KEY;
 const wavyProjectId = env.WAVY_NODE_PROJECT_ID;
+const subjectHashSalt = env.ARKSCORE_SUBJECT_HASH_SALT;
 const allowMock = env.RAILWAY_ALLOW_MOCK === "true";
 const wavyMockMode = allowMock ? "true" : (env.WAVY_NODE_MOCK_MODE ?? "auto");
 
@@ -35,13 +36,14 @@ function main() {
   const missingCredentials = [
     ["WAVY_NODE_API_KEY", wavyApiKey],
     ["WAVY_NODE_PROJECT_ID", wavyProjectId],
+    ["ARKSCORE_SUBJECT_HASH_SALT", subjectHashSalt],
   ]
     .filter(([, value]) => !hasUsableValue(value))
     .map(([key]) => key);
 
   if (missingCredentials.length > 0 && !allowMock) {
     console.log(
-      `[warn] Missing ${missingCredentials.join(", ")}. Apply mode requires live Wavy credentials.`,
+      `[warn] Missing ${missingCredentials.join(", ")}. Apply mode requires live Wavy credentials and a subject hash salt.`,
     );
     console.log(
       "[warn] Set RAILWAY_ALLOW_MOCK=true only for temporary judge-demo mock deployments.\n",
@@ -49,7 +51,9 @@ function main() {
   }
 
   if (apply && missingCredentials.length > 0 && !allowMock) {
-    fail("Refusing to deploy Railway API without Wavy credentials.");
+    fail(
+      "Refusing to deploy Railway API without live Wavy credentials and subject hash salt.",
+    );
   }
 
   const commands = buildCommands();
@@ -126,6 +130,12 @@ function buildCommands(): CommandPlan[] {
   if (hasUsableValue(wavyProjectId)) {
     commands.push(
       variableSetCommand("WAVY_NODE_PROJECT_ID", wavyProjectId, true),
+    );
+  }
+
+  if (hasUsableValue(subjectHashSalt)) {
+    commands.push(
+      variableSetCommand("ARKSCORE_SUBJECT_HASH_SALT", subjectHashSalt, true),
     );
   }
 

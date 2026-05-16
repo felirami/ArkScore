@@ -13,28 +13,28 @@ export const creditScoreRegistryAbi = [
     name: "recordScore",
     stateMutability: "nonpayable",
     inputs: [
-      { name: "subject", type: "address" },
+      { name: "subjectHash", type: "bytes32" },
       { name: "wavyRiskScore", type: "uint8" },
       { name: "compositeCreditScore", type: "uint8" },
       { name: "decision", type: "uint8" },
       { name: "wavyEvidenceHash", type: "bytes32" },
       { name: "wavyAnalysisId", type: "string" },
-      { name: "institution", type: "string" }
+      { name: "institution", type: "string" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
     type: "function",
     name: "isScorer",
     stateMutability: "view",
     inputs: [{ name: "scorer", type: "address" }],
-    outputs: [{ name: "authorized", type: "bool" }]
+    outputs: [{ name: "authorized", type: "bool" }],
   },
   {
     type: "function",
     name: "hasScore",
     stateMutability: "view",
-    inputs: [{ name: "subject", type: "address" }],
-    outputs: [{ name: "exists", type: "bool" }]
-  }
+    inputs: [{ name: "subjectHash", type: "bytes32" }],
+    outputs: [{ name: "exists", type: "bool" }],
+  },
 ] as const;

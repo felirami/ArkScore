@@ -20,7 +20,7 @@ const combinedEnv = {
   ...contractEnv,
   ...apiEnv,
   ...webEnv,
-  ...process.env
+  ...process.env,
 };
 
 main().catch((error: unknown) => {
@@ -36,40 +36,48 @@ async function main() {
     checkFile("apps/api/src/routes/openapi.ts", "Railway OpenAPI endpoint"),
     checkFile(
       "packages/contracts/contracts/CreditScoreRegistry.sol",
-      "CreditScoreRegistry contract"
+      "CreditScoreRegistry contract",
     ),
     checkFile("railway.toml", "Railway root deployment config"),
     checkFile("vercel.json", "Vercel root deployment config"),
     checkSecretPresence(
       "Wavy Node credentials",
       ["WAVY_NODE_API_KEY", "WAVY_NODE_PROJECT_ID"],
-      "required for live Wavy Node source=wavy responses"
+      "required for live Wavy Node source=wavy responses",
+    ),
+    checkSecretPresence(
+      "Subject hash salt",
+      ["ARKSCORE_SUBJECT_HASH_SALT"],
+      "required to keep on-chain subject hashes environment-specific",
     ),
     checkSecretPresence(
       "Fuji deployer key",
       ["FUJI_PRIVATE_KEY"],
-      "required to deploy CreditScoreRegistry to Avalanche Fuji"
+      "required to deploy CreditScoreRegistry to Avalanche Fuji",
     ),
     checkSecretPresence(
       "Frontend API URL",
       ["NEXT_PUBLIC_API_BASE_URL"],
-      "required to point Vercel at the Railway API"
+      "required to point Vercel at the Railway API",
     ),
     checkSecretPresence(
       "Frontend registry address",
       ["NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS"],
-      "required to enable Store on Fuji"
+      "required to enable Store on Fuji",
     ),
     checkSecretPresence(
       "Demo scorer address",
       ["ARKSCORE_SCORER_ADDRESS"],
-      "required to prove the dashboard signer can store scores on Fuji"
+      "required to prove the dashboard signer can store scores on Fuji",
     ),
-    checkRailwayAuth()
+    checkRailwayAuth(),
   ];
 
   checks.push(
-    await checkUrl("Vercel production URL", "https://arkscore-seven.vercel.app")
+    await checkUrl(
+      "Vercel production URL",
+      "https://arkscore-seven.vercel.app",
+    ),
   );
 
   const failed = checks.filter((check) => check.status === "fail");
@@ -82,7 +90,7 @@ async function main() {
 
   console.log("\n## Summary\n");
   console.log(
-    `- Passing: ${checks.filter((check) => check.status === "pass").length}`
+    `- Passing: ${checks.filter((check) => check.status === "pass").length}`,
   );
   console.log(`- Warnings: ${warnings.length}`);
   console.log(`- Failing: ${failed.length}`);
@@ -100,12 +108,12 @@ function checkNodeVersion(): Check {
     ? {
         label: "Node.js runtime",
         status: "pass",
-        detail: `using ${process.versions.node}`
+        detail: `using ${process.versions.node}`,
       }
     : {
         label: "Node.js runtime",
         status: "fail",
-        detail: `expected Node 22.x, found ${process.versions.node}`
+        detail: `expected Node 22.x, found ${process.versions.node}`,
       };
 }
 
@@ -118,7 +126,7 @@ function checkFile(path: string, label: string): Check {
 function checkSecretPresence(
   label: string,
   keys: string[],
-  detail: string
+  detail: string,
 ): Check {
   const missing = keys.filter((key) => !hasUsableValue(combinedEnv[key]));
 
@@ -127,28 +135,28 @@ function checkSecretPresence(
     : {
         label,
         status: "warn",
-        detail: `${detail}; missing ${missing.join(", ")}`
+        detail: `${detail}; missing ${missing.join(", ")}`,
       };
 }
 
 function checkRailwayAuth(): Check {
   const result = spawnSync("pnpm", ["dlx", "@railway/cli", "whoami"], {
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["ignore", "pipe", "pipe"],
   });
 
   if (result.status === 0) {
     return {
       label: "Railway CLI auth",
       status: "pass",
-      detail: "authenticated"
+      detail: "authenticated",
     };
   }
 
   return {
     label: "Railway CLI auth",
     status: "warn",
-    detail: "not authenticated; run railway login or provide RAILWAY_TOKEN"
+    detail: "not authenticated; run railway login or provide RAILWAY_TOKEN",
   };
 }
 
@@ -163,7 +171,7 @@ async function checkUrl(label: string, url: string): Promise<Check> {
     return {
       label,
       status: "fail",
-      detail: error instanceof Error ? error.message : `could not reach ${url}`
+      detail: error instanceof Error ? error.message : `could not reach ${url}`,
     };
   }
 }
@@ -179,20 +187,23 @@ function readEnvFile(path: string): Record<string, string> {
       .map((line) => {
         const index = line.indexOf("=");
         const key = line.slice(0, index).trim();
-        const value = line.slice(index + 1).trim().replace(/^['"]|['"]$/g, "");
+        const value = line
+          .slice(index + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, "");
 
         return [key, value];
-      })
+      }),
   );
 }
 
 function hasUsableValue(value: string | undefined): boolean {
   return Boolean(
     value &&
-      value.trim() &&
-      !value.includes("replace_with") &&
-      !value.includes("your-") &&
-      value !== "0x..."
+    value.trim() &&
+    !value.includes("replace_with") &&
+    !value.includes("your-") &&
+    value !== "0x...",
   );
 }
 

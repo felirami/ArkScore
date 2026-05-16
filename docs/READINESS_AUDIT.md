@@ -7,10 +7,11 @@ Status date: May 16, 2026
 - Monorepo scaffolded with pnpm workspaces, Node.js 22.19.0 pinning, shared TypeScript configs, and environment examples.
 - Next.js 15 App Router dashboard builds as a static Vercel export and includes Avalanche Fuji wallet connection, Wavy score intake, composite scoring, institutional decisioning, and on-chain write flow.
 - Dashboard reads `isScorer(connectedWallet)` from the Fuji registry and disables score storage until the connected wallet is authorized.
+- The Fuji registry stores score records by backend-derived `subjectHash`, so the raw scored wallet address is not included in contract calldata or `ScoreRecorded` events.
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
 - API tests cover `/health`, `/openapi.json`, a Bankaool score response, invalid institution rejection in mock mode, and the live Wavy Node adapter request shape.
 - Simulated Railway archive install/build/test passes with `.railwayignore` applied, confirming the pruned backend workspace can deploy from the repository root.
-- Wavy Node adapter is live-ready for the official register-then-scan flow: `POST /v1/projects/:projectId/addresses`, then `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113`, with deterministic mock mode for judge demos before credentials are added.
+- Wavy Node adapter is live-ready for the official register-then-scan flow: `POST /v1/projects/:projectId/addresses`, then `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113`, with backend-derived subject hashing and deterministic mock mode for judge demos before credentials are added.
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
@@ -42,6 +43,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 ## Pending Credentials
 
 - `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` for live Wavy Node traceability and AI risk scoring.
+- `ARKSCORE_SUBJECT_HASH_SALT` for environment-specific on-chain subject hashes.
 - Railway login or `RAILWAY_TOKEN` for backend deployment.
 - `FUJI_PRIVATE_KEY` for an Avalanche Fuji funded deployer account.
 - Deployed `CreditScoreRegistry` address for `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`.

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 /// @title CreditScoreRegistry
-/// @notice Stores Wavy Node-backed institutional credit decisions for wallet addresses on Avalanche Fuji.
+/// @notice Stores Wavy Node-backed institutional credit decisions by hashed wallet subject on Avalanche Fuji.
 contract CreditScoreRegistry {
     enum InstitutionalDecision {
         ReviewRequired,
@@ -12,7 +12,7 @@ contract CreditScoreRegistry {
     }
 
     struct ScoreRecord {
-        address subject;
+        bytes32 subjectHash;
         uint8 wavyRiskScore;
         uint8 compositeCreditScore;
         InstitutionalDecision decision;
@@ -26,13 +26,13 @@ contract CreditScoreRegistry {
     address public owner;
 
     mapping(address scorer => bool authorized) public isScorer;
-    mapping(address subject => ScoreRecord record) private records;
-    mapping(address subject => bool exists) public hasScore;
+    mapping(bytes32 subjectHash => ScoreRecord record) private records;
+    mapping(bytes32 subjectHash => bool exists) public hasScore;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event ScorerUpdated(address indexed scorer, bool authorized);
     event ScoreRecorded(
-        address indexed subject,
+        bytes32 indexed subjectHash,
         uint8 wavyRiskScore,
         uint8 compositeCreditScore,
         InstitutionalDecision decision,
@@ -45,6 +45,7 @@ contract CreditScoreRegistry {
     error NotOwner();
     error NotScorer();
     error InvalidAddress();
+    error InvalidSubjectHash();
     error InvalidScore();
     error MissingScore();
 
@@ -88,7 +89,7 @@ contract CreditScoreRegistry {
     }
 
     function recordScore(
-        address subject,
+        bytes32 subjectHash,
         uint8 wavyRiskScore,
         uint8 compositeCreditScore,
         InstitutionalDecision decision,
@@ -96,11 +97,11 @@ contract CreditScoreRegistry {
         string calldata wavyAnalysisId,
         string calldata institution
     ) external onlyScorer {
-        if (subject == address(0)) revert InvalidAddress();
+        if (subjectHash == bytes32(0)) revert InvalidSubjectHash();
         if (wavyRiskScore > 100 || compositeCreditScore > 100) revert InvalidScore();
 
-        records[subject] = ScoreRecord({
-            subject: subject,
+        records[subjectHash] = ScoreRecord({
+            subjectHash: subjectHash,
             wavyRiskScore: wavyRiskScore,
             compositeCreditScore: compositeCreditScore,
             decision: decision,
@@ -110,10 +111,10 @@ contract CreditScoreRegistry {
             updatedAt: block.timestamp,
             submitter: msg.sender
         });
-        hasScore[subject] = true;
+        hasScore[subjectHash] = true;
 
         emit ScoreRecorded(
-            subject,
+            subjectHash,
             wavyRiskScore,
             compositeCreditScore,
             decision,
@@ -124,8 +125,8 @@ contract CreditScoreRegistry {
         );
     }
 
-    function getScore(address subject) external view returns (ScoreRecord memory record) {
-        if (!hasScore[subject]) revert MissingScore();
-        return records[subject];
+    function getScore(bytes32 subjectHash) external view returns (ScoreRecord memory record) {
+        if (!hasScore[subjectHash]) revert MissingScore();
+        return records[subjectHash];
     }
 }

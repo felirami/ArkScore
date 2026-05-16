@@ -6,28 +6,28 @@ export const openApiDocument = {
     summary:
       "Wavy Node-backed wallet risk scoring for Arkangeles and Bankaool demos.",
     description:
-      "ArkScore exposes a Railway-ready API that traces Avalanche Fuji wallet risk through Wavy Node, computes a composite institutional credit score, and returns the evidence hash used by the on-chain registry."
+      "ArkScore exposes a Railway-ready API that traces Avalanche Fuji wallet risk through Wavy Node, computes a composite institutional credit score, and returns the evidence hash used by the on-chain registry.",
   },
   servers: [
     {
       url: "https://your-railway-api.up.railway.app",
-      description: "Railway production URL placeholder"
+      description: "Railway production URL placeholder",
     },
     {
       url: "http://localhost:4000",
-      description: "Local development server"
-    }
+      description: "Local development server",
+    },
   ],
   tags: [
     {
       name: "Health",
-      description: "Readiness checks for Railway and live deployment gates."
+      description: "Readiness checks for Railway and live deployment gates.",
     },
     {
       name: "Scoring",
       description:
-        "Wavy Node traceability and AI risk scoring for wallet underwriting."
-    }
+        "Wavy Node traceability and AI risk scoring for wallet underwriting.",
+    },
   ],
   paths: {
     "/health": {
@@ -41,13 +41,13 @@ export const openApiDocument = {
             content: {
               "application/json": {
                 schema: {
-                  $ref: "#/components/schemas/HealthResponse"
-                }
-              }
-            }
-          }
-        }
-      }
+                  $ref: "#/components/schemas/HealthResponse",
+                },
+              },
+            },
+          },
+        },
+      },
     },
     "/api/score/{address}": {
       get: {
@@ -55,7 +55,7 @@ export const openApiDocument = {
         operationId: "scoreWallet",
         summary: "Fetch Wavy Node wallet risk and ArkScore credit decision.",
         description:
-          "Returns a Wavy Node-compatible risk score, composite credit score, institutional recommendation, and evidence hash for the address that can be stored in the Fuji registry.",
+          "Returns a Wavy Node-compatible risk score, composite credit score, institutional recommendation, subject hash, and evidence hash. The subject hash lets ArkScore store score evidence on Fuji without putting the raw wallet address in contract calldata or events.",
         parameters: [
           {
             name: "address",
@@ -65,8 +65,8 @@ export const openApiDocument = {
             schema: {
               type: "string",
               pattern: "^0x[a-fA-F0-9]{40}$",
-              example: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
-            }
+              example: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+            },
           },
           {
             name: "institution",
@@ -75,9 +75,9 @@ export const openApiDocument = {
             description:
               "Institutional decision profile. Defaults to Arkangeles when omitted.",
             schema: {
-              $ref: "#/components/schemas/Institution"
-            }
-          }
+              $ref: "#/components/schemas/Institution",
+            },
+          },
         ],
         responses: {
           "200": {
@@ -86,80 +86,75 @@ export const openApiDocument = {
             content: {
               "application/json": {
                 schema: {
-                  $ref: "#/components/schemas/ScoreApiResponse"
-                }
-              }
-            }
+                  $ref: "#/components/schemas/ScoreApiResponse",
+                },
+              },
+            },
           },
           "400": {
             description: "Invalid wallet address or institution query.",
             content: {
               "application/json": {
                 schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
           },
           "502": {
             description: "Wavy Node request failed in live mode.",
             content: {
               "application/json": {
                 schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
           },
           "500": {
             description: "Unexpected API failure.",
             content: {
               "application/json": {
                 schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   components: {
     schemas: {
       HealthResponse: {
         type: "object",
-        required: [
-          "ok",
-          "service",
-          "wavyCredentialsConfigured",
-          "mockMode"
-        ],
+        required: ["ok", "service", "wavyCredentialsConfigured", "mockMode"],
         properties: {
           ok: {
             type: "boolean",
-            example: true
+            example: true,
           },
           service: {
             type: "string",
-            example: "arkscore-api"
+            example: "arkscore-api",
           },
           wavyCredentialsConfigured: {
             type: "boolean",
             description:
-              "True when WAVY_NODE_API_KEY and WAVY_NODE_PROJECT_ID are configured."
+              "True when WAVY_NODE_API_KEY and WAVY_NODE_PROJECT_ID are configured.",
           },
           mockMode: {
             type: "boolean",
             description:
-              "True when the API is returning deterministic demo traces instead of live Wavy Node results."
-          }
-        }
+              "True when the API is returning deterministic demo traces instead of live Wavy Node results.",
+          },
+        },
       },
       Institution: {
         type: "string",
         enum: ["arkangeles", "bankaool"],
-        example: "bankaool"
+        example: "bankaool",
       },
       InstitutionDecision: {
         type: "string",
@@ -167,20 +162,20 @@ export const openApiDocument = {
           "APPROVE_IFC_EQUITY_ISSUANCE",
           "APPROVE_BANKAOOL_LOAN",
           "REVIEW_REQUIRED",
-          "DECLINE"
+          "DECLINE",
         ],
-        example: "APPROVE_BANKAOOL_LOAN"
+        example: "APPROVE_BANKAOOL_LOAN",
       },
       RiskLevel: {
         type: "string",
         enum: ["verified", "minimal", "low", "medium", "high", "critical"],
-        example: "low"
+        example: "low",
       },
       ScoreSource: {
         type: "string",
         enum: ["wavy", "mock"],
         description:
-          "mock is used only for demos when Wavy Node credentials are not configured."
+          "mock is used only for demos when Wavy Node credentials are not configured.",
       },
       PatternDetected: {
         type: "object",
@@ -188,25 +183,26 @@ export const openApiDocument = {
         properties: {
           name: {
             type: "string",
-            example: "counterparty concentration"
+            example: "counterparty concentration",
           },
           severity: {
             type: "string",
-            example: "medium"
+            example: "medium",
           },
           confidence: {
             type: "number",
             minimum: 0,
             maximum: 1,
-            example: 0.74
-          }
-        }
+            example: 0.74,
+          },
+        },
       },
       WavyRiskResult: {
         type: "object",
         required: [
           "analysisId",
           "address",
+          "subjectHash",
           "chainId",
           "riskScore",
           "riskLevel",
@@ -214,56 +210,62 @@ export const openApiDocument = {
           "suspiciousActivity",
           "patternsDetected",
           "transactionsAnalyzed",
-          "completedAt"
+          "completedAt",
         ],
         properties: {
           analysisId: {
             type: "string",
-            example: "wavy-20260516-001"
+            example: "wavy-20260516-001",
           },
           address: {
             type: "string",
-            pattern: "^0x[a-fA-F0-9]{40}$"
+            pattern: "^0x[a-fA-F0-9]{40}$",
+          },
+          subjectHash: {
+            type: "string",
+            pattern: "^0x[a-fA-F0-9]{64}$",
+            description:
+              "Privacy-preserving wallet subject identifier used as the Fuji registry key.",
           },
           chainId: {
             type: "integer",
-            example: 43113
+            example: 43113,
           },
           riskScore: {
             type: "integer",
             minimum: 0,
             maximum: 100,
             description: "Wavy Node AI risk score where 100 is highest risk.",
-            example: 24
+            example: 24,
           },
           riskLevel: {
-            $ref: "#/components/schemas/RiskLevel"
+            $ref: "#/components/schemas/RiskLevel",
           },
           riskReason: {
             type: "string",
             example:
-              "Trace shows routine wallet behavior with no critical risk patterns."
+              "Trace shows routine wallet behavior with no critical risk patterns.",
           },
           suspiciousActivity: {
             type: "boolean",
-            example: false
+            example: false,
           },
           patternsDetected: {
             type: "array",
             items: {
-              $ref: "#/components/schemas/PatternDetected"
-            }
+              $ref: "#/components/schemas/PatternDetected",
+            },
           },
           transactionsAnalyzed: {
             type: "integer",
             minimum: 0,
-            example: 184
+            example: 184,
           },
           completedAt: {
             type: "string",
-            format: "date-time"
-          }
-        }
+            format: "date-time",
+          },
+        },
       },
       CompositeScore: {
         type: "object",
@@ -271,7 +273,7 @@ export const openApiDocument = {
           "creditScore",
           "decision",
           "decisionLabel",
-          "recommendation"
+          "recommendation",
         ],
         properties: {
           creditScore: {
@@ -280,21 +282,21 @@ export const openApiDocument = {
             maximum: 100,
             description:
               "ArkScore composite score derived from Wavy risk, traceability, suspicious activity, and institutional policy.",
-            example: 82
+            example: 82,
           },
           decision: {
-            $ref: "#/components/schemas/InstitutionDecision"
+            $ref: "#/components/schemas/InstitutionDecision",
           },
           decisionLabel: {
             type: "string",
-            example: "Approve Bankaool loan"
+            example: "Approve Bankaool loan",
           },
           recommendation: {
             type: "string",
             example:
-              "Bankaool can proceed to loan terms while retaining the on-chain score record for audit."
-          }
-        }
+              "Bankaool can proceed to loan terms while retaining the on-chain score record for audit.",
+          },
+        },
       },
       ScoreApiResponse: {
         type: "object",
@@ -306,59 +308,59 @@ export const openApiDocument = {
           "generatedAt",
           "evidenceHash",
           "wavy",
-          "composite"
+          "composite",
         ],
         properties: {
           address: {
             type: "string",
-            pattern: "^0x[a-fA-F0-9]{40}$"
+            pattern: "^0x[a-fA-F0-9]{40}$",
           },
           chainId: {
             type: "integer",
-            example: 43113
+            example: 43113,
           },
           institution: {
-            $ref: "#/components/schemas/Institution"
+            $ref: "#/components/schemas/Institution",
           },
           source: {
-            $ref: "#/components/schemas/ScoreSource"
+            $ref: "#/components/schemas/ScoreSource",
           },
           generatedAt: {
             type: "string",
-            format: "date-time"
+            format: "date-time",
           },
           evidenceHash: {
             type: "string",
             pattern: "^0x[a-fA-F0-9]{64}$",
             description:
-              "Hash over wallet, Wavy trace, composite score, source, and institution for on-chain registry audit."
+              "Hash over wallet, subject hash, Wavy trace, composite score, source, and institution for on-chain registry audit.",
           },
           wavy: {
-            $ref: "#/components/schemas/WavyRiskResult"
+            $ref: "#/components/schemas/WavyRiskResult",
           },
           composite: {
-            $ref: "#/components/schemas/CompositeScore"
-          }
-        }
+            $ref: "#/components/schemas/CompositeScore",
+          },
+        },
       },
       ErrorResponse: {
         type: "object",
         required: ["error"],
         properties: {
           error: {
-            type: "string"
+            type: "string",
           },
           details: {
             type: "array",
             items: {
-              type: "string"
-            }
+              type: "string",
+            },
           },
           statusCode: {
-            type: "integer"
-          }
-        }
-      }
-    }
-  }
+            type: "integer",
+          },
+        },
+      },
+    },
+  },
 } as const;

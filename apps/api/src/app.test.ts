@@ -46,12 +46,13 @@ test("openapi document describes the public scoring contract", async () => {
 test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
   await withTestServer(async (baseUrl) => {
     const response = await fetch(
-      `${baseUrl}/api/score/${demoWallet}?institution=bankaool`
+      `${baseUrl}/api/score/${demoWallet}?institution=bankaool`,
     );
     const payload = (await response.json()) as ScoreApiResponse;
 
     assert.equal(response.status, 200);
     assert.equal(payload.address, demoWallet);
+    assert.match(payload.subjectHash, /^0x[a-f0-9]{64}$/);
     assert.equal(payload.chainId, 43113);
     assert.equal(payload.institution, "bankaool");
     assert.equal(payload.source, "mock");
@@ -59,7 +60,7 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
     assert.ok(payload.wavy.riskScore >= 0 && payload.wavy.riskScore <= 100);
     assert.ok(
       payload.composite.creditScore >= 0 &&
-        payload.composite.creditScore <= 100
+        payload.composite.creditScore <= 100,
     );
     assert.match(payload.evidenceHash, /^0x[a-f0-9]{64}$/);
   });
@@ -68,7 +69,7 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
 test("score endpoint rejects unsupported institutions", async () => {
   await withTestServer(async (baseUrl) => {
     const response = await fetch(
-      `${baseUrl}/api/score/${demoWallet}?institution=unknown`
+      `${baseUrl}/api/score/${demoWallet}?institution=unknown`,
     );
     const payload = (await response.json()) as { error: string };
 
@@ -78,7 +79,7 @@ test("score endpoint rejects unsupported institutions", async () => {
 });
 
 async function withTestServer(
-  run: (baseUrl: string) => Promise<void>
+  run: (baseUrl: string) => Promise<void>,
 ): Promise<void> {
   const server = createApp().listen(0);
 

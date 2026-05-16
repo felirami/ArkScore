@@ -7,6 +7,26 @@ export function createEvidenceHash(payload: unknown): `0x${string}` {
   return `0x${digest}`;
 }
 
+export function createSubjectHash(input: {
+  address: `0x${string}`;
+  chainId: number;
+  institution: string;
+  salt: string;
+}): `0x${string}` {
+  const digest = createHash("sha256")
+    .update(
+      stableStringify({
+        address: input.address.toLowerCase(),
+        chainId: input.chainId,
+        institution: input.institution,
+        salt: input.salt,
+      }),
+    )
+    .digest("hex");
+
+  return `0x${digest}`;
+}
+
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) {
     return `[${value.map((entry) => stableStringify(entry)).join(",")}]`;

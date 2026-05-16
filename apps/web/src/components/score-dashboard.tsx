@@ -8,27 +8,27 @@ import {
   Loader2,
   Search,
   ShieldAlert,
-  UploadCloud
+  UploadCloud,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { isAddress } from "viem";
 import {
   decisionContractEnum,
   type Institution,
-  type ScoreApiResponse
+  type ScoreApiResponse,
 } from "@arkscore/shared";
 import {
   useConnection,
   useReadContract,
   useSwitchChain,
   useWaitForTransactionReceipt,
-  useWriteContract
+  useWriteContract,
 } from "wagmi";
 import { avalancheFuji } from "@/config/chains";
 import { fetchWalletScore } from "@/lib/api";
 import {
   creditScoreRegistryAbi,
-  creditScoreRegistryAddress
+  creditScoreRegistryAddress,
 } from "@/lib/contracts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ export function ScoreDashboard() {
   const {
     data: isAuthorizedScorer,
     isLoading: isCheckingScorer,
-    isError: isScorerCheckError
+    isError: isScorerCheckError,
   } = useReadContract({
     address: creditScoreRegistryAddress,
     abi: creditScoreRegistryAbi,
@@ -55,29 +55,29 @@ export function ScoreDashboard() {
     args: connectedAddress ? [connectedAddress] : undefined,
     chainId: avalancheFuji.id,
     query: {
-      enabled: Boolean(creditScoreRegistryAddress && connectedAddress)
-    }
+      enabled: Boolean(creditScoreRegistryAddress && connectedAddress),
+    },
   });
   const {
     writeContract,
     data: transactionHash,
     error: writeError,
-    isPending: isWriting
+    isPending: isWriting,
   } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
-      hash: transactionHash
+      hash: transactionHash,
     });
 
   const canSubmitToRegistry = useMemo(
     () =>
       Boolean(
         score &&
-          creditScoreRegistryAddress &&
-          isConnected &&
-          isAuthorizedScorer === true
+        creditScoreRegistryAddress &&
+        isConnected &&
+        isAuthorizedScorer === true,
       ),
-    [isAuthorizedScorer, isConnected, score]
+    [isAuthorizedScorer, isConnected, score],
   );
 
   async function handleScoreWallet() {
@@ -94,14 +94,14 @@ export function ScoreDashboard() {
     try {
       const result = await fetchWalletScore({
         address: walletAddress,
-        institution
+        institution,
       });
       setScore(result);
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Unable to fetch wallet score."
+          : "Unable to fetch wallet score.",
       );
     } finally {
       setIsScoring(false);
@@ -126,15 +126,15 @@ export function ScoreDashboard() {
       abi: creditScoreRegistryAbi,
       functionName: "recordScore",
       args: [
-        score.address,
+        score.subjectHash,
         score.wavy.riskScore,
         score.composite.creditScore,
         decisionContractEnum[score.composite.decision],
         score.evidenceHash,
         score.wavy.analysisId,
-        score.institution
+        score.institution,
       ],
-      chainId: avalancheFuji.id
+      chainId: avalancheFuji.id,
     });
   }
 
@@ -142,7 +142,11 @@ export function ScoreDashboard() {
     <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
       <section className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4 md:p-5">
         <div className="flex items-center gap-2">
-          <Search size={18} aria-hidden="true" className="text-[var(--accent)]" />
+          <Search
+            size={18}
+            aria-hidden="true"
+            className="text-[var(--accent)]"
+          />
           <h2 className="text-lg font-semibold">Wallet risk intake</h2>
         </div>
 
@@ -209,7 +213,9 @@ export function ScoreDashboard() {
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-[var(--muted-foreground)]">
             Connected wallet:{" "}
             <span className="font-mono text-[var(--foreground)]">
-              {connectedAddress ? shortAddress(connectedAddress) : "Not connected"}
+              {connectedAddress
+                ? shortAddress(connectedAddress)
+                : "Not connected"}
             </span>
             {creditScoreRegistryAddress ? (
               <span className="mt-2 flex items-center gap-2">
@@ -219,7 +225,7 @@ export function ScoreDashboard() {
                     connectedAddress,
                     isAuthorizedScorer,
                     isCheckingScorer,
-                    isScorerCheckError
+                    isScorerCheckError,
                   })}
                 </Badge>
               </span>
@@ -274,6 +280,7 @@ export function ScoreDashboard() {
             </div>
 
             <div className="grid gap-2 text-sm">
+              <Detail label="Subject hash" value={score.subjectHash} />
               <Detail label="Analysis ID" value={score.wavy.analysisId} />
               <Detail label="Evidence hash" value={score.evidenceHash} />
               <Detail label="Risk reason" value={score.wavy.riskReason} />
@@ -304,11 +311,18 @@ export function ScoreDashboard() {
               <Button
                 onClick={handleStoreOnChain}
                 disabled={
-                  !canSubmitToRegistry || isWriting || isConfirming || isSwitching
+                  !canSubmitToRegistry ||
+                  isWriting ||
+                  isConfirming ||
+                  isSwitching
                 }
               >
                 {isWriting || isConfirming || isSwitching ? (
-                  <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+                  <Loader2
+                    size={16}
+                    aria-hidden="true"
+                    className="animate-spin"
+                  />
                 ) : isConfirmed ? (
                   <CheckCircle2 size={16} aria-hidden="true" />
                 ) : (
@@ -336,7 +350,11 @@ export function ScoreDashboard() {
 
             {writeError ? (
               <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                <AlertTriangle size={16} aria-hidden="true" className="mt-0.5" />
+                <AlertTriangle
+                  size={16}
+                  aria-hidden="true"
+                  className="mt-0.5"
+                />
                 <p>{writeError.message}</p>
               </div>
             ) : null}

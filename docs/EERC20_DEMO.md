@@ -4,7 +4,7 @@ ArkScore is designed so the score registry can sit next to a privacy-preserving 
 
 ## Why eERC20 Fits ArkScore
 
-- The public chain stores the score decision, evidence hash, and Wavy analysis id.
+- The public chain stores the score decision, subject hash, evidence hash, and Wavy analysis id.
 - The optional eERC20 flow can keep credit-token balances and transfer amounts private.
 - Institutions can still audit the score registry while token movement remains privacy-preserving.
 

@@ -3,7 +3,7 @@ import {
   getRiskLevel,
   type Institution,
   type PatternDetected,
-  type ScoreApiResponse
+  type ScoreApiResponse,
 } from "@arkscore/shared";
 
 const fujiChainId = 43113;
@@ -36,35 +36,43 @@ export async function createDemoScore(input: {
     suspiciousActivity,
     patternsDetected,
     transactionsAnalyzed: 24 + (seed % 320),
-    completedAt
+    completedAt,
   };
   const composite = computeCompositeScore({
     institution: input.institution,
     riskScore: wavy.riskScore,
     suspiciousActivity: wavy.suspiciousActivity,
     transactionsAnalyzed: wavy.transactionsAnalyzed,
-    patternsDetected: wavy.patternsDetected
+    patternsDetected: wavy.patternsDetected,
   });
   const generatedAt = new Date().toISOString();
   const source = "mock";
+  const subjectHash = await createEvidenceHash({
+    address: address.toLowerCase(),
+    chainId: wavy.chainId,
+    institution: input.institution,
+    salt: "arkscore-demo-subject-hash-salt",
+  });
   const evidenceHash = await createEvidenceHash({
     address,
+    subjectHash,
     chainId: wavy.chainId,
     institution: input.institution,
     source,
     wavy,
-    composite
+    composite,
   });
 
   return {
     address,
+    subjectHash,
     chainId: wavy.chainId,
     institution: input.institution,
     source,
     generatedAt,
     evidenceHash,
     wavy,
-    composite
+    composite,
   };
 }
 
@@ -75,12 +83,13 @@ function createPatterns(riskScore: number, seed: number): PatternDetected[] {
     "counterparty concentration",
     "rapid fund movement",
     "new wallet interaction",
-    "unusual transaction cadence"
+    "unusual transaction cadence",
   ];
   const count = Math.min(4, Math.max(1, Math.floor(riskScore / 20)));
 
   return Array.from({ length: count }, (_, index) => ({
-    name: basePatterns[(seed + index) % basePatterns.length] ?? "wallet pattern",
+    name:
+      basePatterns[(seed + index) % basePatterns.length] ?? "wallet pattern",
     severity:
       riskScore >= 80
         ? "critical"
@@ -89,7 +98,7 @@ function createPatterns(riskScore: number, seed: number): PatternDetected[] {
           : riskScore >= 40
             ? "medium"
             : "low",
-    confidence: 0.62 + ((seed + index) % 28) / 100
+    confidence: 0.62 + ((seed + index) % 28) / 100,
   }));
 }
 

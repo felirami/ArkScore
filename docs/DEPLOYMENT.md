@@ -52,6 +52,7 @@ WAVY_NODE_CHAIN_ID=43113
 WAVY_NODE_AUTO_REGISTER=true
 WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=auto
+ARKSCORE_SUBJECT_HASH_SALT=replace_with_long_random_subject_hash_salt
 ```
 
 Live scoring follows the Wavy Node quickstart sequence: register the wallet for project monitoring, then run the risk scan.
@@ -76,6 +77,8 @@ GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113
 x-api-key: ApiKey ...
 ```
 
+`ARKSCORE_SUBJECT_HASH_SALT` should be a long random backend-only value. ArkScore returns the derived `subjectHash` to the dashboard, and the Fuji registry stores that hash instead of the raw scored wallet address.
+
 For judge demos without credentials, set `WAVY_NODE_MOCK_MODE=true`.
 
 After logging in with `railway login` or `railway login --browserless`, preview the Railway commands:
@@ -89,6 +92,7 @@ To apply them with live Wavy credentials:
 ```bash
 WAVY_NODE_API_KEY="ApiKey ..." \
 WAVY_NODE_PROJECT_ID="..." \
+ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm deploy:railway:apply -- --create-domain
 ```
 
@@ -105,6 +109,7 @@ railway variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --skip-deploy
 railway variable set WAVY_NODE_MOCK_MODE=auto --skip-deploys --json
 echo "ApiKey ..." | railway variable set WAVY_NODE_API_KEY --stdin --skip-deploys --json
 echo "..." | railway variable set WAVY_NODE_PROJECT_ID --stdin --skip-deploys --json
+echo "..." | railway variable set ARKSCORE_SUBJECT_HASH_SALT --stdin --skip-deploys --json
 railway up --detach --json --message "Deploy ArkScore API"
 railway domain --service arkscore-api --json
 ```

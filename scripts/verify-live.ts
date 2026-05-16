@@ -11,6 +11,7 @@ type Check = {
 
 type ScoreResponse = {
   address?: string;
+  subjectHash?: string;
   chainId?: number;
   institution?: string;
   source?: "wavy" | "mock";
@@ -45,13 +46,13 @@ const env = {
   ...readEnvFile("packages/contracts/.env"),
   ...readEnvFile("apps/api/.env"),
   ...readEnvFile("apps/web/.env.local"),
-  ...process.env
+  ...process.env,
 };
 const webUrl = normalizeBaseUrl(
-  env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app"
+  env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app",
 );
 const apiUrl = normalizeBaseUrl(
-  env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL
+  env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL,
 );
 const registryAddress =
   env.ARKSCORE_REGISTRY_ADDRESS ??
@@ -85,7 +86,7 @@ async function main() {
 
   console.log("\n## Summary\n");
   console.log(
-    `- Passing: ${checks.filter((check) => check.status === "pass").length}`
+    `- Passing: ${checks.filter((check) => check.status === "pass").length}`,
   );
   console.log(`- Warnings: ${warnings.length}`);
   console.log(`- Failing: ${failed.length}`);
@@ -103,7 +104,7 @@ async function verifyWeb(url: string | undefined): Promise<Check> {
     return {
       label: "Vercel web",
       status: "warn",
-      detail: "missing ARKSCORE_WEB_URL"
+      detail: "missing ARKSCORE_WEB_URL",
     };
   }
 
@@ -115,7 +116,7 @@ async function verifyWeb(url: string | undefined): Promise<Check> {
       return {
         label: "Vercel web",
         status: "fail",
-        detail: `${url} returned ${response.status}`
+        detail: `${url} returned ${response.status}`,
       };
     }
 
@@ -123,18 +124,18 @@ async function verifyWeb(url: string | undefined): Promise<Check> {
       ? {
           label: "Vercel web",
           status: "pass",
-          detail: `${url} returned ${response.status} and ArkScore HTML`
+          detail: `${url} returned ${response.status} and ArkScore HTML`,
         }
       : {
           label: "Vercel web",
           status: "fail",
-          detail: `${url} returned ${response.status} but ArkScore text was missing`
+          detail: `${url} returned ${response.status} but ArkScore text was missing`,
         };
   } catch (error) {
     return {
       label: "Vercel web",
       status: "fail",
-      detail: error instanceof Error ? error.message : `could not reach ${url}`
+      detail: error instanceof Error ? error.message : `could not reach ${url}`,
     };
   }
 }
@@ -145,8 +146,8 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       {
         label: "Railway API",
         status: "warn",
-        detail: "missing ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL"
-      }
+        detail: "missing ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL",
+      },
     ];
   }
 
@@ -154,36 +155,39 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
 
   try {
     const healthResponse = await fetch(`${url}/health`);
-    const health = (await healthResponse.json().catch(() => null)) as
-      | { ok?: boolean; service?: string }
-      | null;
+    const health = (await healthResponse.json().catch(() => null)) as {
+      ok?: boolean;
+      service?: string;
+    } | null;
 
     checks.push(
-      healthResponse.ok && health?.ok === true && health.service === "arkscore-api"
+      healthResponse.ok &&
+        health?.ok === true &&
+        health.service === "arkscore-api"
         ? {
             label: "Railway API health",
             status: "pass",
-            detail: `${url}/health returned ok`
+            detail: `${url}/health returned ok`,
           }
         : {
             label: "Railway API health",
             status: "fail",
-            detail: `${url}/health returned ${healthResponse.status}`
-          }
+            detail: `${url}/health returned ${healthResponse.status}`,
+          },
     );
   } catch (error) {
     checks.push({
       label: "Railway API health",
       status: "fail",
-      detail: error instanceof Error ? error.message : "health request failed"
+      detail: error instanceof Error ? error.message : "health request failed",
     });
   }
 
   try {
     const openApiResponse = await fetch(`${url}/openapi.json`);
-    const openApi = (await openApiResponse.json().catch(() => null)) as
-      | OpenApiResponse
-      | null;
+    const openApi = (await openApiResponse
+      .json()
+      .catch(() => null)) as OpenApiResponse | null;
     const contractValid =
       openApiResponse.ok &&
       Boolean(openApi?.openapi?.match(/^3\./)) &&
@@ -198,33 +202,34 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         ? {
             label: "Railway API OpenAPI",
             status: "pass",
-            detail: `${url}/openapi.json documents health and score endpoints`
+            detail: `${url}/openapi.json documents health and score endpoints`,
           }
         : {
             label: "Railway API OpenAPI",
             status: "fail",
-            detail: `${url}/openapi.json returned invalid contract or status ${openApiResponse.status}`
-          }
+            detail: `${url}/openapi.json returned invalid contract or status ${openApiResponse.status}`,
+          },
     );
   } catch (error) {
     checks.push({
       label: "Railway API OpenAPI",
       status: "fail",
-      detail: error instanceof Error ? error.message : "OpenAPI request failed"
+      detail: error instanceof Error ? error.message : "OpenAPI request failed",
     });
   }
 
   try {
     const scoreResponse = await fetch(
-      `${url}/api/score/${testWallet}?institution=bankaool`
+      `${url}/api/score/${testWallet}?institution=bankaool`,
     );
-    const score = (await scoreResponse.json().catch(() => null)) as
-      | ScoreResponse
-      | null;
+    const score = (await scoreResponse
+      .json()
+      .catch(() => null)) as ScoreResponse | null;
     const scoreShapeValid =
       scoreResponse.ok &&
       score?.institution === "bankaool" &&
       score.chainId === 43113 &&
+      Boolean(score.subjectHash?.match(/^0x[a-f0-9]{64}$/)) &&
       isScore(score.wavy?.riskScore) &&
       isScore(score.composite?.creditScore) &&
       Boolean(score.evidenceHash?.match(/^0x[a-f0-9]{64}$/));
@@ -239,19 +244,19 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         ? {
             label: "Railway API score",
             status: requireWavy ? sourceStatus : "pass",
-            detail: `${sourceDetail}; Bankaool score response is valid`
+            detail: `${sourceDetail}; Bankaool score response is valid`,
           }
         : {
             label: "Railway API score",
             status: "fail",
-            detail: `${url}/api/score/:address returned invalid shape or status ${scoreResponse.status}`
-          }
+            detail: `${url}/api/score/:address returned invalid shape or status ${scoreResponse.status}`,
+          },
     );
   } catch (error) {
     checks.push({
       label: "Railway API score",
       status: "fail",
-      detail: error instanceof Error ? error.message : "score request failed"
+      detail: error instanceof Error ? error.message : "score request failed",
     });
   }
 
@@ -265,8 +270,8 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
         label: "Fuji registry contract",
         status: "warn",
         detail:
-          "missing ARKSCORE_REGISTRY_ADDRESS or NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS"
-      }
+          "missing ARKSCORE_REGISTRY_ADDRESS or NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
+      },
     ];
   }
 
@@ -278,19 +283,19 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
       ? {
           label: "Fuji registry bytecode",
           status: "pass",
-          detail: `${address} has deployed bytecode`
+          detail: `${address} has deployed bytecode`,
         }
       : {
           label: "Fuji registry bytecode",
           status: "fail",
-          detail: `${address} has no bytecode on Fuji`
-        }
+          detail: `${address} has no bytecode on Fuji`,
+        },
   );
 
   try {
     const ownerCall = await rpc<string>("eth_call", [
       { to: address, data: "0x8da5cb5b" },
-      "latest"
+      "latest",
     ]);
 
     checks.push(
@@ -298,19 +303,19 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
         ? {
             label: "Fuji registry owner",
             status: "pass",
-            detail: `owner() returned ${decodeAddress(ownerCall)}`
+            detail: `owner() returned ${decodeAddress(ownerCall)}`,
           }
         : {
             label: "Fuji registry owner",
             status: "fail",
-            detail: "owner() call did not return an encoded address"
-          }
+            detail: "owner() call did not return an encoded address",
+          },
     );
   } catch (error) {
     checks.push({
       label: "Fuji registry owner",
       status: "fail",
-      detail: error instanceof Error ? error.message : "owner() call failed"
+      detail: error instanceof Error ? error.message : "owner() call failed",
     });
   }
 
@@ -321,7 +326,7 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
 
 async function verifyScorer(
   registry: string,
-  scorer: string | undefined
+  scorer: string | undefined,
 ): Promise<Check[]> {
   if (!scorer || !isAddress(scorer)) {
     return [
@@ -329,8 +334,8 @@ async function verifyScorer(
         label: "Fuji scorer authorization",
         status: "warn",
         detail:
-          "missing ARKSCORE_SCORER_ADDRESS to prove the dashboard signer is authorized"
-      }
+          "missing ARKSCORE_SCORER_ADDRESS to prove the dashboard signer is authorized",
+      },
     ];
   }
 
@@ -338,7 +343,7 @@ async function verifyScorer(
     const encodedScorer = scorer.slice(2).padStart(64, "0");
     const call = await rpc<string>("eth_call", [
       { to: registry, data: `0x73c4502c${encodedScorer}` },
-      "latest"
+      "latest",
     ]);
     const authorized = BigInt(call) === 1n;
 
@@ -347,13 +352,13 @@ async function verifyScorer(
         ? {
             label: "Fuji scorer authorization",
             status: "pass",
-            detail: `${scorer} is authorized`
+            detail: `${scorer} is authorized`,
           }
         : {
             label: "Fuji scorer authorization",
             status: "fail",
-            detail: `${scorer} is not authorized`
-          }
+            detail: `${scorer} is not authorized`,
+          },
     ];
   } catch (error) {
     return [
@@ -361,8 +366,8 @@ async function verifyScorer(
         label: "Fuji scorer authorization",
         status: "fail",
         detail:
-          error instanceof Error ? error.message : "isScorer(address) failed"
-      }
+          error instanceof Error ? error.message : "isScorer(address) failed",
+      },
     ];
   }
 }
@@ -375,8 +380,8 @@ async function rpc<T>(method: string, params: unknown[]): Promise<T> {
       jsonrpc: "2.0",
       id: 1,
       method,
-      params
-    })
+      params,
+    }),
   });
   const payload = (await response.json()) as {
     result?: T;
@@ -401,10 +406,13 @@ function readEnvFile(path: string): Record<string, string> {
       .map((line) => {
         const index = line.indexOf("=");
         const key = line.slice(0, index).trim();
-        const value = line.slice(index + 1).trim().replace(/^['"]|['"]$/g, "");
+        const value = line
+          .slice(index + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, "");
 
         return [key, value];
-      })
+      }),
   );
 }
 

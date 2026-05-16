@@ -4,10 +4,10 @@ import {
   institutionSchema,
   type Institution,
   type ScoreApiResponse,
-  type WavyRiskResult
+  type WavyRiskResult,
 } from "@arkscore/shared";
 import { env, shouldUseMockScores } from "../config/env.js";
-import { createEvidenceHash } from "../lib/evidence.js";
+import { createEvidenceHash, createSubjectHash } from "../lib/evidence.js";
 import { HttpError } from "../lib/http-error.js";
 import { createMockWavyRiskResult } from "./mock-wavy-node.js";
 import { fetchWavyRiskResult } from "./wavy-node.js";
@@ -24,34 +24,42 @@ export async function scoreWallet(input: {
     riskScore: wavy.riskScore,
     suspiciousActivity: wavy.suspiciousActivity,
     transactionsAnalyzed: wavy.transactionsAnalyzed,
-    patternsDetected: wavy.patternsDetected
+    patternsDetected: wavy.patternsDetected,
   });
   const source = shouldUseMockScores() ? "mock" : "wavy";
   const generatedAt = new Date().toISOString();
+  const subjectHash = createSubjectHash({
+    address,
+    chainId: wavy.chainId,
+    institution,
+    salt: env.ARKSCORE_SUBJECT_HASH_SALT,
+  });
   const evidenceHash = createEvidenceHash({
     address,
+    subjectHash,
     chainId: wavy.chainId,
     institution,
     source,
     wavy,
-    composite
+    composite,
   });
 
   return {
     address,
+    subjectHash,
     chainId: wavy.chainId,
     institution,
     source,
     generatedAt,
     evidenceHash,
     wavy,
-    composite
+    composite,
   };
 }
 
 async function getRiskResult(
   address: `0x${string}`,
-  chainId: number
+  chainId: number,
 ): Promise<WavyRiskResult> {
   if (shouldUseMockScores()) {
     return createMockWavyRiskResult({ address, chainId });
@@ -67,7 +75,7 @@ function parseInstitution(value: string | undefined): Institution {
   if (!parsed.success) {
     throw new HttpError(
       400,
-      "Unsupported institution. Use institution=arkangeles or institution=bankaool."
+      "Unsupported institution. Use institution=arkangeles or institution=bankaool.",
     );
   }
 

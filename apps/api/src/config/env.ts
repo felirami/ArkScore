@@ -14,6 +14,9 @@ const envSchema = z.object({
   WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
   WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
   WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto"),
+  ARKSCORE_SUBJECT_HASH_SALT: z
+    .string()
+    .default("arkscore-demo-subject-hash-salt"),
 });
 
 export const env = envSchema.parse(process.env);

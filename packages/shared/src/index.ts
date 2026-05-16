@@ -57,6 +57,7 @@ export type CompositeScore = {
 
 export type ScoreApiResponse = {
   address: `0x${string}`;
+  subjectHash: `0x${string}`;
   chainId: number;
   institution: Institution;
   source: ScoreSource;
