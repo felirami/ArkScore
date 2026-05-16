@@ -7,7 +7,7 @@ Status date: May 16, 2026
 - Monorepo scaffolded with pnpm workspaces, Node.js 22.19.0 pinning, shared TypeScript configs, and environment examples.
 - Next.js 15 App Router dashboard builds as a static Vercel export and includes Avalanche Fuji wallet connection, Wavy score intake, composite scoring, institutional decisioning, and on-chain write flow.
 - The dashboard includes an optional eERC20 privacy-layer card that links to an Ava Labs EncryptedERC demo address when configured.
-- Dashboard reads `isScorer(connectedWallet)` and `hasScore(subjectHash)` from the Fuji registry, disables score storage until the connected wallet is authorized, and labels the on-chain action as store or update based on subject status.
+- Dashboard reads `isScorer(connectedWallet)`, `hasScore(subjectHash)`, and `getScore(subjectHash)` from the Fuji registry, disables score storage until the connected wallet is authorized, labels the on-chain action as store or update based on subject status, and shows whether the stored evidence matches the current Wavy response.
 - The Fuji registry stores score records by backend-derived `subjectHash`, so the raw scored wallet address is not included in contract calldata or `ScoreRecorded` events.
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
 - API tests cover `/health`, subject-hash salt health reporting, `/openapi.json` privacy fields, a Bankaool score response, invalid institution rejection in mock mode, the live Wavy Node adapter request shape, and gateway-timeout handling for stalled Wavy requests.
@@ -16,7 +16,7 @@ Status date: May 16, 2026
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
-- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_5UkPDfbn7aj9NAyjgYmhPkEvjkN3`.
+- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_6hfCRvJu4MEeDvqxfqcyEm3jCotg`.
 - Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, traceability, AI risk scale, subject hash, subject status, evidence hash, and eERC20 privacy slot while Railway credentials are pending.
 
 ## Verified Locally
@@ -35,7 +35,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm readiness` produces a non-secret live-gate report covering Vercel reachability, Vercel CLI auth, Railway auth, Wavy credentials, Fuji deployer configuration, and frontend deployment variables. It accepts the same Railway API, Fuji registry, and scorer aliases used by the finalization and Hardhat scripts, so the report mirrors the actual handoff flow.
 
-`pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, traceability, AI risk scale, subject hash, subject status, evidence hash, scorer status, and Store on Fuji flow.
+`pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, traceability, AI risk scale, subject hash, subject status, evidence hash, scorer status, Store on Fuji flow, and on-chain readback evidence match.
 
 `pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict` to prove the hosted Vercel bundle contains the configured Railway API URL and Fuji registry address, plus Railway health, live Wavy credential mode, production subject-hash salt, OpenAPI, score response, live Wavy source, Fuji registry bytecode and ABI, and authorized scorer.
 

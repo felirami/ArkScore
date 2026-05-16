@@ -27,6 +27,8 @@ const requiredBundleText = [
   "Scorer status",
   "Subject status",
   "Store on Fuji",
+  "On-chain readback",
+  "Evidence match",
 ];
 
 main().catch((error: unknown) => {

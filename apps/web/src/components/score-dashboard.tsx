@@ -36,6 +36,18 @@ import { Input } from "@/components/ui/input";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 
+type StoredScoreRecord = {
+  subjectHash: `0x${string}`;
+  wavyRiskScore: number;
+  compositeCreditScore: number;
+  decision: number;
+  wavyEvidenceHash: `0x${string}`;
+  wavyAnalysisId: string;
+  institution: string;
+  updatedAt: bigint;
+  submitter: `0x${string}`;
+};
+
 export function ScoreDashboard() {
   const { address: connectedAddress, chainId, isConnected } = useConnection();
   const [institution, setInstitution] = useState<Institution>("arkangeles");
@@ -83,6 +95,38 @@ export function ScoreDashboard() {
       enabled: Boolean(creditScoreRegistryAddress && score?.subjectHash),
     },
   });
+  const {
+    data: rawStoredScoreRecord,
+    isLoading: isLoadingStoredScoreRecord,
+    isError: isStoredScoreRecordError,
+    refetch: refetchStoredScoreRecord,
+  } = useReadContract({
+    address: creditScoreRegistryAddress,
+    abi: creditScoreRegistryAbi,
+    functionName: "getScore",
+    args: score ? [score.subjectHash] : undefined,
+    chainId: avalancheFuji.id,
+    query: {
+      enabled: Boolean(
+        creditScoreRegistryAddress &&
+        score?.subjectHash &&
+        hasStoredScore === true,
+      ),
+      retry: false,
+    },
+  });
+
+  const storedScoreRecord = useMemo(
+    () => parseStoredScoreRecord(rawStoredScoreRecord),
+    [rawStoredScoreRecord],
+  );
+  const storedEvidenceMatches = useMemo(
+    () =>
+      Boolean(
+        score && storedScoreRecord && evidenceMatches(score, storedScoreRecord),
+      ),
+    [score, storedScoreRecord],
+  );
 
   const canSubmitToRegistry = useMemo(
     () =>
@@ -98,8 +142,9 @@ export function ScoreDashboard() {
   useEffect(() => {
     if (isConfirmed) {
       void refetchStoredScore();
+      void refetchStoredScoreRecord();
     }
-  }, [isConfirmed, refetchStoredScore]);
+  }, [isConfirmed, refetchStoredScore, refetchStoredScoreRecord]);
 
   async function handleScoreWallet() {
     setError(null);
@@ -395,6 +440,67 @@ export function ScoreDashboard() {
               </a>
             ) : null}
 
+            {hasStoredScore === true ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-[var(--foreground)]">
+                    On-chain readback
+                  </p>
+                  <Badge
+                    tone={
+                      storedEvidenceMatches
+                        ? "success"
+                        : isStoredScoreRecordError
+                          ? "danger"
+                          : "info"
+                    }
+                  >
+                    {storedReadbackStatusLabel({
+                      isLoadingStoredScoreRecord,
+                      isStoredScoreRecordError,
+                      storedEvidenceMatches,
+                      storedScoreRecord,
+                    })}
+                  </Badge>
+                </div>
+
+                {storedScoreRecord ? (
+                  <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                    <CompactDetail
+                      label="Stored score"
+                      value={`${storedScoreRecord.wavyRiskScore}/100 risk; ${storedScoreRecord.compositeCreditScore}/100 credit`}
+                    />
+                    <CompactDetail
+                      label="Decision enum"
+                      value={String(storedScoreRecord.decision)}
+                    />
+                    <CompactDetail
+                      label="Submitter"
+                      value={shortAddress(storedScoreRecord.submitter)}
+                    />
+                    <CompactDetail
+                      label="Updated"
+                      value={formatUnixTimestamp(storedScoreRecord.updatedAt)}
+                    />
+                    <CompactDetail
+                      label="Analysis ID"
+                      value={storedScoreRecord.wavyAnalysisId}
+                    />
+                    <CompactDetail
+                      label="Institution"
+                      value={storedScoreRecord.institution}
+                    />
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-[var(--muted-foreground)]">
+                    {isLoadingStoredScoreRecord
+                      ? "Reading registry record from Avalanche Fuji."
+                      : "Fuji reports a stored score, but the registry record is not available yet."}
+                  </p>
+                )}
+              </div>
+            ) : null}
+
             {writeError ? (
               <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
                 <AlertTriangle
@@ -431,6 +537,17 @@ function Detail({ label, value }: { label: string; value: string }) {
     <div className="grid gap-1 rounded-lg border border-slate-200 p-3 md:grid-cols-[140px_1fr]">
       <p className="text-[var(--muted-foreground)]">{label}</p>
       <p className="break-all font-mono text-xs md:text-sm">{value}</p>
+    </div>
+  );
+}
+
+function CompactDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md border border-slate-200 bg-white p-2">
+      <p className="text-xs text-[var(--muted-foreground)]">{label}</p>
+      <p className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -492,12 +609,111 @@ function storedScoreStatusLabel(input: {
   return "Awaiting score";
 }
 
+function storedReadbackStatusLabel(input: {
+  isLoadingStoredScoreRecord: boolean;
+  isStoredScoreRecordError: boolean;
+  storedEvidenceMatches: boolean;
+  storedScoreRecord: StoredScoreRecord | null;
+}) {
+  if (input.isLoadingStoredScoreRecord) return "Reading Fuji";
+  if (input.isStoredScoreRecordError) return "Read failed";
+  if (!input.storedScoreRecord) return "Awaiting record";
+  if (input.storedEvidenceMatches) return "Evidence match";
+  return "Different evidence";
+}
+
 function traceabilityRegistrationLabel(
   value: ScoreApiResponse["wavy"]["traceability"]["addressRegistration"],
 ) {
   if (value === "auto-registered-or-reused") return "Auto registered/reused";
   if (value === "preconfigured") return "Preconfigured project address";
   return "Demo trace";
+}
+
+function parseStoredScoreRecord(value: unknown): StoredScoreRecord | null {
+  if (!value || typeof value !== "object") return null;
+
+  const subjectHash = getRecordField(value, "subjectHash", 0);
+  const wavyRiskScore = getRecordField(value, "wavyRiskScore", 1);
+  const compositeCreditScore = getRecordField(value, "compositeCreditScore", 2);
+  const decision = getRecordField(value, "decision", 3);
+  const wavyEvidenceHash = getRecordField(value, "wavyEvidenceHash", 4);
+  const wavyAnalysisId = getRecordField(value, "wavyAnalysisId", 5);
+  const institution = getRecordField(value, "institution", 6);
+  const updatedAt = getRecordField(value, "updatedAt", 7);
+  const submitter = getRecordField(value, "submitter", 8);
+
+  if (
+    !isBytes32(subjectHash) ||
+    !isNumericValue(wavyRiskScore) ||
+    !isNumericValue(compositeCreditScore) ||
+    !isNumericValue(decision) ||
+    !isBytes32(wavyEvidenceHash) ||
+    typeof wavyAnalysisId !== "string" ||
+    typeof institution !== "string" ||
+    !isNumericValue(updatedAt) ||
+    typeof submitter !== "string" ||
+    !isAddress(submitter)
+  ) {
+    return null;
+  }
+
+  return {
+    subjectHash,
+    wavyRiskScore: Number(wavyRiskScore),
+    compositeCreditScore: Number(compositeCreditScore),
+    decision: Number(decision),
+    wavyEvidenceHash,
+    wavyAnalysisId,
+    institution,
+    updatedAt:
+      typeof updatedAt === "bigint" ? updatedAt : BigInt(Number(updatedAt)),
+    submitter: submitter as `0x${string}`,
+  };
+}
+
+function getRecordField(value: object, key: string, index: number) {
+  if (Array.isArray(value)) return value[index];
+  return (value as Record<string, unknown>)[key];
+}
+
+function evidenceMatches(
+  score: ScoreApiResponse,
+  storedScoreRecord: StoredScoreRecord,
+) {
+  return (
+    sameHex(score.subjectHash, storedScoreRecord.subjectHash) &&
+    sameHex(score.evidenceHash, storedScoreRecord.wavyEvidenceHash) &&
+    score.wavy.analysisId === storedScoreRecord.wavyAnalysisId &&
+    score.wavy.riskScore === storedScoreRecord.wavyRiskScore &&
+    score.composite.creditScore === storedScoreRecord.compositeCreditScore &&
+    decisionContractEnum[score.composite.decision] ===
+      storedScoreRecord.decision
+  );
+}
+
+function isBytes32(value: unknown): value is `0x${string}` {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{64}$/.test(value);
+}
+
+function isNumericValue(value: unknown): value is number | bigint {
+  return typeof value === "number" || typeof value === "bigint";
+}
+
+function sameHex(left: string, right: string) {
+  return left.toLowerCase() === right.toLowerCase();
+}
+
+function formatUnixTimestamp(value: bigint) {
+  const timestampMs = Number(value) * 1000;
+  if (!Number.isFinite(timestampMs) || timestampMs <= 0) {
+    return "Pending timestamp";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(timestampMs));
 }
 
 function shortAddress(address: string): string {
