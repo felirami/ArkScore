@@ -1037,6 +1037,16 @@ test("live verifier preflight ignores empty primary aliases", async () => {
   );
 });
 
+test("live verifier fails when OpenAPI omits the served API origin", async () => {
+  const result = await runLivePreflightVerifierWithMocks({
+    openApiServerUrl: "https://wrong-arkscore-api.example",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Railway API OpenAPI/);
+  assert.match(result.output, /missing served origin/);
+});
+
 test("live verifier strict mode rejects local API URLs by default", () => {
   const result = runScript(
     "scripts/verify-live.ts",
@@ -1508,7 +1518,7 @@ async function runLiveVerifierWithMockScoreRecord(
 }
 
 async function runLivePreflightVerifierWithMocks(
-  options: { useFallbackAliases?: boolean } = {},
+  options: { useFallbackAliases?: boolean; openApiServerUrl?: string } = {},
 ) {
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const scorerAddress = "0x4444444444444444444444444444444444444444";
@@ -1531,7 +1541,13 @@ async function runLivePreflightVerifierWithMocks(
 
     if (path === "/openapi.json") {
       response.writeHead(200, { "content-type": "application/json" });
-      response.end(JSON.stringify(createOpenApiFixture()));
+      response.end(
+        JSON.stringify(
+          createOpenApiFixture(
+            options.openApiServerUrl ?? `http://${request.headers.host}`,
+          ),
+        ),
+      );
       return;
     }
 
@@ -1679,10 +1695,11 @@ async function runLivePreflightVerifierWithMocks(
   }
 }
 
-function createOpenApiFixture() {
+function createOpenApiFixture(serverUrl: string) {
   return {
     openapi: "3.1.0",
     info: { title: "ArkScore API" },
+    servers: [{ url: serverUrl }],
     paths: {
       "/health": { get: { responses: { "200": {} } } },
       "/api/score/{address}": {

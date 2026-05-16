@@ -88,6 +88,9 @@ type OpenApiResponse = {
   info?: {
     title?: string;
   };
+  servers?: Array<{
+    url?: string;
+  }>;
   paths?: Record<string, unknown>;
   components?: {
     schemas?: Record<string, OpenApiSchema>;
@@ -473,6 +476,7 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       Boolean(openApi) &&
       Boolean(openApi?.openapi?.match(/^3\./)) &&
       openApi?.info?.title === "ArkScore API" &&
+      serverDocumentsUrl(openApi, url) &&
       Boolean(openApi?.paths?.["/health"]) &&
       Boolean(openApi?.paths?.["/api/score/{address}"]) &&
       operationHasResponse(scoreOperation, "400") &&
@@ -504,12 +508,12 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         ? {
             label: "Railway API OpenAPI",
             status: "pass",
-            detail: `${url}/openapi.json documents health, score, and privacy hash fields`,
+            detail: `${url}/openapi.json documents the served API origin, health, score, and privacy hash fields`,
           }
         : {
             label: "Railway API OpenAPI",
             status: "fail",
-            detail: `${url}/openapi.json returned invalid contract or status ${openApiResponse.status}`,
+            detail: `${url}/openapi.json returned invalid contract, missing served origin, or status ${openApiResponse.status}`,
           },
     );
   } catch (error) {
@@ -1293,6 +1297,20 @@ function schemaPattern(
   const { pattern } = propertySchema as { pattern?: unknown };
 
   return typeof pattern === "string" ? pattern : undefined;
+}
+
+function serverDocumentsUrl(
+  openApi: OpenApiResponse | null | undefined,
+  expectedUrl: string,
+): boolean {
+  const expected = normalizeBaseUrl(expectedUrl);
+
+  return Boolean(
+    expected &&
+    openApi?.servers?.some(
+      (server) => normalizeBaseUrl(server.url) === expected,
+    ),
+  );
 }
 
 function isAddress(value: string): boolean {

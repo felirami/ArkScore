@@ -48,6 +48,7 @@ test("openapi document describes the public scoring contract", async () => {
     const response = await fetch(`${baseUrl}/openapi.json`);
     const payload = (await response.json()) as {
       openapi: string;
+      servers: Array<{ url?: string; description?: string }>;
       paths: Record<string, unknown>;
       components: {
         schemas: Record<string, OpenApiSchema>;
@@ -66,6 +67,8 @@ test("openapi document describes the public scoring contract", async () => {
 
     assert.equal(response.status, 200);
     assert.match(payload.openapi, /^3\./);
+    assert.equal(payload.servers[0]?.url, baseUrl);
+    assert.equal(payload.servers[0]?.description, "Current API origin");
     assert.ok(payload.paths["/health"]);
     assert.ok(payload.paths["/api/score/{address}"]);
     assert.ok(scoreOperation?.get?.responses?.["400"]);
@@ -95,6 +98,26 @@ test("openapi document describes the public scoring contract", async () => {
     assert.ok(traceabilitySchema.properties?.addressRegistration);
     assert.ok(!wavySchema.required?.includes("subjectHash"));
     assert.ok(!wavySchema.properties?.subjectHash);
+  });
+});
+
+test("openapi document honors Railway forwarded origin headers", async () => {
+  await withTestServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/openapi.json`, {
+      headers: {
+        "x-forwarded-proto": "https",
+        "x-forwarded-host": "arkscore-api.up.railway.app",
+      },
+    });
+    const payload = (await response.json()) as {
+      servers: Array<{ url?: string }>;
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(
+      payload.servers[0]?.url,
+      "https://arkscore-api.up.railway.app",
+    );
   });
 });
 

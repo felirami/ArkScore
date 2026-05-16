@@ -502,3 +502,28 @@ export const openApiDocument = {
     },
   },
 } as const;
+
+export function createOpenApiDocument(serverUrl?: string) {
+  const currentServer = normalizeServerUrl(serverUrl);
+  const servers = currentServer
+    ? [
+        {
+          url: currentServer,
+          description: "Current API origin",
+        },
+        ...openApiDocument.servers.filter(
+          (server) => normalizeServerUrl(server.url) !== currentServer,
+        ),
+      ]
+    : openApiDocument.servers;
+
+  return {
+    ...openApiDocument,
+    servers,
+  };
+}
+
+function normalizeServerUrl(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  return value.trim().replace(/\/$/, "");
+}

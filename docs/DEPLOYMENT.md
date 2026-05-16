@@ -185,7 +185,7 @@ export ARKSCORE_API_URL=https://your-railway-api.up.railway.app
 pnpm verify:railway:live
 ```
 
-`verify:railway:live` is the API-only strict live gate. It skips the Vercel bundle and Fuji contract checks, then verifies Railway `/health`, production subject-hash salt mode, live Wavy mode, `/openapi.json`, score response shape, no-store score cache headers, and score rate-limit headers.
+`verify:railway:live` is the API-only strict live gate. It skips the Vercel bundle and Fuji contract checks, then verifies Railway `/health`, production subject-hash salt mode, live Wavy mode, `/openapi.json` with the served API origin in `servers`, score response shape, no-store score cache headers, and score rate-limit headers.
 
 ## Vercel Frontend
 
