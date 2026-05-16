@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T18:44:16.168Z
+Generated: 2026-05-16T18:51:22.974Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `02bac19`
+- Commit: `9f8e124`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -20,6 +20,7 @@ Generated: 2026-05-16T18:44:16.168Z
 
 - PASS: Hosted demo smoke (`pnpm --silent smoke:web`)
 - PASS: Live deployment verifier (`pnpm --silent verify:live`)
+- PASS: Requirements audit (`pnpm --silent audit:requirements`)
 - PASS: Readiness gate (`pnpm --silent readiness`)
 
 ## Current Scope Status
@@ -102,6 +103,42 @@ pnpm verify:live:strict:record
 - Warnings: 2
 - Failing: 0
 - Report id: e02aaaeefbe1
+```
+
+### Requirements audit
+
+- Command: `pnpm --silent audit:requirements`
+- Exit code: `0`
+
+```text
+# ArkScore Requirements Audit
+
+[pass] Next.js 15 App Router frontend: next 15.5.18, app router entrypoints present
+[pass] Tailwind, shadcn-style UI, wagmi, viem: frontend dependencies and local UI primitives are present
+[pass] Vercel frontend deployment config: vercel.json builds and serves the Next.js static export
+[pass] Express score API: Express dependency, score route, health, and OpenAPI route are present
+[pass] Railway backend deployment config: railway.toml builds, starts, and healthchecks the API service
+[pass] Wavy Node traceability and AI risk score: adapter includes chains/register/scan-risk flow and 0-100 traceability fields
+[pass] Hardhat Solidity score registry: CreditScoreRegistry stores hashed score records with scorer authorization
+[pass] Avalanche Fuji network config: Hardhat uses the official Fuji RPC and chain id 43113
+[pass] Privacy-preserving subject hashing: API derives salted subjectHash and contract keys records by bytes32
+[pass] Wallet score to on-chain dashboard flow: dashboard fetches scores, computes decisions, writes, and reads back Fuji evidence
+[pass] Arkangeles and Bankaool institutional copy: frontend and decision labels cover IFC equity issuance and Bankaool loans
+[pass] Optional eERC20 privacy-token path: planner/probe/dashboard slot ready; demo address not configured
+[pass] Hackathon documentation packet: README, deployment, audit, trace, submission, evidence, and eERC20 docs exist
+[warn] Railway live deployment proof: missing ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL
+[warn] Live Wavy credential proof: missing WAVY_NODE_API_KEY, WAVY_NODE_PROJECT_ID, ARKSCORE_SUBJECT_HASH_SALT
+[warn] Fuji registry deployment proof: missing deployed registry address or Fuji deployment artifact
+[warn] Authorized scorer proof: missing ARKSCORE_SCORER_ADDRESS or SCORER_ADDRESS
+[pass] Latest on-chain score record proof: not configured yet; run pnpm record:fuji after live deployment
+[pass] Final live verification and evidence path: strict record verifier, finalizer, readiness, and evidence scripts are registered
+
+## Summary
+
+- Passing: 15
+- Warnings: 4
+- Failing: 0
+- Report id: 76491c38a8cd
 ```
 
 ### Readiness gate
