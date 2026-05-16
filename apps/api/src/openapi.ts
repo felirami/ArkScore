@@ -208,6 +208,62 @@ export const openApiDocument = {
           },
         },
       },
+      WavyTraceability: {
+        type: "object",
+        required: [
+          "provider",
+          "network",
+          "scanType",
+          "riskScoreScale",
+          "addressRegistration",
+          "transactionsAnalyzed",
+          "patternsCount",
+          "completedAt",
+        ],
+        properties: {
+          provider: {
+            type: "string",
+            enum: ["Wavy Node"],
+            description: "Traceability provider used for wallet risk scoring.",
+          },
+          network: {
+            type: "string",
+            example: "Avalanche Fuji",
+          },
+          scanType: {
+            type: "string",
+            enum: ["wallet-risk"],
+            description:
+              "ArkScore uses Wavy Node wallet risk traceability for the requested address.",
+          },
+          riskScoreScale: {
+            type: "string",
+            enum: ["0-100"],
+            description:
+              "Explicit Wavy Node AI risk score scale where 100 is highest risk.",
+          },
+          addressRegistration: {
+            type: "string",
+            enum: ["auto-registered-or-reused", "preconfigured", "demo"],
+            description:
+              "How the wallet was made available to the Wavy Node project before scan-risk.",
+          },
+          transactionsAnalyzed: {
+            type: "integer",
+            minimum: 0,
+            example: 184,
+          },
+          patternsCount: {
+            type: "integer",
+            minimum: 0,
+            example: 2,
+          },
+          completedAt: {
+            type: "string",
+            format: "date-time",
+          },
+        },
+      },
       WavyRiskResult: {
         type: "object",
         required: [
@@ -221,6 +277,7 @@ export const openApiDocument = {
           "patternsDetected",
           "transactionsAnalyzed",
           "completedAt",
+          "traceability",
         ],
         properties: {
           analysisId: {
@@ -268,6 +325,9 @@ export const openApiDocument = {
           completedAt: {
             type: "string",
             format: "date-time",
+          },
+          traceability: {
+            $ref: "#/components/schemas/WavyTraceability",
           },
         },
       },

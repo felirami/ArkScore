@@ -19,6 +19,12 @@ type ScoreResponse = {
   wavy?: {
     analysisId?: string;
     riskScore?: number;
+    traceability?: {
+      provider?: string;
+      riskScoreScale?: string;
+      transactionsAnalyzed?: number;
+      patternsCount?: number;
+    };
   };
   composite?: {
     creditScore?: number;
@@ -334,6 +340,7 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     const healthSchema = getOpenApiSchema(openApi, "HealthResponse");
     const scoreSchema = getOpenApiSchema(openApi, "ScoreApiResponse");
     const wavySchema = getOpenApiSchema(openApi, "WavyRiskResult");
+    const traceabilitySchema = getOpenApiSchema(openApi, "WavyTraceability");
     const contractValid =
       openApiResponse.ok &&
       Boolean(openApi?.openapi?.match(/^3\./)) &&
@@ -346,6 +353,10 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       schemaHasProperty(scoreSchema, "subjectHash") &&
       schemaPattern(scoreSchema, "subjectHash") === "^0x[a-fA-F0-9]{64}$" &&
       Boolean(wavySchema) &&
+      schemaRequires(wavySchema, "traceability") &&
+      schemaHasProperty(wavySchema, "traceability") &&
+      schemaRequires(traceabilitySchema, "riskScoreScale") &&
+      schemaHasProperty(traceabilitySchema, "addressRegistration") &&
       !schemaRequires(wavySchema, "subjectHash") &&
       !schemaHasProperty(wavySchema, "subjectHash");
 
@@ -383,6 +394,10 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       score.chainId === 43113 &&
       Boolean(score.subjectHash?.match(/^0x[a-f0-9]{64}$/)) &&
       isScore(score.wavy?.riskScore) &&
+      score.wavy?.traceability?.provider === "Wavy Node" &&
+      score.wavy?.traceability?.riskScoreScale === "0-100" &&
+      Number.isInteger(score.wavy?.traceability?.transactionsAnalyzed) &&
+      Number.isInteger(score.wavy?.traceability?.patternsCount) &&
       isScore(score.composite?.creditScore) &&
       Boolean(score.evidenceHash?.match(/^0x[a-f0-9]{64}$/));
     const sourceStatus = score?.source === "wavy" ? "pass" : "warn";

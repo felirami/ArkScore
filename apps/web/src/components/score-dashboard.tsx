@@ -301,6 +301,14 @@ export function ScoreDashboard() {
             </div>
 
             <div className="grid gap-2 text-sm">
+              <Detail
+                label="Traceability"
+                value={`${score.wavy.traceability.provider} ${score.wavy.traceability.scanType}; ${score.wavy.traceability.transactionsAnalyzed} tx; ${score.wavy.traceability.patternsCount} patterns`}
+              />
+              <Detail
+                label="AI risk scale"
+                value={`${score.wavy.traceability.riskScoreScale}; ${traceabilityRegistrationLabel(score.wavy.traceability.addressRegistration)}`}
+              />
               <Detail label="Subject hash" value={score.subjectHash} />
               <Detail label="Analysis ID" value={score.wavy.analysisId} />
               <Detail label="Evidence hash" value={score.evidenceHash} />
@@ -482,6 +490,14 @@ function storedScoreStatusLabel(input: {
   if (input.hasStoredScore === true) return "Stored on Fuji";
   if (input.hasStoredScore === false) return "Not stored";
   return "Awaiting score";
+}
+
+function traceabilityRegistrationLabel(
+  value: ScoreApiResponse["wavy"]["traceability"]["addressRegistration"],
+) {
+  if (value === "auto-registered-or-reused") return "Auto registered/reused";
+  if (value === "preconfigured") return "Preconfigured project address";
+  return "Demo trace";
 }
 
 function shortAddress(address: string): string {

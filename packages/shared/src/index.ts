@@ -10,7 +10,7 @@ export const institutionDecisionSchema = z.enum([
   "APPROVE_IFC_EQUITY_ISSUANCE",
   "APPROVE_BANKAOOL_LOAN",
   "REVIEW_REQUIRED",
-  "DECLINE"
+  "DECLINE",
 ]);
 
 export const riskLevelSchema = z.enum([
@@ -19,7 +19,7 @@ export const riskLevelSchema = z.enum([
   "low",
   "medium",
   "high",
-  "critical"
+  "critical",
 ]);
 
 export const scoreSourceSchema = z.enum(["wavy", "mock"]);
@@ -35,6 +35,22 @@ export type PatternDetected = {
   confidence?: number;
 };
 
+export type WavyAddressRegistration =
+  | "auto-registered-or-reused"
+  | "preconfigured"
+  | "demo";
+
+export type WavyTraceability = {
+  provider: "Wavy Node";
+  network: string;
+  scanType: "wallet-risk";
+  riskScoreScale: "0-100";
+  addressRegistration: WavyAddressRegistration;
+  transactionsAnalyzed: number;
+  patternsCount: number;
+  completedAt: string;
+};
+
 export type WavyRiskResult = {
   analysisId: string;
   address: `0x${string}`;
@@ -46,6 +62,7 @@ export type WavyRiskResult = {
   patternsDetected: PatternDetected[];
   transactionsAnalyzed: number;
   completedAt: string;
+  traceability: WavyTraceability;
 };
 
 export type CompositeScore = {
@@ -71,14 +88,14 @@ export const decisionLabels: Record<InstitutionDecision, string> = {
   APPROVE_IFC_EQUITY_ISSUANCE: "Approve IFC equity issuance",
   APPROVE_BANKAOOL_LOAN: "Approve Bankaool loan",
   REVIEW_REQUIRED: "Route to institutional review",
-  DECLINE: "Decline until risk is remediated"
+  DECLINE: "Decline until risk is remediated",
 };
 
 export const decisionContractEnum: Record<InstitutionDecision, number> = {
   REVIEW_REQUIRED: 0,
   APPROVE_IFC_EQUITY_ISSUANCE: 1,
   APPROVE_BANKAOOL_LOAN: 2,
-  DECLINE: 3
+  DECLINE: 3,
 };
 
 export function getRiskLevel(riskScore: number): RiskLevel {
@@ -116,21 +133,41 @@ export function computeCompositeScore(input: {
       traceabilityBonus -
       patternPenalty -
       suspiciousPenalty +
-      institutionAdjustment
+      institutionAdjustment,
   );
 
   const decision = chooseDecision({
     institution: input.institution,
     riskScore,
     creditScore,
-    suspiciousActivity: input.suspiciousActivity
+    suspiciousActivity: input.suspiciousActivity,
   });
 
   return {
     creditScore,
     decision,
     decisionLabel: decisionLabels[decision],
-    recommendation: getRecommendation(input.institution, decision)
+    recommendation: getRecommendation(input.institution, decision),
+  };
+}
+
+export function createWavyTraceability(input: {
+  chainId: number;
+  addressRegistration: WavyAddressRegistration;
+  transactionsAnalyzed: number;
+  patternsDetected: PatternDetected[];
+  completedAt: string;
+}): WavyTraceability {
+  return {
+    provider: "Wavy Node",
+    network:
+      input.chainId === 43113 ? "Avalanche Fuji" : `EVM ${input.chainId}`,
+    scanType: "wallet-risk",
+    riskScoreScale: "0-100",
+    addressRegistration: input.addressRegistration,
+    transactionsAnalyzed: Math.max(0, Math.round(input.transactionsAnalyzed)),
+    patternsCount: input.patternsDetected.length,
+    completedAt: input.completedAt,
   };
 }
 
@@ -176,7 +213,7 @@ function chooseDecision(input: {
 
 function getRecommendation(
   institution: Institution,
-  decision: InstitutionDecision
+  decision: InstitutionDecision,
 ): string {
   if (decision === "APPROVE_IFC_EQUITY_ISSUANCE") {
     return "Arkangeles can continue the IFC equity issuance flow with standard compliance monitoring.";

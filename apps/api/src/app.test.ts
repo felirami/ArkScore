@@ -47,6 +47,7 @@ test("openapi document describes the public scoring contract", async () => {
     const healthSchema = payload.components.schemas.HealthResponse;
     const scoreSchema = payload.components.schemas.ScoreApiResponse;
     const wavySchema = payload.components.schemas.WavyRiskResult;
+    const traceabilitySchema = payload.components.schemas.WavyTraceability;
     const subjectHashSchema = scoreSchema?.properties?.subjectHash as
       | StringSchema
       | undefined;
@@ -58,10 +59,15 @@ test("openapi document describes the public scoring contract", async () => {
     assert.ok(healthSchema);
     assert.ok(scoreSchema);
     assert.ok(wavySchema);
+    assert.ok(traceabilitySchema);
     assert.ok(healthSchema.required?.includes("subjectHashSaltConfigured"));
     assert.ok(healthSchema.properties?.subjectHashSaltConfigured);
     assert.ok(scoreSchema.required?.includes("subjectHash"));
     assert.equal(subjectHashSchema?.pattern, "^0x[a-fA-F0-9]{64}$");
+    assert.ok(wavySchema.required?.includes("traceability"));
+    assert.ok(wavySchema.properties?.traceability);
+    assert.ok(traceabilitySchema.required?.includes("riskScoreScale"));
+    assert.ok(traceabilitySchema.properties?.addressRegistration);
     assert.ok(!wavySchema.required?.includes("subjectHash"));
     assert.ok(!wavySchema.properties?.subjectHash);
   });
@@ -82,6 +88,13 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
     assert.equal(payload.source, "mock");
     assert.match(payload.wavy.analysisId, /^mock-/);
     assert.ok(payload.wavy.riskScore >= 0 && payload.wavy.riskScore <= 100);
+    assert.equal(payload.wavy.traceability.provider, "Wavy Node");
+    assert.equal(payload.wavy.traceability.riskScoreScale, "0-100");
+    assert.equal(payload.wavy.traceability.addressRegistration, "demo");
+    assert.equal(
+      payload.wavy.traceability.transactionsAnalyzed,
+      payload.wavy.transactionsAnalyzed,
+    );
     assert.ok(
       payload.composite.creditScore >= 0 &&
         payload.composite.creditScore <= 100,

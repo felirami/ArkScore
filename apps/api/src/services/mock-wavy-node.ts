@@ -1,7 +1,8 @@
 import {
+  createWavyTraceability,
   getRiskLevel,
   type PatternDetected,
-  type WavyRiskResult
+  type WavyRiskResult,
 } from "@arkscore/shared";
 import { createHash } from "node:crypto";
 
@@ -16,6 +17,8 @@ export function createMockWavyRiskResult(input: {
   const riskScore = seed % 86;
   const riskLevel = getRiskLevel(riskScore);
   const patternsDetected = createPatterns(riskScore, seed);
+  const transactionsAnalyzed = 24 + (seed % 320);
+  const completedAt = new Date().toISOString();
   const suspiciousActivity =
     riskScore >= 70 ||
     patternsDetected.some((pattern) => pattern.severity === "critical") ||
@@ -34,8 +37,15 @@ export function createMockWavyRiskResult(input: {
         : "Demo trace found patterns that require institutional review before approval.",
     suspiciousActivity,
     patternsDetected,
-    transactionsAnalyzed: 24 + (seed % 320),
-    completedAt: new Date().toISOString()
+    transactionsAnalyzed,
+    completedAt,
+    traceability: createWavyTraceability({
+      chainId: input.chainId,
+      addressRegistration: "demo",
+      transactionsAnalyzed,
+      patternsDetected,
+      completedAt,
+    }),
   };
 }
 
@@ -46,13 +56,14 @@ function createPatterns(riskScore: number, seed: number): PatternDetected[] {
     "counterparty concentration",
     "rapid fund movement",
     "new wallet interaction",
-    "unusual transaction cadence"
+    "unusual transaction cadence",
   ];
 
   const count = Math.min(4, Math.max(1, Math.floor(riskScore / 20)));
 
   return Array.from({ length: count }, (_, index) => ({
-    name: basePatterns[(seed + index) % basePatterns.length] ?? "wallet pattern",
+    name:
+      basePatterns[(seed + index) % basePatterns.length] ?? "wallet pattern",
     severity:
       riskScore >= 80
         ? "critical"
@@ -61,6 +72,6 @@ function createPatterns(riskScore: number, seed: number): PatternDetected[] {
           : riskScore >= 40
             ? "medium"
             : "low",
-    confidence: 0.62 + ((seed + index) % 28) / 100
+    confidence: 0.62 + ((seed + index) % 28) / 100,
   }));
 }

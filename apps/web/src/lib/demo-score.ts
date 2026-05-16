@@ -1,5 +1,6 @@
 import {
   computeCompositeScore,
+  createWavyTraceability,
   getRiskLevel,
   type Institution,
   type PatternDetected,
@@ -23,6 +24,7 @@ export async function createDemoScore(input: {
     patternsDetected.filter((pattern) => pattern.severity === "high").length >=
       3;
   const completedAt = new Date().toISOString();
+  const transactionsAnalyzed = 24 + (seed % 320);
   const wavy = {
     analysisId: `demo-${digest.slice(0, 12)}`,
     address,
@@ -35,8 +37,15 @@ export async function createDemoScore(input: {
         : "Demo trace found patterns that require institutional review before approval.",
     suspiciousActivity,
     patternsDetected,
-    transactionsAnalyzed: 24 + (seed % 320),
+    transactionsAnalyzed,
     completedAt,
+    traceability: createWavyTraceability({
+      chainId: fujiChainId,
+      addressRegistration: "demo",
+      transactionsAnalyzed,
+      patternsDetected,
+      completedAt,
+    }),
   };
   const composite = computeCompositeScore({
     institution: input.institution,

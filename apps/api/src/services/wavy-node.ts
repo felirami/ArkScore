@@ -1,5 +1,5 @@
 import type { PatternDetected, WavyRiskResult } from "@arkscore/shared";
-import { getRiskLevel } from "@arkscore/shared";
+import { createWavyTraceability, getRiskLevel } from "@arkscore/shared";
 import { env, shouldAutoRegisterWavyAddresses } from "../config/env.js";
 import { getWavyAuthHeader, getWavyProjectId } from "../config/wavy-node.js";
 import { HttpError } from "../lib/http-error.js";
@@ -81,18 +81,31 @@ export async function fetchWavyRiskResult(input: {
   }
 
   const riskScore = clampWavyScore(firstResult.riskScore);
+  const chainId = Number(firstResult.chainId ?? input.chainId);
+  const patternsDetected = firstResult.patternsDetected ?? [];
+  const transactionsAnalyzed = firstResult.transactionsAnalyzed ?? 0;
+  const completedAt = firstResult.completedAt ?? new Date().toISOString();
 
   return {
     analysisId: firstResult.analysisId ?? "wavy-analysis-unavailable",
     address: input.address,
-    chainId: Number(firstResult.chainId ?? input.chainId),
+    chainId,
     riskScore,
     riskLevel: getRiskLevel(riskScore),
     riskReason: firstResult.riskReason ?? "Wavy Node risk analysis completed.",
     suspiciousActivity: Boolean(firstResult.suspiciousActivity),
-    patternsDetected: firstResult.patternsDetected ?? [],
-    transactionsAnalyzed: firstResult.transactionsAnalyzed ?? 0,
-    completedAt: firstResult.completedAt ?? new Date().toISOString(),
+    patternsDetected,
+    transactionsAnalyzed,
+    completedAt,
+    traceability: createWavyTraceability({
+      chainId,
+      addressRegistration: shouldAutoRegisterWavyAddresses()
+        ? "auto-registered-or-reused"
+        : "preconfigured",
+      transactionsAnalyzed,
+      patternsDetected,
+      completedAt,
+    }),
   };
 }
 

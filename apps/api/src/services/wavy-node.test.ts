@@ -96,6 +96,15 @@ test("fetchWavyRiskResult registers then scans the wallet", async () => {
   assert.equal(result.riskLevel, "minimal");
   assert.equal(result.suspiciousActivity, false);
   assert.equal(result.transactionsAnalyzed, 150);
+  assert.equal(result.traceability.provider, "Wavy Node");
+  assert.equal(result.traceability.network, "Avalanche Fuji");
+  assert.equal(result.traceability.riskScoreScale, "0-100");
+  assert.equal(
+    result.traceability.addressRegistration,
+    "auto-registered-or-reused",
+  );
+  assert.equal(result.traceability.transactionsAnalyzed, 150);
+  assert.equal(result.traceability.patternsCount, 0);
 });
 
 test("fetchWavyRiskResult treats duplicate address registration as reusable", async () => {
@@ -141,6 +150,10 @@ test("fetchWavyRiskResult treats duplicate address registration as reusable", as
   assert.equal(requests.length, 2);
   assert.equal(result.analysisId, "analysis-reused");
   assert.equal(result.riskScore, 22);
+  assert.equal(
+    result.traceability.addressRegistration,
+    "auto-registered-or-reused",
+  );
 });
 
 test("fetchWavyRiskResult preserves upstream Wavy Node errors", async () => {

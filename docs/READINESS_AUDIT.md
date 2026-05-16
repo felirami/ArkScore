@@ -11,7 +11,7 @@ Status date: May 16, 2026
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
 - API tests cover `/health`, subject-hash salt health reporting, `/openapi.json` privacy fields, a Bankaool score response, invalid institution rejection in mock mode, and the live Wavy Node adapter request shape.
 - Simulated Railway archive install/build/test passes with `.railwayignore` applied, confirming the pruned backend workspace can deploy from the repository root.
-- Wavy Node adapter is live-ready for the official register-then-scan flow: `POST /v1/projects/:projectId/addresses`, then `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113`, with backend-derived subject hashing and deterministic mock mode for judge demos before credentials are added.
+- Wavy Node adapter is live-ready for the official register-then-scan flow: `POST /v1/projects/:projectId/addresses`, then `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113`, with an explicit traceability object, backend-derived subject hashing, and deterministic mock mode for judge demos before credentials are added.
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
@@ -24,7 +24,7 @@ Status date: May 16, 2026
 pnpm verify
 ```
 
-The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify address registration, the live `scan-risk` URL, `x-api-key` header, response normalization, duplicate registration handling, and upstream error propagation. Both are included in `pnpm verify`.
+The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify address registration, the live `scan-risk` URL, `x-api-key` header, traceability normalization, duplicate registration handling, and upstream error propagation. Both are included in `pnpm verify`.
 
 `pnpm probe:wavy` is available for the final credential handoff. It refuses placeholder Wavy credentials or demo subject-hash salts, forces live Wavy mode, and prints only non-secret scoring evidence: Wavy analysis id, risk score, composite score, subject hash, and evidence hash.
 
