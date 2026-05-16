@@ -313,6 +313,7 @@ test("submission evidence can render without executing live checks", () => {
   assert.match(result.output, /# ArkScore Submission Evidence/);
   assert.match(result.output, /Checks skipped with `--skip-checks`/);
   assert.match(result.output, /pnpm verify:railway:live/);
+  assert.match(result.output, /pnpm verify:live:preflight:record/);
   assert.match(result.output, /pnpm verify:live:strict/);
 });
 
@@ -953,6 +954,7 @@ test("judge demo runbook keeps fallback posture while live credentials are missi
     assert.match(result.output, /ARKSCORE_SUBJECT_HASH_SALT is missing/);
     assert.match(result.output, /FUJI_PRIVATE_KEY is missing/);
     assert.match(result.output, /pnpm deploy:railway:apply -- --create-domain/);
+    assert.match(result.output, /^pnpm verify:live:preflight:record$/m);
     assert.doesNotMatch(result.output, /final live oracle proof path/);
     assert.doesNotMatch(result.output, /None detected by local configuration/);
   } finally {
@@ -1058,6 +1060,7 @@ test("submission evidence renders strict eERC20 handoff when required", () => {
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /pnpm probe:eerc20:strict/);
   assert.match(result.output, /export ARKSCORE_REQUIRE_EERC20=true/);
+  assert.match(result.output, /^pnpm verify:live:preflight:record$/m);
   assert.match(result.output, /^pnpm finalize:live:apply$/m);
   assert.match(result.output, /pnpm verify:live:strict:eerc20:record/);
   assert.doesNotMatch(result.output, /^pnpm probe:eerc20$/m);

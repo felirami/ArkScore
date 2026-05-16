@@ -193,7 +193,7 @@ function main() {
     console.log("pnpm --filter @arkscore/contracts scorer:fuji");
     console.log("pnpm record:fuji");
     console.log("pnpm readiness:strict:record");
-    console.log("pnpm verify:live:preflight");
+    console.log("pnpm verify:live:preflight:record");
     console.log("pnpm finalize:live:apply");
   }
   console.log(

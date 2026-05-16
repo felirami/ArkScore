@@ -304,7 +304,7 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm --filter @arkscore/contracts scorer:fuji",
     "pnpm record:fuji",
     readinessCommand,
-    "pnpm verify:live:preflight",
+    "pnpm verify:live:preflight:record",
     "pnpm finalize:live:apply",
     verifyCommand,
   ].join("\n");

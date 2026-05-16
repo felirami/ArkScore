@@ -62,7 +62,7 @@ export ARKSCORE_SCORER_ADDRESS=0x...
 pnpm --filter @arkscore/contracts scorer:fuji
 pnpm record:fuji
 pnpm readiness:strict:record
-pnpm verify:live:preflight
+pnpm verify:live:preflight:record
 pnpm finalize:live:apply
 pnpm verify:live:strict:record
 ```
@@ -74,6 +74,7 @@ export ARKSCORE_EERC20_DEMO_ADDRESS=0x...
 export ARKSCORE_REQUIRE_EERC20=true
 pnpm probe:eerc20:strict
 pnpm readiness:strict:record
+pnpm verify:live:preflight:record
 pnpm verify:live:strict:eerc20:record
 ```
 
