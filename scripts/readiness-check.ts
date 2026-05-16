@@ -33,6 +33,7 @@ async function main() {
     checkNodeVersion(),
     checkFile("apps/web/src/app/page.tsx", "Next.js App Router entry"),
     checkFile("apps/api/src/routes/score.ts", "Railway score endpoint"),
+    checkFile("apps/api/src/routes/openapi.ts", "Railway OpenAPI endpoint"),
     checkFile(
       "packages/contracts/contracts/CreditScoreRegistry.sol",
       "CreditScoreRegistry contract"

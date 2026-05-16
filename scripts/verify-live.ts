@@ -25,6 +25,17 @@ type ScoreResponse = {
   };
 };
 
+type OpenApiResponse = {
+  openapi?: string;
+  info?: {
+    title?: string;
+  };
+  paths?: Record<string, unknown>;
+  components?: {
+    schemas?: Record<string, unknown>;
+  };
+};
+
 const strict = process.argv.includes("--strict");
 const requireWavy =
   process.argv.includes("--require-wavy") ||
@@ -165,6 +176,41 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       label: "Railway API health",
       status: "fail",
       detail: error instanceof Error ? error.message : "health request failed"
+    });
+  }
+
+  try {
+    const openApiResponse = await fetch(`${url}/openapi.json`);
+    const openApi = (await openApiResponse.json().catch(() => null)) as
+      | OpenApiResponse
+      | null;
+    const contractValid =
+      openApiResponse.ok &&
+      Boolean(openApi?.openapi?.match(/^3\./)) &&
+      openApi.info?.title === "ArkScore API" &&
+      Boolean(openApi.paths?.["/health"]) &&
+      Boolean(openApi.paths?.["/api/score/{address}"]) &&
+      Boolean(openApi.components?.schemas?.ScoreApiResponse) &&
+      Boolean(openApi.components?.schemas?.WavyRiskResult);
+
+    checks.push(
+      contractValid
+        ? {
+            label: "Railway API OpenAPI",
+            status: "pass",
+            detail: `${url}/openapi.json documents health and score endpoints`
+          }
+        : {
+            label: "Railway API OpenAPI",
+            status: "fail",
+            detail: `${url}/openapi.json returned invalid contract or status ${openApiResponse.status}`
+          }
+    );
+  } catch (error) {
+    checks.push({
+      label: "Railway API OpenAPI",
+      status: "fail",
+      detail: error instanceof Error ? error.message : "OpenAPI request failed"
     });
   }
 
