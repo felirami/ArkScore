@@ -39,7 +39,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `.github/workflows/ci.yml` runs `pnpm verify`, `pnpm audit:requirements`, and `pnpm readiness` for push, pull request, and manual workflow dispatch events.
 
-`pnpm audit:requirements` maps the hackathon requirements to concrete repo files, package manifests, deployment configs, environment aliases, generated artifacts, and final scripts. It reports structural missing work as failures, live proof gaps as warnings, redacts secrets, and has a strict mode for the final handoff once live Railway/Wavy/Fuji evidence is expected.
+`pnpm audit:requirements` maps the hackathon requirements to concrete repo files, package manifests, deployment configs, environment aliases, generated artifacts, and final scripts. It reports structural missing work as failures, live proof gaps as warnings, redacts secrets, validates any configured score-record artifact for Wavy source, Fuji chain, public Railway API URL, and registry/scorer consistency, and has a strict mode for the final handoff once live Railway/Wavy/Fuji evidence is expected.
 
 `pnpm judge:demo` prints a current environment-aware walkthrough for the live demo, including hosted fallback posture, live proof readiness, three-minute click path, proof commands, and remaining blockers without exposing secrets. It only treats a public HTTPS API URL as the live Railway target, so copied localhost values keep the runbook in fallback mode.
 

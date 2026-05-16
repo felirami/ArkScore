@@ -16,6 +16,7 @@ type PackageJson = {
 };
 
 type ScoreRecordProof = {
+  apiUrl?: string;
   chainId?: number;
   composite?: {
     creditScore?: number;
@@ -634,8 +635,15 @@ function readScoreRecordProof(): ScoreRecordProof | undefined {
 }
 
 function validateScoreRecordProof(proof: ScoreRecordProof): string | undefined {
-  if (proof.source !== "wavy") return "source is not wavy";
-  if (proof.chainId !== 43113) return "chainId is not Fuji 43113";
+  if (proof.source !== "wavy") {
+    return `source is ${proof.source ?? "unknown"}, expected wavy`;
+  }
+  if (proof.chainId !== 43113) {
+    return `chainId is ${proof.chainId ?? "unknown"}, expected Fuji 43113`;
+  }
+  if (!proof.apiUrl || !isPublicHttpsUrl(proof.apiUrl)) {
+    return "missing a public HTTPS Railway apiUrl";
+  }
   if (!proof.subjectHash || !isBytes32(proof.subjectHash)) {
     return "missing valid subjectHash";
   }
@@ -659,11 +667,34 @@ function validateScoreRecordProof(proof: ScoreRecordProof): string | undefined {
   if (!proof.registryAddress || !isAddress(proof.registryAddress)) {
     return "missing valid registry address";
   }
+  const configuredRegistry = registryAddressFromEnvOrArtifact();
+  if (
+    configuredRegistry &&
+    proof.registryAddress.toLowerCase() !== configuredRegistry.toLowerCase()
+  ) {
+    return "registry address does not match configured registry";
+  }
   if (!proof.scorerAddress || !isAddress(proof.scorerAddress)) {
     return "missing valid scorer address";
   }
+  const configuredScorer = firstConfiguredValue([
+    env.ARKSCORE_SCORER_ADDRESS,
+    env.SCORER_ADDRESS,
+  ]);
+  if (
+    configuredScorer &&
+    isAddress(configuredScorer) &&
+    proof.scorerAddress.toLowerCase() !== configuredScorer.toLowerCase()
+  ) {
+    return "scorer address does not match configured scorer";
+  }
   if (!proof.stored?.submitter || !isAddress(proof.stored.submitter)) {
     return "missing stored submitter";
+  }
+  if (
+    proof.stored.submitter.toLowerCase() !== proof.scorerAddress.toLowerCase()
+  ) {
+    return "stored submitter does not match scorerAddress";
   }
   if (!proof.stored.updatedAt || !/^\d+$/.test(proof.stored.updatedAt)) {
     return "missing stored timestamp";
@@ -775,6 +806,32 @@ function isBytes32(value: string): boolean {
 
 function isScore(value: unknown): boolean {
   return typeof value === "number" && value >= 0 && value <= 100;
+}
+
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" && !isLocalHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  return (
+    value === "localhost" ||
+    value === "::1" ||
+    value.endsWith(".local") ||
+    value === "0.0.0.0" ||
+    /^127\./.test(value) ||
+    /^10\./.test(value) ||
+    /^192\.168\./.test(value) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+    /^169\.254\./.test(value)
+  );
 }
 
 function icon(status: CheckStatus): string {

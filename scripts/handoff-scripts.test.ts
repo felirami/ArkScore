@@ -468,6 +468,59 @@ test("requirements audit maps repo readiness without leaking secrets", () => {
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
 });
 
+test("requirements audit warns when score record proof uses a local API URL", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-audit-local-record-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify(validScoreRecordProof({ apiUrl: "http://localhost:4000" })),
+  );
+
+  try {
+    const result = runScript("scripts/audit-requirements.ts", [], {
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /\[warn\] Latest on-chain score record proof:/);
+    assert.match(result.output, /public HTTPS Railway apiUrl/);
+    assert.doesNotMatch(
+      result.output,
+      /\[pass\] Latest on-chain score record proof:/,
+    );
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("requirements audit warns when score record proof mismatches configured scorer", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-audit-scorer-record-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+
+  writeFileSync(artifactPath, JSON.stringify(validScoreRecordProof()));
+
+  try {
+    const result = runScript("scripts/audit-requirements.ts", [], {
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      ARKSCORE_SCORER_ADDRESS: "0x5555555555555555555555555555555555555555",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /\[warn\] Latest on-chain score record proof:/);
+    assert.match(
+      result.output,
+      /scorer address does not match configured scorer/,
+    );
+    assert.doesNotMatch(
+      result.output,
+      /\[pass\] Latest on-chain score record proof:/,
+    );
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("requirements audit strict mode fails while live proof is missing", () => {
   const result = runScript("scripts/audit-requirements.ts", ["--strict"], {
     ARKSCORE_API_URL: "",
