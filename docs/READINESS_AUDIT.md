@@ -27,6 +27,8 @@ The API endpoint test suite passes in mock mode and is included in `pnpm verify`
 
 `pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict`.
 
+`pnpm deploy:railway` is a dry-run Railway deploy planner. `pnpm deploy:railway:apply -- --create-domain` creates or links the Railway project, sets non-secret and Wavy variables, uploads the API, and can generate the service domain when Railway auth is available.
+
 `pnpm finalize:live` is a dry-run finalizer for the Vercel handoff. `pnpm finalize:live:apply` sets `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false`, deploys production, then runs strict live verification.
 
 ## Pending Credentials

@@ -53,7 +53,21 @@ x-api-key: ApiKey ...
 
 For judge demos without credentials, set `WAVY_NODE_MOCK_MODE=true`.
 
-After logging in with `railway login` or `railway login --browserless`, the intended CLI flow is:
+After logging in with `railway login` or `railway login --browserless`, preview the Railway commands:
+
+```bash
+pnpm deploy:railway
+```
+
+To apply them with live Wavy credentials:
+
+```bash
+WAVY_NODE_API_KEY="ApiKey ..." \
+WAVY_NODE_PROJECT_ID="..." \
+pnpm deploy:railway:apply -- --create-domain
+```
+
+The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow:
 
 ```bash
 railway init --name arkscore-api --json

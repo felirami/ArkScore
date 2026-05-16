@@ -19,7 +19,7 @@ Status date: May 16, 2026
 
 ## Remaining Proof Needed
 
-- Railway API URL from a successful `railway up` deployment.
+- Railway API URL from a successful `pnpm deploy:railway:apply -- --create-domain` or equivalent `railway up` deployment.
 - Live `/health` response from the Railway API.
 - Live Wavy Node score response with `source: "wavy"` after `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` are configured.
 - Fuji `CreditScoreRegistry` address from `pnpm --filter @arkscore/contracts deploy:fuji`; the deploy script writes `packages/contracts/deployments/fuji/CreditScoreRegistry.json`.

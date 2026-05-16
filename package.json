@@ -19,6 +19,8 @@
     "verify:live:strict": "tsx scripts/verify-live.ts --strict --require-wavy",
     "finalize:live": "tsx scripts/finalize-live.ts",
     "finalize:live:apply": "tsx scripts/finalize-live.ts --apply",
+    "deploy:railway": "tsx scripts/deploy-railway.ts",
+    "deploy:railway:apply": "tsx scripts/deploy-railway.ts --apply",
     "format": "prettier --write ."
   },
   "engines": {
