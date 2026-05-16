@@ -15,6 +15,7 @@
     "verify": "pnpm -r lint && pnpm -r test && pnpm -r build && pnpm -r typecheck",
     "readiness": "tsx scripts/readiness-check.ts",
     "readiness:strict": "tsx scripts/readiness-check.ts --strict",
+    "probe:wavy": "tsx scripts/probe-wavy.ts",
     "verify:live": "tsx scripts/verify-live.ts",
     "verify:live:strict": "tsx scripts/verify-live.ts --strict --require-wavy",
     "smoke:web": "tsx scripts/smoke-hosted-demo.ts",

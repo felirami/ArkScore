@@ -96,6 +96,17 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm deploy:railway:apply -- --create-domain
 ```
 
+Before deploying Railway, you can prove the Wavy credentials locally without printing the API key:
+
+```bash
+WAVY_NODE_API_KEY="ApiKey ..." \
+WAVY_NODE_PROJECT_ID="..." \
+ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
+pnpm probe:wavy
+```
+
+`probe:wavy` forces `WAVY_NODE_MOCK_MODE=false`, scores `ARKSCORE_TEST_WALLET` or the default demo wallet, and prints the Wavy analysis id, live risk score, composite score, subject hash, and evidence hash.
+
 The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow:
 
 ```bash

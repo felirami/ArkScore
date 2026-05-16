@@ -87,6 +87,7 @@ pnpm --filter @arkscore/web build
 pnpm -r lint
 pnpm verify
 pnpm readiness
+pnpm probe:wavy
 pnpm smoke:web
 pnpm verify:live
 pnpm deploy:railway
@@ -98,7 +99,7 @@ Use Node.js 22.19.0. The repository pins Node 22 because the verified Next.js 15
 
 See `docs/READINESS_AUDIT.md` and `docs/REQUIREMENTS_TRACE.md` for the current judge-readiness checklist and remaining credential-dependent deployment items.
 
-`pnpm readiness` checks local configuration gates without printing secrets. GitHub Actions runs `pnpm verify` and `pnpm readiness` on pushes and pull requests. `pnpm smoke:web` confirms the hosted Vercel demo is public and includes the judge-facing score flow, subject hash, subject status, and Store on Fuji path. `pnpm deploy:railway` prints the Railway project/env/deploy commands, and `pnpm deploy:railway:apply` runs them once Railway auth and Wavy credentials are available. `pnpm verify:live` checks reachable deployments; use `pnpm verify:live:strict` after Railway, Wavy Node, subject-hash salt, Fuji, and Vercel environment variables are all configured. The Railway API publishes its integration contract at `/openapi.json`. `pnpm finalize:live` prints the final Vercel env/deploy commands, and `pnpm finalize:live:apply` applies them.
+`pnpm readiness` checks local configuration gates without printing secrets. GitHub Actions runs `pnpm verify` and `pnpm readiness` on pushes and pull requests. `pnpm probe:wavy` forces live Wavy mode and validates the provided Wavy Node credentials before Railway deployment. `pnpm smoke:web` confirms the hosted Vercel demo is public and includes the judge-facing score flow, subject hash, subject status, and Store on Fuji path. `pnpm deploy:railway` prints the Railway project/env/deploy commands, and `pnpm deploy:railway:apply` runs them once Railway auth and Wavy credentials are available. `pnpm verify:live` checks reachable deployments; use `pnpm verify:live:strict` after Railway, Wavy Node, subject-hash salt, Fuji, and Vercel environment variables are all configured. The Railway API publishes its integration contract at `/openapi.json`. `pnpm finalize:live` prints the final Vercel env/deploy commands, and `pnpm finalize:live:apply` applies them.
 
 The readiness, finalization, and live verification scripts accept the same Fuji registry aliases used by the Hardhat tooling: `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the generated `packages/contracts/deployments/fuji/CreditScoreRegistry.json` artifact.
 

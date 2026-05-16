@@ -22,6 +22,7 @@ ArkScore turns Wavy Node wallet traceability and AI risk into an auditable Avala
 - The scored wallet is represented on-chain by a backend-derived `subjectHash`, keeping the raw wallet address out of registry calldata and events.
 - The same score engine supports Arkangeles and Bankaool with different approval thresholds.
 - Mock mode keeps the demo reliable before the final Wavy project id and API key are available.
+- `pnpm probe:wavy` gives the team a pre-deployment proof that live Wavy credentials return an analysis id, risk score, subject hash, and evidence hash without exposing the API key.
 - Authorized scorer permissions keep the registry closer to an institutional oracle model.
 
 ## Links
