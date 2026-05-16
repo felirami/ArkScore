@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T18:51:22.974Z
+Generated: 2026-05-16T18:59:45.802Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `9f8e124`
+- Commit: `7572c05`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -21,6 +21,7 @@ Generated: 2026-05-16T18:51:22.974Z
 - PASS: Hosted demo smoke (`pnpm --silent smoke:web`)
 - PASS: Live deployment verifier (`pnpm --silent verify:live`)
 - PASS: Requirements audit (`pnpm --silent audit:requirements`)
+- PASS: Judge demo runbook (`pnpm --silent judge:demo`)
 - PASS: Readiness gate (`pnpm --silent readiness`)
 
 ## Current Scope Status
@@ -55,7 +56,7 @@ pnpm verify:live:strict:record
 - Command: `pnpm --silent smoke:web`
 - Exit code: `0`
 
-```text
+````text
 # ArkScore Hosted Demo Smoke
 
 [pass] Public page: https://arkscore-seven.vercel.app returned 200
@@ -83,14 +84,14 @@ pnpm verify:live:strict:record
 - Passing: 19
 - Failing: 0
 - Report id: ff68c0bfd56c
-```
+````
 
 ### Live deployment verifier
 
 - Command: `pnpm --silent verify:live`
 - Exit code: `0`
 
-```text
+````text
 # ArkScore Live Verification
 
 [pass] Vercel web: https://arkscore-seven.vercel.app returned 200 and ArkScore HTML
@@ -103,14 +104,14 @@ pnpm verify:live:strict:record
 - Warnings: 2
 - Failing: 0
 - Report id: e02aaaeefbe1
-```
+````
 
 ### Requirements audit
 
 - Command: `pnpm --silent audit:requirements`
 - Exit code: `0`
 
-```text
+````text
 # ArkScore Requirements Audit
 
 [pass] Next.js 15 App Router frontend: next 15.5.18, app router entrypoints present
@@ -125,7 +126,7 @@ pnpm verify:live:strict:record
 [pass] Wallet score to on-chain dashboard flow: dashboard fetches scores, computes decisions, writes, and reads back Fuji evidence
 [pass] Arkangeles and Bankaool institutional copy: frontend and decision labels cover IFC equity issuance and Bankaool loans
 [pass] Optional eERC20 privacy-token path: planner/probe/dashboard slot ready; demo address not configured
-[pass] Hackathon documentation packet: README, deployment, audit, trace, submission, evidence, and eERC20 docs exist
+[pass] Hackathon documentation packet: README, deployment, audit, trace, judge demo, submission, evidence, and eERC20 docs exist
 [warn] Railway live deployment proof: missing ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL
 [warn] Live Wavy credential proof: missing WAVY_NODE_API_KEY, WAVY_NODE_PROJECT_ID, ARKSCORE_SUBJECT_HASH_SALT
 [warn] Fuji registry deployment proof: missing deployed registry address or Fuji deployment artifact
@@ -138,15 +139,72 @@ pnpm verify:live:strict:record
 - Passing: 15
 - Warnings: 4
 - Failing: 0
-- Report id: 76491c38a8cd
+- Report id: 6cd32d01e4f4
+````
+
+### Judge demo runbook
+
+- Command: `pnpm --silent judge:demo`
+- Exit code: `0`
+
+````text
+# ArkScore Judge Demo Runbook
+
+## Current Mode
+
+- Frontend: https://arkscore-seven.vercel.app
+- Score source: hosted fallback demo until Railway/Wavy credentials are configured
+- Fuji registry: not configured yet
+- Authorized scorer: not configured yet
+- Latest score record proof: not recorded yet
+- Optional eERC20: not configured
+- Demo posture: judge-usable fallback with live proof blockers listed below
+
+## Three-Minute Walkthrough
+
+1. Open https://arkscore-seven.vercel.app.
+2. Connect an Avalanche Fuji wallet.
+3. Keep the demo wallet 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045, or paste any EVM wallet.
+4. Select Arkangeles, fetch the score, and point to Wavy risk, traceability, subject hash, evidence hash, composite score, and IFC equity issuance decision.
+5. Switch to Bankaool, fetch again, and point to the credit-underwriting decision and changed institutional threshold.
+6. Show the disabled Store on Fuji path and explain that the registry address is published during the final Fuji deployment.
+7. Show the eERC20 privacy-token card as the optional EncryptedERC deployment slot.
+
+## Proof Commands
+
+```bash
+pnpm smoke:web
+pnpm audit:requirements
+pnpm readiness
+pnpm verify:live
+pnpm probe:wavy
+pnpm probe:fuji
+pnpm deploy:railway:apply -- --create-domain
+pnpm --filter @arkscore/contracts deploy:fuji
+pnpm --filter @arkscore/contracts scorer:fuji
+pnpm record:fuji
+pnpm readiness:strict:record
+pnpm verify:live:strict:record
 ```
+
+## Current Blockers
+
+- Railway API URL is missing.
+- WAVY_NODE_API_KEY is missing.
+- WAVY_NODE_PROJECT_ID is missing.
+- ARKSCORE_SUBJECT_HASH_SALT is missing.
+- FUJI_PRIVATE_KEY is missing.
+- Fuji CreditScoreRegistry address is missing.
+- Authorized scorer address is missing.
+- Latest Fuji score record artifact is missing.
+````
 
 ### Readiness gate
 
 - Command: `pnpm --silent readiness`
 - Exit code: `0`
 
-```text
+````text
 # ArkScore Readiness Check
 
 [pass] Node.js runtime: using 22.19.0
@@ -174,4 +232,4 @@ pnpm verify:live:strict:record
 - Warnings: 7
 - Failing: 0
 - Report id: da7cb1931d12
-```
+````
