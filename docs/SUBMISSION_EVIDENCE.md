@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T22:59:40.943Z
+Generated: 2026-05-16T23:08:52.029Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `b72a304`
+- Commit: `63281ec`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -43,6 +43,7 @@ pnpm probe:eerc20
 pnpm railway:whoami
 pnpm verify:railway
 pnpm deploy:railway:apply -- --create-domain
+# If deploy:railway:apply did not print and verify a generated API URL, export it manually.
 export ARKSCORE_API_URL=https://your-railway-api.up.railway.app
 pnpm verify:railway:live
 pnpm --filter @arkscore/contracts deploy:fuji
@@ -111,7 +112,7 @@ devDependencies:
 + tsx 4.22.0
 + typescript 6.0.3
 
-Done in 948ms using pnpm v11.1.2
+Done in 965ms using pnpm v11.1.2
 
 $ pnpm --filter @arkscore/api build
 CLI Building entry: src/server.ts
@@ -121,7 +122,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 32.53 KB
-ESM ⚡️ Build success in 417ms
+ESM ⚡️ Build success in 437ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -130,49 +131,49 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 20.106667
+  duration_ms: 20.130208
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 4.410334
+  duration_ms: 4.53325
   type: 'test'
   ...
 # Subtest: openapi document honors Railway forwarded origin headers
 ok 3 - openapi document honors Railway forwarded origin headers
   ---
-  duration_ms: 2.241
+  duration_ms: 2.236083
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 4 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.469041
+  duration_ms: 2.459625
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 5 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.104125
+  duration_ms: 2.047084
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 6 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 5.833542
+  duration_ms: 6.781083
   type: 'test'
   ...
 # Subtest: API config defaults Wavy Node scoring to Avalanche Fuji
 ok 7 - API config defaults Wavy Node scoring to Avalanche Fuji
   ---
-  duration_ms: 0.378167
+  duration_ms: 0.376083
   type: 'test'
   ...
 # Subtest: API config refuses non-Fuji Wavy Node chain IDs
 ok 8 - API config refuses non-Fuji Wavy Node chain IDs
   ---
-  duration_ms: 0.473875
+  duration_ms: 0.464084
   type: 'test'
   ...
 1..8
@@ -183,48 +184,48 @@ ok 8 - API config refuses non-Fuji Wavy Node chain IDs
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 644.909167
+# duration_ms 681.314625
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 8.637708
+  duration_ms: 9.998834
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.679292
+  duration_ms: 0.639875
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 1.05675
+  duration_ms: 0.932625
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult rejects upstream chain mismatches
 ok 4 - fetchWavyRiskResult rejects upstream chain mismatches
   ---
-  duration_ms: 0.4965
+  duration_ms: 0.492292
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult rejects upstream address mismatches
 ok 5 - fetchWavyRiskResult rejects upstream address mismatches
   ---
-  duration_ms: 0.952834
+  duration_ms: 1.055084
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 6 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.347
+  duration_ms: 0.385333
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 7 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.138041
+  duration_ms: 0.139958
   type: 'test'
   ...
 1..7
@@ -235,7 +236,7 @@ ok 7 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 151.728583
+# duration_ms 161.871917
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts src/config/env.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
@@ -315,7 +316,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 [pass] Tailwind, shadcn-style UI, wagmi, viem: frontend dependencies and local UI primitives are present
 [pass] Vercel frontend deployment config: vercel.json builds a clean static export and web public env example is present
 [pass] Express score API: Express dependency, score route, health, and OpenAPI route are present
-[pass] Railway backend deployment config: railway.toml builds, starts, healthchecks, watches shared config, and registers the archive verifier
+[pass] Railway backend deployment config: railway.toml builds, starts, healthchecks, watches shared config, registers the archive verifier, and retries the live Railway verifier after deploy
 [pass] Wavy Node traceability and AI risk score: adapter includes chains/register/scan-risk flow, Fuji-only runtime config, upstream result matching, and 0-100 traceability fields
 [pass] Hardhat Solidity score registry: CreditScoreRegistry stores hashed score records with scorer authorization and Solhint linting
 [pass] Avalanche Fuji network config: Hardhat uses the official Fuji RPC and chain id 43113
@@ -336,7 +337,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 - Passing: 15
 - Warnings: 4
 - Failing: 0
-- Report id: 6ceaae4fa8da
+- Report id: ac4c632db3a2
 ````
 
 ### Judge demo runbook
@@ -381,6 +382,7 @@ pnpm probe:eerc20
 pnpm railway:whoami
 pnpm verify:railway
 pnpm deploy:railway:apply -- --create-domain
+# The Railway deploy helper verifies the generated API URL when it can extract it.
 export ARKSCORE_API_URL=https://your-railway-api.up.railway.app
 pnpm verify:railway:live
 pnpm --filter @arkscore/contracts deploy:fuji
