@@ -53,6 +53,43 @@ test("submission evidence can render without executing live checks", () => {
   assert.match(result.output, /pnpm verify:live:strict/);
 });
 
+test("submission evidence renders configured public deployment targets only", () => {
+  const result = runScript(
+    "scripts/submission-evidence.ts",
+    ["--skip-checks"],
+    {
+      ARKSCORE_WEB_URL: "https://arkscore-demo.vercel.app/",
+      ARKSCORE_API_URL: "https://arkscore-api.up.railway.app/",
+      ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
+      ARKSCORE_EERC20_DEMO_ADDRESS:
+        "0x3333333333333333333333333333333333333333",
+      WAVY_NODE_API_KEY: "ApiKey should-not-print",
+      FUJI_PRIVATE_KEY:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    },
+  );
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(
+    result.output,
+    /Vercel frontend: https:\/\/arkscore-demo\.vercel\.app/,
+  );
+  assert.match(
+    result.output,
+    /Railway backend: https:\/\/arkscore-api\.up\.railway\.app/,
+  );
+  assert.match(
+    result.output,
+    /Avalanche Fuji `CreditScoreRegistry`: `0x1111111111111111111111111111111111111111`/,
+  );
+  assert.match(
+    result.output,
+    /Optional eERC20 demo contract: `0x3333333333333333333333333333333333333333`/,
+  );
+  assert.doesNotMatch(result.output, /should-not-print/);
+  assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
+});
+
 test("Vercel finalizer dry run prints public env and strict verification commands", () => {
   const apiUrl = "https://arkscore-api.up.railway.app";
   const registryAddress = "0x1111111111111111111111111111111111111111";

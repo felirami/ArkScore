@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import process from "node:process";
 
@@ -15,6 +15,13 @@ type ShellResult = {
   output: string;
 };
 
+type DeploymentTargets = {
+  apiUrl?: string;
+  eerc20DemoAddress?: string;
+  registryAddress?: string;
+  webUrl: string;
+};
+
 const args = new Set(process.argv.slice(2));
 const shouldWrite = args.has("--write");
 const skipChecks = args.has("--skip-checks");
@@ -22,6 +29,13 @@ const includeVerify = args.has("--include-verify");
 const outputPath =
   readArgValue("--output") ??
   join(process.cwd(), "docs", "SUBMISSION_EVIDENCE.md");
+const env = {
+  ...readEnvFile(".env"),
+  ...readEnvFile("packages/contracts/.env"),
+  ...readEnvFile("apps/api/.env"),
+  ...readEnvFile("apps/web/.env.local"),
+  ...process.env,
+};
 
 main();
 
@@ -37,6 +51,7 @@ function main() {
     gitBranch,
     gitStatus,
     checkResults,
+    deploymentTargets: getDeploymentTargets(),
   });
 
   if (shouldWrite) {
@@ -84,6 +99,7 @@ function renderReport(input: {
   gitBranch: string;
   gitStatus: string;
   checkResults: CommandResult[];
+  deploymentTargets: DeploymentTargets;
 }) {
   const checkSummary =
     input.checkResults.length === 0
@@ -126,10 +142,10 @@ Generated: ${input.generatedAt}
 
 ## Deployment Targets
 
-- Vercel frontend: https://arkscore-seven.vercel.app
-- Railway backend: \`TBD until Railway auth and Wavy credentials are configured\`
-- Avalanche Fuji \`CreditScoreRegistry\`: \`TBD until FUJI_PRIVATE_KEY is funded and deployed\`
-- Optional eERC20 demo contract: \`TBD unless the EncryptedERC demo is deployed\`
+- Vercel frontend: ${input.deploymentTargets.webUrl}
+- Railway backend: ${renderUrlOrTbd(input.deploymentTargets.apiUrl, "TBD until Railway auth and Wavy credentials are configured")}
+- Avalanche Fuji \`CreditScoreRegistry\`: ${renderAddressOrTbd(input.deploymentTargets.registryAddress, "TBD until FUJI_PRIVATE_KEY is funded and deployed")}
+- Optional eERC20 demo contract: ${renderAddressOrTbd(input.deploymentTargets.eerc20DemoAddress, "TBD unless the EncryptedERC demo is deployed")}
 
 ## Evidence Summary
 
@@ -188,6 +204,82 @@ function readArgValue(name: string) {
     .find((entry) => entry.startsWith(exactPrefix));
 
   return value?.slice(exactPrefix.length);
+}
+
+function getDeploymentTargets(): DeploymentTargets {
+  return {
+    webUrl:
+      normalizeBaseUrl(env.ARKSCORE_WEB_URL) ??
+      "https://arkscore-seven.vercel.app",
+    apiUrl: normalizeBaseUrl(
+      env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL,
+    ),
+    registryAddress: firstValidAddress([
+      env.ARKSCORE_REGISTRY_ADDRESS,
+      env.CREDIT_SCORE_REGISTRY_ADDRESS,
+      env.REGISTRY_ADDRESS,
+      env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS,
+      readRegistryDeployment()?.address,
+    ]),
+    eerc20DemoAddress: firstValidAddress([
+      env.ARKSCORE_EERC20_DEMO_ADDRESS,
+      env.EERC20_DEMO_ADDRESS,
+      env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS,
+    ]),
+  };
+}
+
+function readEnvFile(path: string): Record<string, string> {
+  if (!existsSync(path)) return {};
+
+  return Object.fromEntries(
+    readFileSync(path, "utf8")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#") && line.includes("="))
+      .map((line) => {
+        const index = line.indexOf("=");
+        const key = line.slice(0, index).trim();
+        const value = line
+          .slice(index + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, "");
+
+        return [key, value];
+      }),
+  );
+}
+
+function readRegistryDeployment(): { address?: string } | undefined {
+  const path = "packages/contracts/deployments/fuji/CreditScoreRegistry.json";
+  if (!existsSync(path)) return undefined;
+
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as { address?: string };
+  } catch {
+    return undefined;
+  }
+}
+
+function firstValidAddress(values: Array<string | undefined>) {
+  return values.find((value) => value && isAddress(value));
+}
+
+function normalizeBaseUrl(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  return value.trim().replace(/\/$/, "");
+}
+
+function isAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function renderUrlOrTbd(value: string | undefined, fallback: string) {
+  return value ? value : `\`${fallback}\``;
+}
+
+function renderAddressOrTbd(value: string | undefined, fallback: string) {
+  return value ? `\`${value}\`` : `\`${fallback}\``;
 }
 
 function stripAnsi(value: string) {
