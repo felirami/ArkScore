@@ -160,6 +160,9 @@ function main() {
     console.log("pnpm --filter @arkscore/contracts deploy:fuji");
     console.log("export ARKSCORE_REGISTRY_ADDRESS=0x...");
     console.log("export ARKSCORE_SCORER_ADDRESS=0x...");
+    console.log(
+      "# If the scorer is not the FUJI_PRIVATE_KEY deployer, set ARKSCORE_SCORER_PRIVATE_KEY.",
+    );
     console.log("pnpm --filter @arkscore/contracts scorer:fuji");
     console.log("pnpm record:fuji");
     console.log("pnpm readiness:strict:record");

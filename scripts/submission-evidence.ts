@@ -253,6 +253,7 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm --filter @arkscore/contracts deploy:fuji",
     "export ARKSCORE_REGISTRY_ADDRESS=0x...",
     "export ARKSCORE_SCORER_ADDRESS=0x...",
+    "# If the scorer is not the FUJI_PRIVATE_KEY deployer, set ARKSCORE_SCORER_PRIVATE_KEY.",
     ...eerc20Exports,
     "pnpm --filter @arkscore/contracts scorer:fuji",
     "pnpm record:fuji",

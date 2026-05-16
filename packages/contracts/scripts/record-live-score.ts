@@ -1,4 +1,5 @@
 import { network } from "hardhat";
+import { computeAddress } from "ethers";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -116,7 +117,9 @@ const repoDir = join(packageDir, "..", "..", "..");
 const defaultWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 const bytes32Regex = /^0x[a-fA-F0-9]{64}$/;
+const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
 const decisionContractEnum: Record<InstitutionDecision, number> = {
   REVIEW_REQUIRED: 0,
   APPROVE_IFC_EQUITY_ISSUANCE: 1,
@@ -149,29 +152,40 @@ async function main() {
     firstConfiguredValue([env.ARKSCORE_TEST_WALLET]) ?? defaultWallet;
   const institution = parseInstitution(env.ARKSCORE_INSTITUTION);
   const allowMockRecord = env.ARKSCORE_ALLOW_MOCK_RECORD === "true";
+  const scorerPrivateKey = requireScorerPrivateKey();
+  const scorerAddressFromKey = computeAddress(scorerPrivateKey);
+  const configuredScorerAddress = firstConfiguredValue([
+    env.ARKSCORE_SCORER_ADDRESS,
+    env.SCORER_ADDRESS,
+  ]);
 
-  const { ethers } = await network.create();
-
-  if (!env.FUJI_PRIVATE_KEY?.trim()) {
-    fail("Set FUJI_PRIVATE_KEY to the authorized Fuji scorer private key.");
-  }
-
-  if (!ethers.isAddress(registryAddress)) {
+  if (!isAddress(registryAddress)) {
     fail(
       "Set ARKSCORE_REGISTRY_ADDRESS, CREDIT_SCORE_REGISTRY_ADDRESS, REGISTRY_ADDRESS, NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS, or deploy first.",
     );
   }
 
-  if (!ethers.isAddress(wallet)) {
+  if (!isAddress(wallet)) {
     fail("ARKSCORE_TEST_WALLET must be a valid EVM wallet address.");
   }
 
-  const [scorer] = await ethers.getSigners();
-
-  if (!scorer) {
-    fail("No Fuji scorer signer available. Set FUJI_PRIVATE_KEY.");
+  if (configuredScorerAddress && !isAddress(configuredScorerAddress)) {
+    fail(
+      "ARKSCORE_SCORER_ADDRESS or SCORER_ADDRESS must be a valid EVM address.",
+    );
   }
 
+  if (
+    configuredScorerAddress &&
+    configuredScorerAddress.toLowerCase() !== scorerAddressFromKey.toLowerCase()
+  ) {
+    fail(
+      `Configured scorer ${configuredScorerAddress} does not match signer ${scorerAddressFromKey}. Run pnpm record:fuji with ARKSCORE_SCORER_PRIVATE_KEY, FUJI_SCORER_PRIVATE_KEY, or FUJI_PRIVATE_KEY for the authorized scorer wallet.`,
+    );
+  }
+
+  const { ethers } = await network.create();
+  const scorer = new ethers.Wallet(scorerPrivateKey, ethers.provider);
   const providerNetwork = await ethers.provider.getNetwork();
   const chainId = Number(providerNetwork.chainId);
 
@@ -188,8 +202,9 @@ async function main() {
   const registry = (await ethers.getContractAt(
     "CreditScoreRegistry",
     registryAddress,
+    scorer,
   )) as unknown as CreditScoreRegistryInstance;
-  const scorerAddress = await scorer.getAddress();
+  const scorerAddress = scorer.address;
   const authorized = await registry.isScorer(scorerAddress);
 
   if (!authorized) {
@@ -379,7 +394,7 @@ function parseScorePayload(value: unknown): ScoreApiResponse {
     },
   };
 
-  if (!/^0x[a-fA-F0-9]{40}$/.test(score.address)) {
+  if (!isAddress(score.address)) {
     fail("Score API response address is not a valid EVM address.");
   }
 
@@ -540,6 +555,28 @@ function firstConfiguredValue(values: Array<string | undefined>) {
   return values.find((value) => value?.trim())?.trim();
 }
 
+function requireScorerPrivateKey(): string {
+  const privateKey = firstConfiguredValue([
+    env.ARKSCORE_SCORER_PRIVATE_KEY,
+    env.FUJI_SCORER_PRIVATE_KEY,
+    env.FUJI_PRIVATE_KEY,
+  ]);
+
+  if (!privateKey) {
+    fail(
+      "Set ARKSCORE_SCORER_PRIVATE_KEY, FUJI_SCORER_PRIVATE_KEY, or FUJI_PRIVATE_KEY to the authorized Fuji scorer private key.",
+    );
+  }
+
+  if (!privateKeyRegex.test(privateKey)) {
+    fail(
+      "The Fuji scorer private key must be a 32-byte 0x-prefixed hex private key.",
+    );
+  }
+
+  return privateKey;
+}
+
 function requireBaseUrl(value: string | undefined): string {
   const url = value?.trim().replace(/\/+$/, "");
 
@@ -556,6 +593,10 @@ function requireBaseUrl(value: string | undefined): string {
   }
 
   return url;
+}
+
+function isAddress(value: string): boolean {
+  return addressRegex.test(value);
 }
 
 function isPublicHttpsUrl(value: string): boolean {

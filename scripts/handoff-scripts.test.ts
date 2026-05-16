@@ -1160,6 +1160,37 @@ test("Fuji score recorder refuses local API URLs before touching Fuji", () => {
   assert.doesNotMatch(result.output, /Submitted recordScore/);
 });
 
+test("Fuji score recorder refuses configured scorer mismatch before live calls", () => {
+  const result = runPnpm(
+    [
+      "--filter",
+      "@arkscore/contracts",
+      "exec",
+      "hardhat",
+      "run",
+      "scripts/record-live-score.ts",
+      "--network",
+      "fuji",
+    ],
+    {
+      ARKSCORE_API_URL: "https://arkscore-api.up.railway.app",
+      ARKSCORE_REGISTRY_ADDRESS: "0x2222222222222222222222222222222222222222",
+      ARKSCORE_SCORER_ADDRESS: "0x1111111111111111111111111111111111111111",
+      ARKSCORE_SCORER_PRIVATE_KEY: "",
+      FUJI_SCORER_PRIVATE_KEY: "",
+      FUJI_PRIVATE_KEY:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Configured scorer .* does not match signer/);
+  assert.match(result.output, /ARKSCORE_SCORER_PRIVATE_KEY/);
+  assert.doesNotMatch(result.output, /Live API score fetched/);
+  assert.doesNotMatch(result.output, /Submitted recordScore/);
+  assert.doesNotMatch(result.output, /Score API returned/);
+});
+
 test("live verifier proves registry getScore readback ABI", async () => {
   const result = await runLiveVerifierWithMockRegistry();
 

@@ -61,7 +61,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm --filter @arkscore/contracts scorer:fuji` authorizes or revokes the wallet that will submit score records from the dashboard. Strict live verification checks `ARKSCORE_SCORER_ADDRESS` with `isScorer(address)`.
 
-`pnpm record:fuji` is available for the final end-to-end oracle proof. It requires `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` to be a public HTTPS Railway API URL, fetches a Railway score for `ARKSCORE_TEST_WALLET`, requires live Wavy mode unless `ARKSCORE_ALLOW_MOCK_RECORD=true` is set, writes the returned subject hash and evidence hash to `CreditScoreRegistry`, reads the record back from Fuji, verifies it matches the API response, and writes `packages/contracts/deployments/fuji/LatestScoreRecord.json` for the evidence packet unless `ARKSCORE_SCORE_RECORD_ARTIFACT` points to a custom output path.
+`pnpm record:fuji` is available for the final end-to-end oracle proof. It requires `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` to be a public HTTPS Railway API URL, fetches a Railway score for `ARKSCORE_TEST_WALLET`, requires live Wavy mode unless `ARKSCORE_ALLOW_MOCK_RECORD=true` is set, signs with `ARKSCORE_SCORER_PRIVATE_KEY`, `FUJI_SCORER_PRIVATE_KEY`, or `FUJI_PRIVATE_KEY`, refuses a configured scorer address that does not match the signing key, writes the returned subject hash and evidence hash to `CreditScoreRegistry`, reads the record back from Fuji, verifies it matches the API response, and writes `packages/contracts/deployments/fuji/LatestScoreRecord.json` for the evidence packet unless `ARKSCORE_SCORE_RECORD_ARTIFACT` points to a custom output path.
 
 ## Pending Credentials
 
@@ -72,7 +72,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 - Deployed `CreditScoreRegistry` address for `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`.
 - `NEXT_PUBLIC_API_BASE_URL` on Vercel must be set to the Railway API URL before the live Wavy-backed flow replaces hosted demo fallback mode.
 - `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` can be set after optional EncryptedERC deployment; live verification checks bytecode when it is configured.
-- `ARKSCORE_SCORER_ADDRESS` should be set to the dashboard signing wallet and authorized before the final Store on Fuji demo.
+- `ARKSCORE_SCORER_ADDRESS` should be set to the dashboard signing wallet and authorized before the final Store on Fuji demo. If that wallet is different from the deployer, set `ARKSCORE_SCORER_PRIVATE_KEY` or `FUJI_SCORER_PRIVATE_KEY` before `pnpm record:fuji` so the non-secret score-record proof uses the same authorized scorer.
 - `pnpm record:fuji` should be run after Railway, Wavy, Fuji, and scorer authorization are configured to produce the final non-secret storage proof.
 
 ## Deployment Targets

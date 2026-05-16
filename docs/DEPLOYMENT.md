@@ -35,7 +35,7 @@ ARKSCORE_EERC20_DEMO_ADDRESS=0x... pnpm probe:eerc20
 
 Use `pnpm probe:eerc20:strict` or `ARKSCORE_REQUIRE_EERC20=true` when the optional privacy-token demo is required for a final evidence packet.
 
-The deploying wallet is the first authorized scorer. Use `setScorer(address,bool)` from the owner wallet if another institutional signer should write records.
+The deploying wallet is the first authorized scorer. Use `setScorer(address,bool)` from the owner wallet if another institutional signer should write records. If that scorer is different from the deployer, keep `FUJI_PRIVATE_KEY` set to the owner key while authorizing it, then set `ARKSCORE_SCORER_PRIVATE_KEY` or `FUJI_SCORER_PRIVATE_KEY` to the scorer key before running `pnpm record:fuji`.
 
 `pnpm probe:fuji` checks that `FUJI_PRIVATE_KEY` is present, formatted as a 32-byte hex key, connected to Avalanche Fuji chain id `43113`, and funded with Fuji AVAX before deployment. It prints the deployer address and balance, but never prints the private key.
 
@@ -52,12 +52,13 @@ After Railway is deployed with live Wavy credentials, prove the full oracle path
 ```bash
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
 ARKSCORE_REGISTRY_ADDRESS=0x... \
+ARKSCORE_SCORER_ADDRESS=0x... \
 ARKSCORE_TEST_WALLET=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 \
 ARKSCORE_INSTITUTION=bankaool \
 pnpm record:fuji
 ```
 
-`pnpm record:fuji` uses the configured `FUJI_PRIVATE_KEY` signer, requires that signer to be authorized with `isScorer`, requires `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` to be a public HTTPS Railway API URL, fetches `/api/score/:address`, refuses `source: "mock"` unless `ARKSCORE_ALLOW_MOCK_RECORD=true`, calls `recordScore`, verifies `hasScore(subjectHash)` and `getScore(subjectHash)` match the live Wavy risk score, composite score, decision, evidence hash, analysis id, and institution, then writes `packages/contracts/deployments/fuji/LatestScoreRecord.json` as non-secret submission evidence. Set `ARKSCORE_SCORE_RECORD_ARTIFACT` only when you want that proof written to a custom path.
+`pnpm record:fuji` signs with `ARKSCORE_SCORER_PRIVATE_KEY`, `FUJI_SCORER_PRIVATE_KEY`, or `FUJI_PRIVATE_KEY` in that order, requires that signer to be authorized with `isScorer`, and refuses to continue if `ARKSCORE_SCORER_ADDRESS` or `SCORER_ADDRESS` is configured but does not match the private key that will submit the transaction. It requires `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` to be a public HTTPS Railway API URL, fetches `/api/score/:address`, refuses `source: "mock"` unless `ARKSCORE_ALLOW_MOCK_RECORD=true`, calls `recordScore`, verifies `hasScore(subjectHash)` and `getScore(subjectHash)` match the live Wavy risk score, composite score, decision, evidence hash, analysis id, and institution, then writes `packages/contracts/deployments/fuji/LatestScoreRecord.json` as non-secret submission evidence. Set `ARKSCORE_SCORE_RECORD_ARTIFACT` only when you want that proof written to a custom path.
 
 ## Railway API
 
