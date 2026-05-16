@@ -160,6 +160,7 @@ pnpm verify:railway
 pnpm probe:wavy
 pnpm dlx @railway/cli whoami --json
 pnpm dlx @railway/cli init --name arkscore-api --json
+pnpm dlx @railway/cli add --service arkscore-api --json
 pnpm dlx @railway/cli variable set PORT=4000 --environment production --service arkscore-api --skip-deploys --json
 pnpm dlx @railway/cli variable set ALLOWED_ORIGINS=https://arkscore-seven.vercel.app --environment production --service arkscore-api --skip-deploys --json
 pnpm dlx @railway/cli variable set WAVY_NODE_BASE_URL=https://api.wavynode.com/v1 --environment production --service arkscore-api --skip-deploys --json
@@ -177,7 +178,7 @@ pnpm dlx @railway/cli up --detach --json --environment production --service arks
 pnpm dlx @railway/cli domain --environment production --service arkscore-api --json
 ```
 
-If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `pnpm dlx @railway/cli link --project <project-id> --environment production --service arkscore-api --json` instead of `init`.
+If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `pnpm dlx @railway/cli link --project <project-id> --environment production --service arkscore-api --json` instead of `init` plus `add`.
 
 After Railway prints the service URL or generated domain, prove the deployed API before continuing to Fuji/Vercel finalization:
 

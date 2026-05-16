@@ -99,6 +99,7 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.match(result.output, /echo '\[redacted\]' \|/);
   assert.match(result.output, /@railway\/cli up/);
   assert.match(result.output, /@railway\/cli domain/);
+  assert.doesNotMatch(result.output, /@railway\/cli add --service/);
   assert.doesNotMatch(
     result.output,
     /ARKSCORE_API_URL=https:\/\/your-railway-api\.up\.railway\.app pnpm/,
@@ -106,6 +107,33 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.doesNotMatch(result.output, /super-secret-key/);
   assert.doesNotMatch(result.output, /project-secret-id/);
   assert.doesNotMatch(result.output, /salt-secret-value/);
+});
+
+test("Railway fresh project dry run creates the target service before variables", () => {
+  const result = runScript("scripts/deploy-railway.ts", [], {
+    WAVY_NODE_API_KEY: "ApiKey super-secret-key",
+    WAVY_NODE_PROJECT_ID: "project-secret-id",
+    ARKSCORE_SUBJECT_HASH_SALT: "salt-secret-value",
+    RAILWAY_PROJECT_ID: "",
+    RAILWAY_PROJECT_NAME: "arkscore-fresh",
+    RAILWAY_SERVICE: "arkscore-api",
+    RAILWAY_WORKSPACE: "workspace_123",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(
+    result.output,
+    /@railway\/cli init --name arkscore-fresh --json --workspace workspace_123/,
+  );
+  assert.match(
+    result.output,
+    /@railway\/cli add --service arkscore-api --json/,
+  );
+  assert.match(
+    result.output,
+    /@railway\/cli add --service arkscore-api --json[\s\S]*@railway\/cli variable set PORT=4000/,
+  );
+  assert.doesNotMatch(result.output, /@railway\/cli link --project/);
 });
 
 test("Railway live dry run overrides stale local mock mode", () => {

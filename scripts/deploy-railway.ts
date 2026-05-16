@@ -136,6 +136,9 @@ function buildCommands(): CommandPlan[] {
     }
 
     commands.push({ command: initCommand });
+    commands.push({
+      command: railwayCommand("add", "--service", service, "--json"),
+    });
   }
 
   const plainVariables: Record<string, string> = {
