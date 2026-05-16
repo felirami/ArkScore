@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T19:15:28.708Z
+Generated: 2026-05-16T19:26:39.414Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `e4fb817`
+- Commit: `2df30aa`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -18,6 +18,7 @@ Generated: 2026-05-16T19:15:28.708Z
 
 ## Evidence Summary
 
+- PASS: Railway archive verifier (`pnpm --silent verify:railway`)
 - PASS: Hosted demo smoke (`pnpm --silent smoke:web`)
 - PASS: Live deployment verifier (`pnpm --silent verify:live`)
 - PASS: Requirements audit (`pnpm --silent audit:requirements`)
@@ -27,7 +28,7 @@ Generated: 2026-05-16T19:15:28.708Z
 ## Current Scope Status
 
 - Frontend dashboard: production-hosted demo fallback is public and judge-usable.
-- Backend API: Railway-ready Express service is built and tested locally, but live deployment still needs Railway auth and Wavy credentials.
+- Backend API: Railway-ready Express service is built and tested locally, including a pruned Railway archive verifier, but live deployment still needs Railway auth and Wavy credentials.
 - Wavy Node: live adapter and probe tooling are present; live proof needs `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID`.
 - Fuji registry: Solidity contract and scripts are ready; live proof needs funded `FUJI_PRIVATE_KEY`, deployed registry address, and authorized scorer wallet.
 - Privacy model: API returns a backend-derived `subjectHash`; the contract stores hashed subjects, evidence hashes, Wavy analysis ids, and institutional decisions instead of raw scored wallets.
@@ -40,6 +41,7 @@ pnpm probe:fuji
 pnpm plan:eerc20
 pnpm probe:eerc20
 pnpm railway:whoami
+pnpm verify:railway
 pnpm deploy:railway:apply -- --create-domain
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji
@@ -51,6 +53,162 @@ pnpm verify:live:strict:record
 ```
 
 ## Check Output
+
+### Railway archive verifier
+
+- Command: `pnpm --silent verify:railway`
+- Exit code: `0`
+
+````text
+# ArkScore Railway Archive Verification
+
+[pass] Required payload entry: package.json
+[pass] Required payload entry: pnpm-lock.yaml
+[pass] Required payload entry: pnpm-workspace.yaml
+[pass] Required payload entry: railway.toml
+[pass] Required payload entry: .railwayignore
+[pass] Required payload entry: config/tsconfig/base.json
+[pass] Required payload entry: config/tsconfig/node.json
+[pass] Required payload entry: apps/api/package.json
+[pass] Required payload entry: apps/api/src/server.ts
+[pass] Required payload entry: apps/api/src/app.test.ts
+[pass] Required payload entry: packages/shared/package.json
+[pass] Required payload entry: packages/shared/src/index.ts
+[pass] Excluded payload entry: .env
+[pass] Excluded payload entry: .env.example
+[pass] Excluded payload entry: apps/api/.env
+[pass] Excluded payload entry: apps/api/.env.example
+[pass] Excluded payload entry: apps/web
+[pass] Excluded payload entry: packages/contracts
+[pass] Excluded payload entry: docs
+[pass] Excluded payload entry: node_modules
+[pass] Railway ignore pattern: node_modules
+[pass] Railway ignore pattern: **/node_modules
+[pass] Railway ignore pattern: .env
+[pass] Railway ignore pattern: .env.*
+[pass] Railway ignore pattern: apps/web
+[pass] Railway ignore pattern: packages/contracts
+[pass] Railway ignore pattern: docs
+[pass] Railway watch pattern: /apps/api/**
+[pass] Railway watch pattern: /packages/shared/**
+[pass] Railway watch pattern: /config/**
+
+$ pnpm install --frozen-lockfile
+Scope: all 3 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +247
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 247, reused 247, downloaded 0, added 247, done
+
+devDependencies:
++ prettier 3.8.3
++ tsx 4.22.0
++ typescript 6.0.3
+
+Done in 975ms using pnpm v11.1.2
+
+$ pnpm --filter @arkscore/api build
+CLI Building entry: src/server.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist/server.js 30.17 KB
+ESM ⚡️ Build success in 439ms
+
+$ tsup src/server.ts --format esm --clean
+
+$ pnpm --filter @arkscore/api test
+TAP version 13
+# Subtest: health reports mock scoring mode when credentials are absent
+ok 1 - health reports mock scoring mode when credentials are absent
+  ---
+  duration_ms: 19.992
+  type: 'test'
+  ...
+# Subtest: openapi document describes the public scoring contract
+ok 2 - openapi document describes the public scoring contract
+  ---
+  duration_ms: 4.47425
+  type: 'test'
+  ...
+# Subtest: score endpoint returns a Bankaool-ready mock Wavy response
+ok 3 - score endpoint returns a Bankaool-ready mock Wavy response
+  ---
+  duration_ms: 2.826459
+  type: 'test'
+  ...
+# Subtest: score endpoint rejects unsupported institutions
+ok 4 - score endpoint rejects unsupported institutions
+  ---
+  duration_ms: 2.18525
+  type: 'test'
+  ...
+# Subtest: score endpoint rate limits repeated clients
+ok 5 - score endpoint rate limits repeated clients
+  ---
+  duration_ms: 5.926
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 680.094125
+TAP version 13
+# Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
+ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
+  ---
+  duration_ms: 8.779375
+  type: 'test'
+  ...
+# Subtest: fetchWavyRiskResult registers then scans the wallet
+ok 2 - fetchWavyRiskResult registers then scans the wallet
+  ---
+  duration_ms: 0.619167
+  type: 'test'
+  ...
+# Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
+ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
+  ---
+  duration_ms: 0.890333
+  type: 'test'
+  ...
+# Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
+ok 4 - fetchWavyRiskResult preserves upstream Wavy Node errors
+  ---
+  duration_ms: 0.510583
+  type: 'test'
+  ...
+# Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
+ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
+  ---
+  duration_ms: 0.301083
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 143.6255
+
+$ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
+
+## Summary
+
+- Passing: Railway payload install/build/test completed
+- Payload: removed
+````
 
 ### Hosted demo smoke
 
@@ -119,7 +277,7 @@ pnpm verify:live:strict:record
 [pass] Tailwind, shadcn-style UI, wagmi, viem: frontend dependencies and local UI primitives are present
 [pass] Vercel frontend deployment config: vercel.json builds and serves the Next.js static export
 [pass] Express score API: Express dependency, score route, health, and OpenAPI route are present
-[pass] Railway backend deployment config: railway.toml builds, starts, and healthchecks the API service
+[pass] Railway backend deployment config: railway.toml builds, starts, healthchecks, watches shared config, and registers the archive verifier
 [pass] Wavy Node traceability and AI risk score: adapter includes chains/register/scan-risk flow and 0-100 traceability fields
 [pass] Hardhat Solidity score registry: CreditScoreRegistry stores hashed score records with scorer authorization
 [pass] Avalanche Fuji network config: Hardhat uses the official Fuji RPC and chain id 43113
@@ -140,7 +298,7 @@ pnpm verify:live:strict:record
 - Passing: 15
 - Warnings: 4
 - Failing: 0
-- Report id: 6cd32d01e4f4
+- Report id: c68b20afd2e7
 ````
 
 ### Judge demo runbook
