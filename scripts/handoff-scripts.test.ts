@@ -720,6 +720,7 @@ test("submission evidence renders strict eERC20 handoff when required", () => {
 
 test("Vercel finalizer dry run prints public env and strict verification commands", () => {
   const apiUrl = "https://arkscore-api.up.railway.app";
+  const fujiRpcUrl = "https://rpc.example.com/avalanche/fuji";
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const eerc20DemoAddress = "0x3333333333333333333333333333333333333333";
   const scorerAddress = "0x4444444444444444444444444444444444444444";
@@ -728,6 +729,7 @@ test("Vercel finalizer dry run prints public env and strict verification command
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
     ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress,
     ARKSCORE_SCORER_ADDRESS: scorerAddress,
+    NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: `${fujiRpcUrl}/`,
     VERCEL_SCOPE: "arkscore-scope",
     VERCEL_PROJECT_NAME: "arkscore-project",
     WAVY_NODE_API_KEY: "ApiKey should-not-print",
@@ -750,6 +752,12 @@ test("Vercel finalizer dry run prints public env and strict verification command
   assert.match(
     result.output,
     new RegExp(
+      `NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL production --value ${escapeRegExp(fujiRpcUrl)}`,
+    ),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
       `NEXT_PUBLIC_EERC20_DEMO_ADDRESS production --value ${eerc20DemoAddress}`,
     ),
   );
@@ -762,7 +770,7 @@ test("Vercel finalizer dry run prints public env and strict verification command
   assert.match(
     result.output,
     new RegExp(
-      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:preflight`,
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=${escapeRegExp(fujiRpcUrl)} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:preflight`,
     ),
   );
   assert.match(
@@ -773,7 +781,7 @@ test("Vercel finalizer dry run prints public env and strict verification command
   assert.match(
     result.output,
     new RegExp(
-      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:strict`,
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=${escapeRegExp(fujiRpcUrl)} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:strict`,
     ),
   );
   assert.doesNotMatch(result.output, /should-not-print/);
@@ -781,6 +789,7 @@ test("Vercel finalizer dry run prints public env and strict verification command
 
 test("Vercel finalizer ignores empty primary aliases and uses fallback env", () => {
   const apiUrl = "https://arkscore-api.up.railway.app";
+  const fujiRpcUrl = "https://api.avax-test.network/ext/bc/C/rpc";
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const scorerAddress = "0x4444444444444444444444444444444444444444";
   const result = runScript("scripts/finalize-live.ts", [], {
@@ -809,7 +818,13 @@ test("Vercel finalizer ignores empty primary aliases and uses fallback env", () 
   assert.match(
     result.output,
     new RegExp(
-      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:preflight`,
+      `NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL production --value ${escapeRegExp(fujiRpcUrl)}`,
+    ),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=${escapeRegExp(fujiRpcUrl)} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:preflight`,
     ),
   );
   assert.doesNotMatch(result.output, /Missing ARKSCORE_API_URL/);
@@ -818,6 +833,7 @@ test("Vercel finalizer ignores empty primary aliases and uses fallback env", () 
 
 test("Vercel finalizer dry run prints strict eERC20 verification when required", () => {
   const apiUrl = "https://arkscore-api.up.railway.app";
+  const fujiRpcUrl = "https://api.avax-test.network/ext/bc/C/rpc";
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const eerc20DemoAddress = "0x3333333333333333333333333333333333333333";
   const result = runScript("scripts/finalize-live.ts", [], {
@@ -845,13 +861,13 @@ test("Vercel finalizer dry run prints strict eERC20 verification when required",
   assert.match(
     result.output,
     new RegExp(
-      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:preflight`,
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=${escapeRegExp(fujiRpcUrl)} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:preflight`,
     ),
   );
   assert.match(
     result.output,
     new RegExp(
-      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:strict:eerc20`,
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=${escapeRegExp(fujiRpcUrl)} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:strict:eerc20`,
     ),
   );
   assert.doesNotMatch(result.output, /pnpm verify:live:strict$/m);
@@ -966,6 +982,18 @@ test("Vercel finalizer refuses local API URLs before printing deploy commands", 
 
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /public HTTPS Railway API URL/);
+  assert.doesNotMatch(result.output, /vercel deploy/);
+});
+
+test("Vercel finalizer refuses local public Fuji RPC URLs before printing deploy commands", () => {
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: "https://arkscore-api.up.railway.app",
+    ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
+    NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: "http://localhost:9650/ext/bc/C/rpc",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /public HTTPS Avalanche Fuji RPC URL/);
   assert.doesNotMatch(result.output, /vercel deploy/);
 });
 
@@ -1399,6 +1427,42 @@ test("live verifier preflight ignores empty primary aliases", async () => {
   );
 });
 
+test("live verifier proves configured public Fuji RPC in the hosted bundle", async () => {
+  const fujiRpcUrl = "https://rpc.example.com/avalanche/fuji";
+  const result = await runLiveVerifierWithMockRegistry({
+    publicFujiRpcUrl: fujiRpcUrl,
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Vercel web Fuji RPC config:/);
+  assert.match(result.output, /hosted bundle contains rpc\.example\.com/);
+});
+
+test("live verifier strict mode rejects local public Fuji RPC URLs", async () => {
+  const webServer = await listen((_request, response) => {
+    response.writeHead(200, { "content-type": "text/html" });
+    response.end("<main>ArkScore</main>");
+  });
+
+  try {
+    const result = await runScriptAsync(
+      "scripts/verify-live.ts",
+      ["--skip-api", "--skip-contract", "--skip-eerc20", "--strict"],
+      {
+        ARKSCORE_WEB_URL: webServer.url,
+        NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL:
+          "http://localhost:9650/ext/bc/C/rpc",
+      },
+    );
+
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /Vercel web Fuji RPC config:/);
+    assert.match(result.output, /public HTTPS Fuji RPC URL/);
+  } finally {
+    await webServer.close();
+  }
+});
+
 test("live verifier fails when OpenAPI omits the served API origin", async () => {
   const result = await runLivePreflightVerifierWithMocks({
     openApiServerUrl: "https://wrong-arkscore-api.example",
@@ -1609,6 +1673,7 @@ async function runEerc20ProbeWithMockRpc(options: Eerc20RpcOptions = {}) {
 type RegistryRpcOptions = {
   getScoreBehavior?: "missing-score" | "record" | "wrong-error";
   hasScoreResult?: string;
+  publicFujiRpcUrl?: string;
 };
 
 async function runLiveVerifierWithMockRegistry(
@@ -1618,7 +1683,9 @@ async function runLiveVerifierWithMockRegistry(
   const webServer = await listen((request, response) => {
     if (request.url === "/bundle.js") {
       response.writeHead(200, { "content-type": "application/javascript" });
-      response.end(`window.registry="${registryAddress}"`);
+      response.end(
+        `window.registry="${registryAddress}";window.fujiRpc="${options.publicFujiRpcUrl ?? ""}"`,
+      );
       return;
     }
 
@@ -1706,6 +1773,9 @@ async function runLiveVerifierWithMockRegistry(
       ARKSCORE_WEB_URL: webServer.url,
       FUJI_RPC_URL: rpcServer.url,
       ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ...(options.publicFujiRpcUrl
+        ? { NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: options.publicFujiRpcUrl }
+        : {}),
     });
   } finally {
     await webServer.close();

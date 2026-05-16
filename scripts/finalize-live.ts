@@ -40,6 +40,10 @@ const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
 const webUrl =
   normalizeBaseUrl(firstConfiguredValue([env.ARKSCORE_WEB_URL])) ??
   "https://arkscore-seven.vercel.app";
+const publicFujiRpcUrl =
+  normalizeBaseUrl(
+    firstConfiguredValue([env.NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL]),
+  ) ?? "https://api.avax-test.network/ext/bc/C/rpc";
 const configuredScoreRecordArtifactPath = firstConfiguredValue([
   env.ARKSCORE_SCORE_RECORD_ARTIFACT,
 ]);
@@ -75,6 +79,12 @@ function main() {
     fail("Invalid optional eERC20 demo address.");
   }
 
+  if (!isPublicHttpsUrl(publicFujiRpcUrl)) {
+    fail(
+      "NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL must be a public HTTPS Avalanche Fuji RPC URL before Vercel finalization.",
+    );
+  }
+
   if (requireEerc20 && !eerc20DemoAddress) {
     fail("Missing eERC20 demo address while ARKSCORE_REQUIRE_EERC20=true.");
   }
@@ -91,6 +101,7 @@ function main() {
       "NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
       registryAddress,
     ),
+    vercelEnvCommand("NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL", publicFujiRpcUrl),
     ...(eerc20DemoAddress
       ? [vercelEnvCommand("NEXT_PUBLIC_EERC20_DEMO_ADDRESS", eerc20DemoAddress)]
       : []),
@@ -135,6 +146,7 @@ function main() {
     ...process.env,
     ARKSCORE_API_URL: apiUrl,
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: publicFujiRpcUrl,
     ...(eerc20DemoAddress
       ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
       : {}),
@@ -242,6 +254,7 @@ function renderVerifyEnv() {
   const verifyEnv: Record<string, string> = {
     ARKSCORE_API_URL: apiUrl ?? "",
     ARKSCORE_REGISTRY_ADDRESS: registryAddress ?? "",
+    NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: publicFujiRpcUrl,
     ...(eerc20DemoAddress
       ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
       : {}),
@@ -264,6 +277,7 @@ function renderPreflightEnv() {
   const preflightEnv: Record<string, string> = {
     ARKSCORE_API_URL: apiUrl ?? "",
     ARKSCORE_REGISTRY_ADDRESS: registryAddress ?? "",
+    NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: publicFujiRpcUrl,
     ...(eerc20DemoAddress
       ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
       : {}),

@@ -151,8 +151,11 @@ const eerc20DemoAddress = firstConfiguredValue([
   env.EERC20_DEMO_ADDRESS,
   env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS,
 ]);
+const publicFujiRpcUrl = normalizeBaseUrl(
+  firstConfiguredValue([env.NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL]),
+);
 const fujiRpcUrl =
-  firstConfiguredValue([env.FUJI_RPC_URL]) ??
+  firstConfiguredValue([env.FUJI_RPC_URL, publicFujiRpcUrl]) ??
   "https://api.avax-test.network/ext/bc/C/rpc";
 const testWallet =
   firstConfiguredValue([env.ARKSCORE_TEST_WALLET]) ??
@@ -215,6 +218,15 @@ async function verifyWeb(url: string | undefined): Promise<Check[]> {
   }
 
   const checks: Check[] = [];
+
+  if (publicFujiRpcUrl && !isPublicHttpsUrl(publicFujiRpcUrl)) {
+    checks.push({
+      label: "Vercel web Fuji RPC config",
+      status: strict ? "fail" : "warn",
+      detail:
+        "NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL must be a public HTTPS Fuji RPC URL for live verification",
+    });
+  }
 
   try {
     const response = await fetch(url);
@@ -319,6 +331,13 @@ function expectedPublicWebConfig(): Array<{ label: string; value: string }> {
     expected.push({
       label: "Vercel web registry config",
       value: registryAddress,
+    });
+  }
+
+  if (publicFujiRpcUrl && isPublicHttpsUrl(publicFujiRpcUrl)) {
+    expected.push({
+      label: "Vercel web Fuji RPC config",
+      value: publicFujiRpcUrl,
     });
   }
 
