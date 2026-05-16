@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T18:19:55.252Z
+Generated: 2026-05-16T18:26:08.071Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `f906636`
+- Commit: `3959564`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -42,7 +42,7 @@ pnpm --filter @arkscore/contracts scorer:fuji
 pnpm record:fuji
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... pnpm verify:live:preflight
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
-pnpm verify:live:strict
+pnpm verify:live:strict:record
 ```
 
 ## Check Output
