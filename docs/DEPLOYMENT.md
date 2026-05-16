@@ -183,8 +183,11 @@ Use either the repository root or `apps/web` as the Vercel project root. Both `v
 
 ```bash
 pnpm install
+cp apps/web/.env.local.example apps/web/.env.local
 pnpm --filter @arkscore/web build
 ```
+
+For production, set the same public values in Vercel. `NEXT_PUBLIC_API_BASE_URL` must point to the Railway API URL, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS` must point to the deployed Fuji registry, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false` keeps the final dashboard in live Wavy mode.
 
 Vercel variables:
 

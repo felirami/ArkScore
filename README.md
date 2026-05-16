@@ -43,7 +43,7 @@ docs/
 
 ## Environment
 
-Copy `.env.example` into the relevant app or deployment provider and replace the placeholders:
+Copy `.env.example` into the relevant app or deployment provider and replace the placeholders. For frontend-only local work, copy `apps/web/.env.local.example` to `apps/web/.env.local`; it contains only public `NEXT_PUBLIC_*` values.
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
@@ -76,6 +76,7 @@ FUJI_PRIVATE_KEY=
 corepack enable
 nvm use
 pnpm install
+cp apps/web/.env.local.example apps/web/.env.local
 pnpm --filter @arkscore/api dev
 pnpm --filter @arkscore/web dev
 ```

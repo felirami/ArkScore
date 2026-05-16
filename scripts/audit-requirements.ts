@@ -153,22 +153,41 @@ function checkFrontendStack(): Check {
 
 function checkVercelConfig(): Check {
   const vercelConfig = safeRead("vercel.json");
+  const webEnvExample = safeRead("apps/web/.env.local.example");
+  const requiredPublicEnv = [
+    "NEXT_PUBLIC_API_BASE_URL",
+    "NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL",
+    "NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
+    "NEXT_PUBLIC_EERC20_DEMO_ADDRESS",
+    "NEXT_PUBLIC_ENABLE_DEMO_FALLBACK",
+  ];
+  const missingPublicEnv = requiredPublicEnv.filter(
+    (key) => !webEnvExample?.includes(`${key}=`),
+  );
 
   if (
     vercelConfig?.includes("@arkscore/web build") &&
-    vercelConfig.includes("apps/web/out")
+    vercelConfig.includes("apps/web/out") &&
+    missingPublicEnv.length === 0
   ) {
     return {
       label: "Vercel frontend deployment config",
       status: "pass",
-      detail: "vercel.json builds and serves the Next.js static export",
+      detail:
+        "vercel.json builds the static export and web public env example is present",
     };
   }
 
   return {
     label: "Vercel frontend deployment config",
     status: "fail",
-    detail: "vercel.json is missing web build or outputDirectory config",
+    detail: `missing ${[
+      vercelConfig?.includes("@arkscore/web build") ? "" : "web build command",
+      vercelConfig?.includes("apps/web/out") ? "" : "outputDirectory config",
+      ...missingPublicEnv,
+    ]
+      .filter(Boolean)
+      .join(", ")}`,
   };
 }
 

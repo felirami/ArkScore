@@ -16,6 +16,9 @@ typechain-types/
 .env
 .env.*
 !.env.example
+!.env.*.example
+!**/.env.example
+!**/.env.*.example
 
 # Logs
 *.log

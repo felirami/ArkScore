@@ -49,6 +49,18 @@ test("root package exposes Railway CLI handoff scripts", () => {
   assert.match(railwayArchiveVerifier, /@arkscore\/api", "test"/);
 });
 
+test("web env example documents public deployment variables", () => {
+  const webEnvExample = readFileSync("apps/web/.env.local.example", "utf8");
+
+  assert.match(webEnvExample, /NEXT_PUBLIC_API_BASE_URL=/);
+  assert.match(webEnvExample, /NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=/);
+  assert.match(webEnvExample, /NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=/);
+  assert.match(webEnvExample, /NEXT_PUBLIC_EERC20_DEMO_ADDRESS=/);
+  assert.match(webEnvExample, /NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false/);
+  assert.doesNotMatch(webEnvExample, /WAVY_NODE_API_KEY/);
+  assert.doesNotMatch(webEnvExample, /FUJI_PRIVATE_KEY/);
+});
+
 test("Railway dry run prints redacted secret variable commands", () => {
   const result = runScript("scripts/deploy-railway.ts", ["--create-domain"], {
     ARKSCORE_WEB_URL: "https://arkscore-seven.vercel.app",

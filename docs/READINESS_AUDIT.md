@@ -4,7 +4,7 @@ Status date: May 16, 2026
 
 ## Ready
 
-- Monorepo scaffolded with pnpm workspaces, Node.js 22.19.0 pinning, shared TypeScript configs, and environment examples.
+- Monorepo scaffolded with pnpm workspaces, Node.js 22.19.0 pinning, shared TypeScript configs, root/API/contracts env examples, and `apps/web/.env.local.example` for public Vercel variables.
 - Next.js 15 App Router dashboard builds as a static Vercel export and includes Avalanche Fuji wallet connection, Wavy score intake, composite scoring, institutional decisioning, and on-chain write flow.
 - The web test/typecheck scripts clean stale generated `.next/types` before running `next typegen`, keeping repeated local and CI verification runs deterministic.
 - The dashboard includes an optional eERC20 privacy-layer card that links to an Ava Labs EncryptedERC demo address when configured.

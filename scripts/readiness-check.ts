@@ -106,6 +106,7 @@ async function main() {
   const checks: Check[] = [
     checkNodeVersion(),
     checkFile("apps/web/src/app/page.tsx", "Next.js App Router entry"),
+    checkFile("apps/web/.env.local.example", "Frontend public env example"),
     checkFile("apps/api/src/routes/score.ts", "Railway score endpoint"),
     checkFile("apps/api/src/routes/openapi.ts", "Railway OpenAPI endpoint"),
     checkFile(
