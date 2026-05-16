@@ -65,6 +65,16 @@ function main() {
       : []),
     vercelEnvCommand("NEXT_PUBLIC_ENABLE_DEMO_FALLBACK", "false"),
   ];
+  const eerc20ProbeCommand = eerc20DemoAddress
+    ? ["pnpm", requireEerc20 ? "probe:eerc20:strict" : "probe:eerc20"]
+    : undefined;
+  const eerc20ProbeEnv = {
+    ...process.env,
+    ...(eerc20DemoAddress
+      ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
+      : {}),
+    ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
+  };
   const authCommand = vercelCommand("whoami");
   const linkCommand = vercelCommand(
     "link",
@@ -104,6 +114,9 @@ function main() {
     console.log("Dry run. Re-run `pnpm finalize:live:apply` to apply.\n");
     printCommand(authCommand);
     printCommand(linkCommand);
+    if (eerc20ProbeCommand) {
+      console.log(`${renderEerc20ProbeEnv()} ${eerc20ProbeCommand.join(" ")}`);
+    }
     for (const command of envCommands) printCommand(command);
     printCommand(deployCommand);
     console.log(`${renderVerifyEnv()} pnpm ${verifyScript}`);
@@ -112,6 +125,7 @@ function main() {
 
   run(authCommand);
   run(linkCommand);
+  if (eerc20ProbeCommand) run(eerc20ProbeCommand, eerc20ProbeEnv);
   for (const command of envCommands) run(command);
   run(deployCommand);
   run(verifyCommand, verifyEnv);
@@ -178,6 +192,19 @@ function renderVerifyEnv() {
   };
 
   return Object.entries(verifyEnv)
+    .map(([key, value]) => `${key}=${shellEscape(value)}`)
+    .join(" ");
+}
+
+function renderEerc20ProbeEnv() {
+  if (!eerc20DemoAddress) return "";
+
+  const probeEnv: Record<string, string> = {
+    ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress,
+    ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
+  };
+
+  return Object.entries(probeEnv)
     .map(([key, value]) => `${key}=${shellEscape(value)}`)
     .join(" ");
 }

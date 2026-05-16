@@ -148,6 +148,12 @@ test("Vercel finalizer dry run prints public env and strict verification command
   );
   assert.match(
     result.output,
+    new RegExp(
+      `ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} pnpm probe:eerc20`,
+    ),
+  );
+  assert.match(
+    result.output,
     /NEXT_PUBLIC_ENABLE_DEMO_FALLBACK production --value false/,
   );
   assert.match(result.output, /vercel deploy \. --prod/);
@@ -178,6 +184,12 @@ test("Vercel finalizer dry run prints strict eERC20 verification when required",
     result.output,
     new RegExp(
       `NEXT_PUBLIC_EERC20_DEMO_ADDRESS production --value ${eerc20DemoAddress}`,
+    ),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm probe:eerc20:strict`,
     ),
   );
   assert.match(

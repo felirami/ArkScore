@@ -47,7 +47,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm deploy:railway` is a dry-run Railway deploy planner. `pnpm deploy:railway:apply -- --create-domain` checks Railway auth, creates or links the Railway project, targets the configured service and environment when setting variables, uploads the API, and can generate the service domain when Railway auth is available.
 
-`pnpm finalize:live` is a dry-run finalizer for the Vercel handoff. `pnpm finalize:live:apply` checks Vercel auth, links the checkout to `VERCEL_PROJECT_NAME` under `VERCEL_SCOPE`, sets `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false`, deploys production, then runs strict live verification against the static bundle and live services. When `ARKSCORE_REQUIRE_EERC20=true`, the finalizer prints and runs `pnpm verify:live:strict:eerc20`.
+`pnpm finalize:live` is a dry-run finalizer for the Vercel handoff. `pnpm finalize:live:apply` checks Vercel auth, links the checkout to `VERCEL_PROJECT_NAME` under `VERCEL_SCOPE`, probes any configured eERC20 address before publishing it, sets `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false`, deploys production, then runs strict live verification against the static bundle and live services. When `ARKSCORE_REQUIRE_EERC20=true`, the finalizer prints and runs `pnpm probe:eerc20:strict` plus `pnpm verify:live:strict:eerc20`.
 
 `pnpm --filter @arkscore/contracts scorer:fuji` authorizes or revokes the wallet that will submit score records from the dashboard. Strict live verification checks `ARKSCORE_SCORER_ADDRESS` with `isScorer(address)`.
 
