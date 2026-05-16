@@ -25,7 +25,7 @@ Status date: May 16, 2026
 - Railway API URL from a successful `pnpm deploy:railway:apply -- --create-domain` or equivalent `railway up` deployment.
 - Live `/health` response from the Railway API.
 - Live Wavy Node score response with `source: "wavy"` after `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` are configured.
-- Local `pnpm probe:wavy` output proving the Wavy credentials, production subject-hash salt, Wavy analysis id, subject hash, and evidence hash.
+- Local `pnpm probe:wavy` output proving the Wavy credentials, production subject-hash salt, Wavy analysis id, traceability fields, subject hash, and evidence hash.
 - Backend `ARKSCORE_SUBJECT_HASH_SALT` for production subject hashing.
 - Fuji `CreditScoreRegistry` address from `pnpm --filter @arkscore/contracts deploy:fuji`; the deploy script writes `packages/contracts/deployments/fuji/CreditScoreRegistry.json`.
 - Local `pnpm probe:fuji` output proving the deployer key maps to a Fuji account with test AVAX.

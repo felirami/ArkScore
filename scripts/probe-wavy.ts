@@ -72,7 +72,17 @@ async function main() {
   console.log(`- Composite score: ${score.composite.creditScore}/100`);
   console.log(`- Decision: ${score.composite.decisionLabel}`);
   console.log(`- Wavy analysis id: ${score.wavy.analysisId}`);
-  console.log(`- Transactions analyzed: ${score.wavy.transactionsAnalyzed}`);
+  console.log(
+    `- Traceability: ${score.wavy.traceability.provider} ${score.wavy.traceability.scanType} on ${score.wavy.traceability.network}`,
+  );
+  console.log(`- AI risk scale: ${score.wavy.traceability.riskScoreScale}`);
+  console.log(
+    `- Address registration: ${score.wavy.traceability.addressRegistration}`,
+  );
+  console.log(
+    `- Transactions analyzed: ${score.wavy.traceability.transactionsAnalyzed}`,
+  );
+  console.log(`- Patterns detected: ${score.wavy.traceability.patternsCount}`);
   console.log(`- Subject hash: ${score.subjectHash}`);
   console.log(`- Evidence hash: ${score.evidenceHash}`);
 }
