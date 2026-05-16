@@ -119,11 +119,13 @@ x-api-key: ApiKey ...
 
 For judge demos without credentials, set `WAVY_NODE_MOCK_MODE=true`.
 
-After logging in with `railway login` or `railway login --browserless`, preview the Railway commands:
+After logging in with `pnpm railway:login` or `pnpm railway:login:browserless`, preview the Railway commands:
 
 ```bash
 pnpm deploy:railway
 ```
+
+Use `pnpm railway:whoami` to confirm the active Railway account. These package scripts wrap `pnpm dlx @railway/cli`, so the deploy flow does not require a globally installed `railway` binary.
 
 To apply them with live Wavy credentials:
 
@@ -151,26 +153,26 @@ The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=
 
 ```bash
 pnpm probe:wavy
-railway whoami --json
-railway init --name arkscore-api --json
-railway variable set PORT=4000 --environment production --service arkscore-api --skip-deploys --json
-railway variable set ALLOWED_ORIGINS=https://arkscore-seven.vercel.app --environment production --service arkscore-api --skip-deploys --json
-railway variable set WAVY_NODE_BASE_URL=https://api.wavynode.com/v1 --environment production --service arkscore-api --skip-deploys --json
-railway variable set WAVY_NODE_CHAIN_ID=43113 --environment production --service arkscore-api --skip-deploys --json
-railway variable set WAVY_NODE_TIMEOUT_MS=15000 --environment production --service arkscore-api --skip-deploys --json
-railway variable set WAVY_NODE_AUTO_REGISTER=true --environment production --service arkscore-api --skip-deploys --json
-railway variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --environment production --service arkscore-api --skip-deploys --json
-railway variable set WAVY_NODE_MOCK_MODE=auto --environment production --service arkscore-api --skip-deploys --json
-railway variable set ARKSCORE_SCORE_RATE_LIMIT_MAX=120 --environment production --service arkscore-api --skip-deploys --json
-railway variable set ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000 --environment production --service arkscore-api --skip-deploys --json
-echo "ApiKey ..." | railway variable set WAVY_NODE_API_KEY --environment production --service arkscore-api --stdin --skip-deploys --json
-echo "..." | railway variable set WAVY_NODE_PROJECT_ID --environment production --service arkscore-api --stdin --skip-deploys --json
-echo "..." | railway variable set ARKSCORE_SUBJECT_HASH_SALT --environment production --service arkscore-api --stdin --skip-deploys --json
-railway up --detach --json --environment production --service arkscore-api --message "Deploy ArkScore API"
-railway domain --environment production --service arkscore-api --json
+pnpm dlx @railway/cli whoami --json
+pnpm dlx @railway/cli init --name arkscore-api --json
+pnpm dlx @railway/cli variable set PORT=4000 --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set ALLOWED_ORIGINS=https://arkscore-seven.vercel.app --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set WAVY_NODE_BASE_URL=https://api.wavynode.com/v1 --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set WAVY_NODE_CHAIN_ID=43113 --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set WAVY_NODE_TIMEOUT_MS=15000 --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set WAVY_NODE_AUTO_REGISTER=true --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set WAVY_NODE_MOCK_MODE=auto --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set ARKSCORE_SCORE_RATE_LIMIT_MAX=120 --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000 --environment production --service arkscore-api --skip-deploys --json
+echo "ApiKey ..." | pnpm dlx @railway/cli variable set WAVY_NODE_API_KEY --environment production --service arkscore-api --stdin --skip-deploys --json
+echo "..." | pnpm dlx @railway/cli variable set WAVY_NODE_PROJECT_ID --environment production --service arkscore-api --stdin --skip-deploys --json
+echo "..." | pnpm dlx @railway/cli variable set ARKSCORE_SUBJECT_HASH_SALT --environment production --service arkscore-api --stdin --skip-deploys --json
+pnpm dlx @railway/cli up --detach --json --environment production --service arkscore-api --message "Deploy ArkScore API"
+pnpm dlx @railway/cli domain --environment production --service arkscore-api --json
 ```
 
-If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `railway link --project <project-id> --environment production --service arkscore-api --json` instead of `railway init`.
+If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `pnpm dlx @railway/cli link --project <project-id> --environment production --service arkscore-api --json` instead of `init`.
 
 ## Vercel Frontend
 

@@ -414,7 +414,8 @@ function checkRailwayAuth(): Check {
   return {
     label: "Railway CLI auth",
     status: "warn",
-    detail: "not authenticated; run railway login or provide RAILWAY_TOKEN",
+    detail:
+      "not authenticated; run pnpm railway:login, pnpm railway:login:browserless, or provide RAILWAY_TOKEN",
   };
 }
 

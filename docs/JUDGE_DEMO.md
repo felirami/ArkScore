@@ -49,6 +49,7 @@ pnpm probe:wavy
 pnpm probe:fuji
 pnpm plan:eerc20
 pnpm probe:eerc20
+pnpm railway:whoami
 pnpm deploy:railway:apply -- --create-domain
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji

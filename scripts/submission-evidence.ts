@@ -225,6 +225,7 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm probe:fuji",
     "pnpm plan:eerc20",
     eerc20ProbeCommand,
+    "pnpm railway:whoami",
     "pnpm deploy:railway:apply -- --create-domain",
     "pnpm --filter @arkscore/contracts deploy:fuji",
     "pnpm --filter @arkscore/contracts scorer:fuji",

@@ -41,6 +41,9 @@
     "finalize:live:apply": "tsx scripts/finalize-live.ts --apply",
     "deploy:railway": "tsx scripts/deploy-railway.ts",
     "deploy:railway:apply": "tsx scripts/deploy-railway.ts --apply",
+    "railway:login": "pnpm dlx @railway/cli login",
+    "railway:login:browserless": "pnpm dlx @railway/cli login --browserless",
+    "railway:whoami": "pnpm dlx @railway/cli whoami",
     "format": "prettier --write ."
   },
   "engines": {

@@ -1,6 +1,12 @@
 import { strict as assert } from "node:assert";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import {
   createServer,
   type IncomingMessage,
@@ -9,6 +15,25 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+
+test("root package exposes Railway CLI handoff scripts", () => {
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+    scripts: Record<string, string>;
+  };
+
+  assert.equal(
+    packageJson.scripts["railway:login"],
+    "pnpm dlx @railway/cli login",
+  );
+  assert.equal(
+    packageJson.scripts["railway:login:browserless"],
+    "pnpm dlx @railway/cli login --browserless",
+  );
+  assert.equal(
+    packageJson.scripts["railway:whoami"],
+    "pnpm dlx @railway/cli whoami",
+  );
+});
 
 test("Railway dry run prints redacted secret variable commands", () => {
   const result = runScript("scripts/deploy-railway.ts", ["--create-domain"], {
@@ -295,6 +320,7 @@ test("judge demo runbook renders fallback blockers without leaking secrets", () 
   assert.match(result.output, /https:\/\/arkscore-demo\.vercel\.app/);
   assert.match(result.output, /hosted fallback demo/);
   assert.match(result.output, /Three-Minute Walkthrough/);
+  assert.match(result.output, /pnpm railway:whoami/);
   assert.match(result.output, /Railway API URL is missing/);
   assert.doesNotMatch(result.output, /should-not-print/);
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
