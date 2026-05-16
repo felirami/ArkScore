@@ -31,4 +31,4 @@ Status date: May 16, 2026
 - Local `pnpm probe:fuji` output proving the deployer key maps to a Fuji account with test AVAX.
 - Authorized scorer proof from `ARKSCORE_SCORER_ADDRESS=0x... pnpm --filter @arkscore/contracts scorer:fuji` and `pnpm verify:live:strict`.
 - Vercel environment update for `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, followed by a production redeploy through `pnpm finalize:live:apply`.
-- Final `pnpm verify:live:strict` run proving the public frontend bundle contains the live Railway API URL and Fuji registry address, Railway API, production subject-hash salt, live Wavy `source: "wavy"` response, Fuji registry bytecode and ABI, and authorized scorer are all reachable.
+- Final `pnpm verify:live:strict` run proving the public frontend bundle contains the live Railway API URL and Fuji registry address, Railway API, live Wavy credential mode, production subject-hash salt, live Wavy `source: "wavy"` response, Fuji registry bytecode and ABI, and authorized scorer are all reachable.

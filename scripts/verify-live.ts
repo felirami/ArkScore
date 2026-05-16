@@ -287,7 +287,9 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     const health = (await healthResponse.json().catch(() => null)) as {
       ok?: boolean;
       service?: string;
+      wavyCredentialsConfigured?: boolean;
       subjectHashSaltConfigured?: boolean;
+      mockMode?: boolean;
     } | null;
     const healthValid =
       healthResponse.ok &&
@@ -323,6 +325,21 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
                 "ARKSCORE_SUBJECT_HASH_SALT is missing or still using the demo default",
             },
       );
+
+      checks.push(
+        health.wavyCredentialsConfigured === true && health.mockMode === false
+          ? {
+              label: "Railway Wavy mode",
+              status: "pass",
+              detail: "live Wavy credentials configured and mock mode disabled",
+            }
+          : {
+              label: "Railway Wavy mode",
+              status: "warn",
+              detail:
+                "WAVY_NODE_API_KEY/WAVY_NODE_PROJECT_ID are missing or API is still serving mock mode",
+            },
+      );
     }
   } catch (error) {
     checks.push({
@@ -347,8 +364,12 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       openApi.info?.title === "ArkScore API" &&
       Boolean(openApi.paths?.["/health"]) &&
       Boolean(openApi.paths?.["/api/score/{address}"]) &&
+      schemaRequires(healthSchema, "wavyCredentialsConfigured") &&
+      schemaHasProperty(healthSchema, "wavyCredentialsConfigured") &&
       schemaRequires(healthSchema, "subjectHashSaltConfigured") &&
       schemaHasProperty(healthSchema, "subjectHashSaltConfigured") &&
+      schemaRequires(healthSchema, "mockMode") &&
+      schemaHasProperty(healthSchema, "mockMode") &&
       schemaRequires(scoreSchema, "subjectHash") &&
       schemaHasProperty(scoreSchema, "subjectHash") &&
       schemaPattern(scoreSchema, "subjectHash") === "^0x[a-fA-F0-9]{64}$" &&
