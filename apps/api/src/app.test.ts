@@ -14,12 +14,14 @@ test("health reports mock scoring mode when credentials are absent", async () =>
       ok: boolean;
       service: string;
       mockMode: boolean;
+      subjectHashSaltConfigured: boolean;
     };
 
     assert.equal(response.status, 200);
     assert.equal(payload.ok, true);
     assert.equal(payload.service, "arkscore-api");
     assert.equal(payload.mockMode, true);
+    assert.equal(payload.subjectHashSaltConfigured, false);
   });
 });
 

@@ -158,12 +158,15 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     const health = (await healthResponse.json().catch(() => null)) as {
       ok?: boolean;
       service?: string;
+      subjectHashSaltConfigured?: boolean;
     } | null;
+    const healthValid =
+      healthResponse.ok &&
+      health?.ok === true &&
+      health.service === "arkscore-api";
 
     checks.push(
-      healthResponse.ok &&
-        health?.ok === true &&
-        health.service === "arkscore-api"
+      healthValid
         ? {
             label: "Railway API health",
             status: "pass",
@@ -175,6 +178,23 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
             detail: `${url}/health returned ${healthResponse.status}`,
           },
     );
+
+    if (healthValid) {
+      checks.push(
+        health.subjectHashSaltConfigured === true
+          ? {
+              label: "Railway subject hash salt",
+              status: "pass",
+              detail: "production subject hash salt is configured",
+            }
+          : {
+              label: "Railway subject hash salt",
+              status: "warn",
+              detail:
+                "ARKSCORE_SUBJECT_HASH_SALT is missing or still using the demo default",
+            },
+      );
+    }
   } catch (error) {
     checks.push({
       label: "Railway API health",

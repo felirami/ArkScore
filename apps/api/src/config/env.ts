@@ -3,6 +3,8 @@ import { z } from "zod";
 
 loadEnv({ quiet: true });
 
+const demoSubjectHashSalt = "arkscore-demo-subject-hash-salt";
+
 const envSchema = z.object({
   NODE_ENV: z.string().default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -14,9 +16,7 @@ const envSchema = z.object({
   WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
   WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
   WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto"),
-  ARKSCORE_SUBJECT_HASH_SALT: z
-    .string()
-    .default("arkscore-demo-subject-hash-salt"),
+  ARKSCORE_SUBJECT_HASH_SALT: z.string().default(demoSubjectHashSalt),
 });
 
 export const env = envSchema.parse(process.env);
@@ -33,6 +33,18 @@ export function hasWavyCredentials(): boolean {
     env.WAVY_NODE_PROJECT_ID &&
     !env.WAVY_NODE_API_KEY.includes("replace_with") &&
     !env.WAVY_NODE_PROJECT_ID.includes("replace_with"),
+  );
+}
+
+export function hasProductionSubjectHashSalt(): boolean {
+  const salt = env.ARKSCORE_SUBJECT_HASH_SALT.trim();
+
+  return Boolean(
+    salt &&
+    salt !== demoSubjectHashSalt &&
+    !salt.includes("replace_with") &&
+    !salt.includes("your-") &&
+    salt.length >= 32,
   );
 }
 

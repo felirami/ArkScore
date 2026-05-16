@@ -129,7 +129,13 @@ export const openApiDocument = {
     schemas: {
       HealthResponse: {
         type: "object",
-        required: ["ok", "service", "wavyCredentialsConfigured", "mockMode"],
+        required: [
+          "ok",
+          "service",
+          "wavyCredentialsConfigured",
+          "subjectHashSaltConfigured",
+          "mockMode",
+        ],
         properties: {
           ok: {
             type: "boolean",
@@ -143,6 +149,11 @@ export const openApiDocument = {
             type: "boolean",
             description:
               "True when WAVY_NODE_API_KEY and WAVY_NODE_PROJECT_ID are configured.",
+          },
+          subjectHashSaltConfigured: {
+            type: "boolean",
+            description:
+              "True when ARKSCORE_SUBJECT_HASH_SALT is set to a production value instead of the demo default.",
           },
           mockMode: {
             type: "boolean",
