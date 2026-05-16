@@ -65,9 +65,12 @@ Use the repository root as the Railway service root so the `@arkscore/shared` wo
 
 ```bash
 pnpm install
+pnpm verify:railway
 pnpm --filter @arkscore/api build
 pnpm --filter @arkscore/api start
 ```
+
+`pnpm verify:railway` creates a temporary Railway-like payload with `.railwayignore` applied, confirms `apps/api`, `packages/shared`, and shared `config/tsconfig` files are present, confirms frontend/contracts/docs/env files are excluded, then runs a frozen pnpm install, API build, and API tests from that pruned workspace.
 
 Railway variables:
 
@@ -242,6 +245,8 @@ pnpm readiness:strict:record
 ```
 
 Use `pnpm audit:requirements` for a requirement-by-requirement handoff report. It exits zero while only live proofs are missing, and `pnpm audit:requirements:strict` exits non-zero until Railway, Wavy, Fuji, scorer, and score-record evidence are configured.
+
+Use `pnpm verify:railway` before `pnpm deploy:railway:apply` when you want a standalone proof that the repository-root Railway payload can install, build, and test the API with only the files Railway should receive.
 
 Use `pnpm judge:demo` for a concise, environment-aware walkthrough before presenting to judges. It prints fallback/live mode, the click path, proof commands, and current blockers without exposing secrets.
 

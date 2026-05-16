@@ -4,6 +4,7 @@ buildCommand = "pnpm --filter @arkscore/api build"
 watchPatterns = [
   "/apps/api/**",
   "/packages/shared/**",
+  "/config/**",
   "/package.json",
   "/pnpm-lock.yaml",
   "/pnpm-workspace.yaml",

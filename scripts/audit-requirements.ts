@@ -199,23 +199,45 @@ function checkExpressBackend(): Check {
 
 function checkRailwayConfig(): Check {
   const railwayConfig = safeRead("railway.toml");
+  const railwayVerifier = safeRead("scripts/verify-railway-archive.ts");
+  const rootPackage = readPackageJson("package.json");
+  const scripts = rootPackage.scripts ?? {};
+  const requirements: Array<[string, boolean]> = [
+    [
+      "API build command",
+      railwayConfig?.includes("@arkscore/api build") ?? false,
+    ],
+    [
+      "API start command",
+      railwayConfig?.includes("@arkscore/api start") ?? false,
+    ],
+    ["healthcheck", railwayConfig?.includes("/health") ?? false],
+    ["config watch pattern", railwayConfig?.includes('"/config/**"') ?? false],
+    [
+      "Railway archive verifier",
+      Boolean(
+        railwayVerifier?.includes("@arkscore/api") &&
+        scripts["verify:railway"]?.includes("verify-railway-archive.ts"),
+      ),
+    ],
+  ];
+  const missing = requirements
+    .filter(([, present]) => !present)
+    .map(([label]) => label);
 
-  if (
-    railwayConfig?.includes("@arkscore/api build") &&
-    railwayConfig.includes("@arkscore/api start") &&
-    railwayConfig.includes("/health")
-  ) {
+  if (missing.length === 0) {
     return {
       label: "Railway backend deployment config",
       status: "pass",
-      detail: "railway.toml builds, starts, and healthchecks the API service",
+      detail:
+        "railway.toml builds, starts, healthchecks, watches shared config, and registers the archive verifier",
     };
   }
 
   return {
     label: "Railway backend deployment config",
     status: "fail",
-    detail: "railway.toml is missing API build, start, or healthcheck config",
+    detail: `missing ${missing.join(", ")}`,
   };
 }
 

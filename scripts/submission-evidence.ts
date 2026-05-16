@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import process from "node:process";
 
 type CommandResult = {
@@ -77,7 +77,7 @@ function main() {
   const generatedAt = new Date().toISOString();
   const gitCommit = commandText("git", ["rev-parse", "--short", "HEAD"]);
   const gitBranch = commandText("git", ["branch", "--show-current"]);
-  const gitStatus = commandText("git", ["status", "--short"]);
+  const gitStatus = gitStatusWithoutOutput(outputPath);
   const checkResults = skipChecks ? [] : runChecks();
   const markdown = renderReport({
     generatedAt,
@@ -109,6 +109,10 @@ function runChecks(): CommandResult[] {
     ...(includeVerify
       ? [{ label: "Full repo verification", command: "pnpm --silent verify" }]
       : []),
+    {
+      label: "Railway archive verifier",
+      command: "pnpm --silent verify:railway",
+    },
     { label: "Hosted demo smoke", command: "pnpm --silent smoke:web" },
     {
       label: "Live deployment verifier",
@@ -192,7 +196,7 @@ ${checkSummary}
 ## Current Scope Status
 
 - Frontend dashboard: production-hosted demo fallback is public and judge-usable.
-- Backend API: Railway-ready Express service is built and tested locally, but live deployment still needs Railway auth and Wavy credentials.
+- Backend API: Railway-ready Express service is built and tested locally, including a pruned Railway archive verifier, but live deployment still needs Railway auth and Wavy credentials.
 - Wavy Node: live adapter and probe tooling are present; live proof needs \`WAVY_NODE_API_KEY\` and \`WAVY_NODE_PROJECT_ID\`.
 - Fuji registry: Solidity contract and scripts are ready; live proof needs funded \`FUJI_PRIVATE_KEY\`, deployed registry address, and authorized scorer wallet.
 - Privacy model: API returns a backend-derived \`subjectHash\`; the contract stores hashed subjects, evidence hashes, Wavy analysis ids, and institutional decisions instead of raw scored wallets.
@@ -228,6 +232,7 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm plan:eerc20",
     eerc20ProbeCommand,
     "pnpm railway:whoami",
+    "pnpm verify:railway",
     "pnpm deploy:railway:apply -- --create-domain",
     "pnpm --filter @arkscore/contracts deploy:fuji",
     "pnpm --filter @arkscore/contracts scorer:fuji",
@@ -241,6 +246,34 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
 
 function commandText(command: string, commandArgs: string[]) {
   return runCommand(command, commandArgs).output.trim();
+}
+
+function gitStatusWithoutOutput(path: string) {
+  const ignoredPath = normalizePath(relative(process.cwd(), path));
+  const result = spawnSync("git", ["status", "--short"], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    env: process.env,
+  });
+  const status = stripAnsi(
+    [result.stdout, result.stderr].filter(Boolean).join("\n"),
+  );
+
+  return status
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .filter((line) => !isStatusForPath(line, ignoredPath))
+    .join("\n");
+}
+
+function isStatusForPath(line: string, path: string) {
+  const statusPath = normalizePath(line.replace(/^.. /, "").trim());
+
+  return statusPath === path || statusPath.endsWith(` -> ${path}`);
+}
+
+function normalizePath(path: string) {
+  return path.replaceAll("\\", "/");
 }
 
 function runCommand(command: string, commandArgs: string[]): ShellResult {

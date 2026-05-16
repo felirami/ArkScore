@@ -20,6 +20,11 @@ test("root package exposes Railway CLI handoff scripts", () => {
   const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
     scripts: Record<string, string>;
   };
+  const railwayConfig = readFileSync("railway.toml", "utf8");
+  const railwayArchiveVerifier = readFileSync(
+    "scripts/verify-railway-archive.ts",
+    "utf8",
+  );
 
   assert.equal(
     packageJson.scripts["railway:login"],
@@ -33,6 +38,15 @@ test("root package exposes Railway CLI handoff scripts", () => {
     packageJson.scripts["railway:whoami"],
     "pnpm dlx @railway/cli whoami",
   );
+  assert.equal(
+    packageJson.scripts["verify:railway"],
+    "tsx scripts/verify-railway-archive.ts",
+  );
+  assert.match(packageJson.scripts.verify, /pnpm verify:railway/);
+  assert.match(railwayConfig, /"\/config\/\*\*"/);
+  assert.match(railwayArchiveVerifier, /pnpm", \["install"/);
+  assert.match(railwayArchiveVerifier, /@arkscore\/api", "build"/);
+  assert.match(railwayArchiveVerifier, /@arkscore\/api", "test"/);
 });
 
 test("Railway dry run prints redacted secret variable commands", () => {
