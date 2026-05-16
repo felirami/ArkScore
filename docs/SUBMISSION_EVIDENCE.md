@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T21:16:11.176Z
+Generated: 2026-05-16T21:21:01.405Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `1a6150d`
+- Commit: `2150245`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -121,7 +121,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 31.09 KB
-ESM ⚡️ Build success in 481ms
+ESM ⚡️ Build success in 408ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -130,37 +130,37 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 19.830208
+  duration_ms: 21.873625
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 4.025541
+  duration_ms: 5.114542
   type: 'test'
   ...
 # Subtest: openapi document honors Railway forwarded origin headers
 ok 3 - openapi document honors Railway forwarded origin headers
   ---
-  duration_ms: 2.2735
+  duration_ms: 2.347292
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 4 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.4985
+  duration_ms: 2.587083
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 5 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.131834
+  duration_ms: 2.171541
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 6 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 5.934041
+  duration_ms: 6.148834
   type: 'test'
   ...
 1..6
@@ -171,36 +171,36 @@ ok 6 - score endpoint rate limits repeated clients
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 718.262625
+# duration_ms 717.122959
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 8.571917
+  duration_ms: 8.677916
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.656417
+  duration_ms: 0.644834
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 0.9555
+  duration_ms: 0.925791
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 4 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.546666
+  duration_ms: 0.536917
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.305208
+  duration_ms: 0.320167
   type: 'test'
   ...
 1..5
@@ -211,7 +211,7 @@ ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 157.280583
+# duration_ms 149.906416
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
@@ -400,6 +400,7 @@ pnpm verify:live:strict:record
 [warn] Subject hash salt: required to keep on-chain subject hashes environment-specific; missing ARKSCORE_SUBJECT_HASH_SALT
 [warn] Fuji deployer key: required to deploy CreditScoreRegistry to Avalanche Fuji; missing FUJI_PRIVATE_KEY
 [warn] Frontend API URL: required to point Vercel at the public HTTPS Railway API during finalization; missing ARKSCORE_API_URL, NEXT_PUBLIC_API_BASE_URL
+[pass] Frontend Fuji RPC URL: required so the Vercel dashboard can read and write Avalanche Fuji from the browser; using default https://api.avax-test.network/ext/bc/C/rpc
 [warn] Frontend registry address: required to enable Store on Fuji and set Vercel public env; missing ARKSCORE_REGISTRY_ADDRESS, CREDIT_SCORE_REGISTRY_ADDRESS, REGISTRY_ADDRESS, NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS, packages/contracts/deployments/fuji/CreditScoreRegistry.json
 [pass] Optional eERC20 demo address: optional EncryptedERC privacy token demo address; not configured
 [warn] Demo scorer address: required to prove the dashboard signer can store scores on Fuji; missing ARKSCORE_SCORER_ADDRESS, SCORER_ADDRESS
@@ -410,8 +411,8 @@ pnpm verify:live:strict:record
 
 ## Summary
 
-- Passing: 12
+- Passing: 13
 - Warnings: 7
 - Failing: 0
-- Report id: 264155a86194
+- Report id: cf0fc8a78bde
 ````
