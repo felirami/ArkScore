@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T20:21:42.177Z
+Generated: 2026-05-16T20:27:10.840Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `7f81c3d`
+- Commit: `a539f45`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -110,7 +110,7 @@ devDependencies:
 + tsx 4.22.0
 + typescript 6.0.3
 
-Done in 930ms using pnpm v11.1.2
+Done in 931ms using pnpm v11.1.2
 
 $ pnpm --filter @arkscore/api build
 CLI Building entry: src/server.ts
@@ -120,7 +120,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 31.09 KB
-ESM ⚡️ Build success in 402ms
+ESM ⚡️ Build success in 393ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -129,37 +129,37 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 20.194042
+  duration_ms: 20.61375
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 4.538208
+  duration_ms: 4.525792
   type: 'test'
   ...
 # Subtest: openapi document honors Railway forwarded origin headers
 ok 3 - openapi document honors Railway forwarded origin headers
   ---
-  duration_ms: 2.277917
+  duration_ms: 2.216959
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 4 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.670583
+  duration_ms: 2.473875
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 5 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.302375
+  duration_ms: 2.016541
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 6 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 5.923958
+  duration_ms: 5.936583
   type: 'test'
   ...
 1..6
@@ -170,36 +170,36 @@ ok 6 - score endpoint rate limits repeated clients
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 649.966667
+# duration_ms 647.373209
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 8.951333
+  duration_ms: 8.737625
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.624375
+  duration_ms: 0.597166
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 0.96025
+  duration_ms: 0.945834
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 4 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.57675
+  duration_ms: 0.514167
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.334584
+  duration_ms: 0.317666
   type: 'test'
   ...
 1..5
@@ -210,7 +210,7 @@ ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 144.65325
+# duration_ms 145.442167
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
