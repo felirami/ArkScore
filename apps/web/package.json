@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm clean:export && next build",
     "start": "next start",
     "lint": "eslint src next.config.ts postcss.config.mjs --max-warnings=0",
+    "clean:export": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\"",
     "clean:typegen": "node -e \"require('node:fs').rmSync('.next/types', { recursive: true, force: true })\"",
     "typecheck": "pnpm clean:typegen && next typegen && tsc --noEmit",
     "test": "pnpm clean:typegen && next typegen && tsc --noEmit"

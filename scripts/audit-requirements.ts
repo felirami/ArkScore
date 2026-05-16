@@ -171,7 +171,10 @@ function checkFrontendStack(): Check {
 
 function checkVercelConfig(): Check {
   const vercelConfig = safeRead("vercel.json");
+  const webPackage = readPackageJson("apps/web/package.json");
   const webEnvExample = safeRead("apps/web/.env.local.example");
+  const webBuildScript = webPackage?.scripts?.build ?? "";
+  const cleanExportScript = webPackage?.scripts?.["clean:export"] ?? "";
   const requiredPublicEnv = [
     "NEXT_PUBLIC_API_BASE_URL",
     "NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL",
@@ -186,13 +189,15 @@ function checkVercelConfig(): Check {
   if (
     vercelConfig?.includes("@arkscore/web build") &&
     vercelConfig.includes("apps/web/out") &&
+    webBuildScript.includes("clean:export") &&
+    cleanExportScript.includes("rmSync('out'") &&
     missingPublicEnv.length === 0
   ) {
     return {
       label: "Vercel frontend deployment config",
       status: "pass",
       detail:
-        "vercel.json builds the static export and web public env example is present",
+        "vercel.json builds a clean static export and web public env example is present",
     };
   }
 
@@ -202,6 +207,8 @@ function checkVercelConfig(): Check {
     detail: `missing ${[
       vercelConfig?.includes("@arkscore/web build") ? "" : "web build command",
       vercelConfig?.includes("apps/web/out") ? "" : "outputDirectory config",
+      webBuildScript.includes("clean:export") ? "" : "clean static export",
+      cleanExportScript.includes("rmSync('out'") ? "" : "out cleanup script",
       ...missingPublicEnv,
     ]
       .filter(Boolean)

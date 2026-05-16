@@ -55,8 +55,15 @@ test("root package exposes Railway CLI handoff scripts", () => {
 });
 
 test("web env example documents public deployment variables", () => {
+  const webPackage = JSON.parse(
+    readFileSync("apps/web/package.json", "utf8"),
+  ) as {
+    scripts: Record<string, string>;
+  };
   const webEnvExample = readFileSync("apps/web/.env.local.example", "utf8");
 
+  assert.match(webPackage.scripts.build, /clean:export/);
+  assert.match(webPackage.scripts["clean:export"], /rmSync\('out'/);
   assert.match(webEnvExample, /NEXT_PUBLIC_API_BASE_URL=/);
   assert.match(webEnvExample, /NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=/);
   assert.match(webEnvExample, /NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=/);
