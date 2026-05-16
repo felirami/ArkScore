@@ -1,5 +1,6 @@
 import { strict as assert } from "node:assert";
 import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdirSync,
   mkdtempSync,
@@ -1476,7 +1477,7 @@ test("live verifier preflight skips Vercel and proves API plus registry", async 
   );
   assert.match(
     result.output,
-    /Railway API score: live Wavy Node response; Bankaool score response is valid, no-store, and rate-limited/,
+    /Railway API score: live Wavy Node response; Bankaool score response is valid, evidence-hashed, no-store, and rate-limited/,
   );
   assert.match(
     result.output,
@@ -1518,6 +1519,18 @@ test("live verifier fails when Railway health reports a non-Fuji Wavy chain", as
   assert.match(
     result.output,
     /Railway Wavy chain: expected wavyChainId 43113, received 1/,
+  );
+});
+
+test("live verifier fails when the Railway score evidence hash is stale", async () => {
+  const result = await runLivePreflightVerifierWithMocks({
+    scoreEvidenceHash: `0x${"b".repeat(64)}`,
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Railway API score: .*invalid shape, evidence hash, cache\/rate-limit headers/,
   );
 });
 
@@ -2050,6 +2063,7 @@ async function runLivePreflightVerifierWithMocks(
     useFallbackAliases?: boolean;
     openApiServerUrl?: string;
     healthWavyChainId?: number;
+    scoreEvidenceHash?: string;
   } = {},
 ) {
   const registryAddress = "0x1111111111111111111111111111111111111111";
@@ -2085,35 +2099,14 @@ async function runLivePreflightVerifierWithMocks(
     }
 
     if (path?.startsWith("/api/score/")) {
+      const score = createLiveScoreFixture(options.scoreEvidenceHash);
+
       response.writeHead(200, {
         "cache-control": "no-store",
         "content-type": "application/json",
         "ratelimit-limit": "120",
       });
-      response.end(
-        JSON.stringify({
-          address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-          subjectHash: `0x${"a".repeat(64)}`,
-          chainId: 43113,
-          institution: "bankaool",
-          source: "wavy",
-          evidenceHash: `0x${"b".repeat(64)}`,
-          wavy: {
-            analysisId: "wavy-live-fixture",
-            riskScore: 18,
-            traceability: {
-              provider: "Wavy Node",
-              riskScoreScale: "0-100",
-              transactionsAnalyzed: 42,
-              patternsCount: 2,
-            },
-          },
-          composite: {
-            creditScore: 82,
-            decisionLabel: "Approve Bankaool loan",
-          },
-        }),
-      );
+      response.end(JSON.stringify(score));
       return;
     }
 
@@ -2228,6 +2221,45 @@ async function runLivePreflightVerifierWithMocks(
   }
 }
 
+function createLiveScoreFixture(evidenceHashOverride?: string) {
+  const score = {
+    address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    subjectHash: `0x${"a".repeat(64)}`,
+    chainId: 43113,
+    institution: "bankaool",
+    source: "wavy",
+    wavy: {
+      analysisId: "wavy-live-fixture",
+      riskScore: 18,
+      traceability: {
+        provider: "Wavy Node",
+        riskScoreScale: "0-100",
+        transactionsAnalyzed: 42,
+        patternsCount: 2,
+      },
+    },
+    composite: {
+      creditScore: 82,
+      decisionLabel: "Approve Bankaool loan",
+    },
+  };
+
+  return {
+    ...score,
+    evidenceHash:
+      evidenceHashOverride ??
+      createEvidenceHash({
+        address: score.address,
+        subjectHash: score.subjectHash,
+        chainId: score.chainId,
+        institution: score.institution,
+        source: score.source,
+        wavy: score.wavy,
+        composite: score.composite,
+      }),
+  };
+}
+
 function createOpenApiFixture(serverUrl: string) {
   return {
     openapi: "3.1.0",
@@ -2287,6 +2319,27 @@ function createOpenApiFixture(serverUrl: string) {
       },
     },
   };
+}
+
+function createEvidenceHash(payload: unknown): string {
+  return `0x${createHash("sha256").update(stableStringify(payload)).digest("hex")}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableStringify(entry)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }
 
 function validScoreRecordProof(

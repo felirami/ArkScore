@@ -16,17 +16,17 @@ type ScoreResponse = {
   institution?: string;
   source?: "wavy" | "mock";
   evidenceHash?: string;
-  wavy?: {
+  wavy?: Record<string, unknown> & {
     analysisId?: string;
     riskScore?: number;
-    traceability?: {
+    traceability?: Record<string, unknown> & {
       provider?: string;
       riskScoreScale?: string;
       transactionsAnalyzed?: number;
       patternsCount?: number;
     };
   };
-  composite?: {
+  composite?: Record<string, unknown> & {
     creditScore?: number;
     decisionLabel?: string;
   };
@@ -580,6 +580,8 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       Number.isInteger(score.wavy?.traceability?.patternsCount) &&
       isScore(score.composite?.creditScore) &&
       Boolean(score.evidenceHash?.match(/^0x[a-f0-9]{64}$/));
+    const evidenceHashValid =
+      scoreShapeValid && scoreEvidenceHashMatches(score);
     const cacheControl = scoreResponse.headers.get("cache-control") ?? "";
     const rateLimit = scoreResponse.headers.get("ratelimit-limit") ?? "";
     const cacheValid = /\bno-store\b/i.test(cacheControl);
@@ -591,16 +593,16 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         : `response source is ${score?.source ?? "unknown"}`;
 
     checks.push(
-      scoreShapeValid && cacheValid && rateLimitValid
+      scoreShapeValid && evidenceHashValid && cacheValid && rateLimitValid
         ? {
             label: "Railway API score",
             status: requireWavy ? sourceStatus : "pass",
-            detail: `${sourceDetail}; Bankaool score response is valid, no-store, and rate-limited`,
+            detail: `${sourceDetail}; Bankaool score response is valid, evidence-hashed, no-store, and rate-limited`,
           }
         : {
             label: "Railway API score",
             status: "fail",
-            detail: `${url}/api/score/:address returned invalid shape, cache/rate-limit headers, or status ${scoreResponse.status}`,
+            detail: `${url}/api/score/:address returned invalid shape, evidence hash, cache/rate-limit headers, or status ${scoreResponse.status}`,
           },
     );
   } catch (error) {
@@ -612,6 +614,22 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
   }
 
   return checks;
+}
+
+function scoreEvidenceHashMatches(score: ScoreResponse | null): boolean {
+  if (!score?.evidenceHash || !isBytes32(score.evidenceHash)) return false;
+
+  const expected = createEvidenceHash({
+    address: score.address,
+    subjectHash: score.subjectHash,
+    chainId: score.chainId,
+    institution: score.institution,
+    source: score.source,
+    wavy: score.wavy,
+    composite: score.composite,
+  });
+
+  return score.evidenceHash.toLowerCase() === expected;
 }
 
 async function verifyContract(address: string | undefined): Promise<Check[]> {
@@ -1385,6 +1403,27 @@ function isBytes32(value: string): boolean {
 
 function isScore(value: unknown): boolean {
   return typeof value === "number" && value >= 0 && value <= 100;
+}
+
+function createEvidenceHash(payload: unknown): string {
+  return `0x${createHash("sha256").update(stableStringify(payload)).digest("hex")}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableStringify(entry)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }
 
 function isEncodedAddress(value: string): boolean {
