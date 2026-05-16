@@ -64,7 +64,13 @@ const requireScoreRecord =
 const skipExternal =
   process.argv.includes("--skip-external") ||
   combinedEnv.ARKSCORE_READINESS_SKIP_EXTERNAL === "true";
+const skipCliAuth =
+  process.argv.includes("--skip-cli-auth") ||
+  combinedEnv.ARKSCORE_READINESS_SKIP_CLI_AUTH === "true";
 const allowMockRecord = combinedEnv.ARKSCORE_ALLOW_MOCK_RECORD === "true";
+const webUrl =
+  normalizeBaseUrl(firstConfiguredValue([combinedEnv.ARKSCORE_WEB_URL])) ??
+  "https://arkscore-seven.vercel.app";
 const configuredScoreRecordArtifactPath = firstConfiguredValue([
   combinedEnv.ARKSCORE_SCORE_RECORD_ARTIFACT,
 ]);
@@ -183,14 +189,17 @@ async function main() {
       detail: "skipped by --skip-external",
     });
   } else {
-    checks.push(
-      checkRailwayAuth(),
-      checkVercelAuth(),
-      await checkUrl(
-        "Vercel production URL",
-        "https://arkscore-seven.vercel.app",
-      ),
-    );
+    if (skipCliAuth) {
+      checks.push({
+        label: "CLI auth probes",
+        status: "pass",
+        detail: "skipped by --skip-cli-auth",
+      });
+    } else {
+      checks.push(checkRailwayAuth(), checkVercelAuth());
+    }
+
+    checks.push(await checkUrl("Vercel production URL", webUrl));
   }
 
   const failed = checks.filter((check) => check.status === "fail");
@@ -404,6 +413,11 @@ function findValidCandidate(
 
 function firstConfiguredValue(values: Array<string | undefined>) {
   return values.find((value) => value?.trim())?.trim();
+}
+
+function normalizeBaseUrl(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  return value.trim().replace(/\/$/, "");
 }
 
 function isCustomScoreRecordArtifactPath(value: string | undefined) {

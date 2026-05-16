@@ -313,6 +313,35 @@ test("readiness treats the default score record artifact path as optional until 
   assert.doesNotMatch(result.output, /LatestScoreRecord\.json is missing/);
 });
 
+test("readiness probes the configured production web URL", async () => {
+  const webServer = await listen((_request, response) => {
+    response.writeHead(200, { "content-type": "text/html" });
+    response.end("<html><body>ArkScore readiness</body></html>");
+  });
+
+  try {
+    const result = await runScriptAsync(
+      "scripts/readiness-check.ts",
+      ["--skip-cli-auth"],
+      {
+        ARKSCORE_WEB_URL: `${webServer.url}/`,
+      },
+    );
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /\[pass\] CLI auth probes:/);
+    assert.match(
+      result.output,
+      new RegExp(
+        `\\[pass\\] Vercel production URL: ${escapeRegExp(webServer.url)} returned 200`,
+      ),
+    );
+    assert.doesNotMatch(result.output, /arkscore-seven\.vercel\.app returned/);
+  } finally {
+    await webServer.close();
+  }
+});
+
 test("requirements audit maps repo readiness without leaking secrets", () => {
   const result = runScript("scripts/audit-requirements.ts", [], {
     WAVY_NODE_API_KEY: "ApiKey should-not-print",
@@ -968,6 +997,10 @@ function runScript(
   env: Record<string, string> = {},
 ) {
   return runPnpm(["exec", "tsx", scriptPath, ...args], env);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function runPnpm(args: string[] = [], env: Record<string, string> = {}) {
