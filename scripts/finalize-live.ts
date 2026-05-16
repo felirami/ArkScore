@@ -8,17 +8,20 @@ type DeploymentArtifact = {
 const apply = process.argv.includes("--apply");
 const env = {
   ...readEnvFile(".env"),
+  ...readEnvFile("packages/contracts/.env"),
   ...readEnvFile("apps/web/.env.local"),
-  ...process.env
+  ...process.env,
 };
 const apiUrl = normalizeBaseUrl(
-  env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL
+  env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL,
 );
 const registryAddress =
   env.ARKSCORE_REGISTRY_ADDRESS ??
+  env.CREDIT_SCORE_REGISTRY_ADDRESS ??
+  env.REGISTRY_ADDRESS ??
   env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
   readRegistryDeployment()?.address;
-const scorerAddress = env.ARKSCORE_SCORER_ADDRESS;
+const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
 const webUrl = env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app";
 
@@ -33,14 +36,17 @@ function main() {
 
   if (!registryAddress || !isAddress(registryAddress)) {
     fail(
-      "Missing registry address. Set ARKSCORE_REGISTRY_ADDRESS or deploy Fuji contract first."
+      "Missing registry address. Set ARKSCORE_REGISTRY_ADDRESS, CREDIT_SCORE_REGISTRY_ADDRESS, REGISTRY_ADDRESS, or deploy Fuji contract first.",
     );
   }
 
   const envCommands = [
     vercelEnvCommand("NEXT_PUBLIC_API_BASE_URL", apiUrl),
-    vercelEnvCommand("NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS", registryAddress),
-    vercelEnvCommand("NEXT_PUBLIC_ENABLE_DEMO_FALLBACK", "false")
+    vercelEnvCommand(
+      "NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
+      registryAddress,
+    ),
+    vercelEnvCommand("NEXT_PUBLIC_ENABLE_DEMO_FALLBACK", "false"),
   ];
   const deployCommand = [
     "pnpm",
@@ -51,18 +57,15 @@ function main() {
     "--prod",
     "-y",
     "--scope",
-    vercelScope
+    vercelScope,
   ];
-  const verifyCommand = [
-    "pnpm",
-    "verify:live:strict"
-  ];
+  const verifyCommand = ["pnpm", "verify:live:strict"];
   const verifyEnv = {
     ...process.env,
     ARKSCORE_API_URL: apiUrl,
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
-    ARKSCORE_WEB_URL: webUrl
+    ARKSCORE_WEB_URL: webUrl,
   };
 
   if (!apply) {
@@ -93,7 +96,7 @@ function vercelEnvCommand(name: string, value: string) {
     "--yes",
     "--scope",
     vercelScope,
-    "--no-sensitive"
+    "--no-sensitive",
   ];
 }
 
@@ -102,7 +105,7 @@ function run(command: string[], commandEnv = process.env) {
   const [binary, ...args] = command;
   const result = spawnSync(binary, args, {
     env: commandEnv,
-    stdio: "inherit"
+    stdio: "inherit",
   });
 
   if (result.status !== 0) {
@@ -118,7 +121,7 @@ function renderVerifyEnv() {
   return Object.entries({
     ARKSCORE_API_URL: apiUrl,
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
-    ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {})
+    ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
   })
     .map(([key, value]) => `${key}=${shellEscape(value)}`)
     .join(" ");
@@ -135,10 +138,13 @@ function readEnvFile(path: string): Record<string, string> {
       .map((line) => {
         const index = line.indexOf("=");
         const key = line.slice(0, index).trim();
-        const value = line.slice(index + 1).trim().replace(/^['"]|['"]$/g, "");
+        const value = line
+          .slice(index + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, "");
 
         return [key, value];
-      })
+      }),
   );
 }
 

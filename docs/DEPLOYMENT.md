@@ -149,7 +149,7 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
 ```
 
-`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS` or the Fuji deployment artifact, sets public Vercel env values, redeploys the frontend, and runs strict live verification.
+`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, sets public Vercel env values, redeploys the frontend, and runs strict live verification. It also accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during strict verification.
 
 ## Final Smoke Test
 
@@ -160,10 +160,11 @@ curl "https://your-railway-api.up.railway.app/api/score/0xd8dA6BF26964aF9D7eEd9e
 pnpm readiness
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
   ARKSCORE_REGISTRY_ADDRESS=0x... \
+  ARKSCORE_SCORER_ADDRESS=0x... \
   pnpm verify:live
 ```
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing.
 
 Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable, checks the Railway health, production subject-hash salt, OpenAPI, and score response shape, and verifies that the Fuji registry address has bytecode plus a callable `owner()`.
-Set `ARKSCORE_SCORER_ADDRESS` before the strict run to prove the dashboard signing wallet is authorized to store score records.
+Set `ARKSCORE_SCORER_ADDRESS` or `SCORER_ADDRESS` before the strict run to prove the dashboard signing wallet is authorized to store score records.

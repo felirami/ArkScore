@@ -61,13 +61,15 @@ const apiUrl = normalizeBaseUrl(
 );
 const registryAddress =
   env.ARKSCORE_REGISTRY_ADDRESS ??
+  env.CREDIT_SCORE_REGISTRY_ADDRESS ??
+  env.REGISTRY_ADDRESS ??
   env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
   readRegistryDeployment()?.address;
 const fujiRpcUrl =
   env.FUJI_RPC_URL ?? "https://api.avax-test.network/ext/bc/C/rpc";
 const testWallet =
   env.ARKSCORE_TEST_WALLET ?? "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
-const scorerAddress = env.ARKSCORE_SCORER_ADDRESS;
+const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
