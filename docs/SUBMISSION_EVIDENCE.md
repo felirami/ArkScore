@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T19:33:47.470Z
+Generated: 2026-05-16T19:39:22.441Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `af9b1e5`
+- Commit: `d9ecad7`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -43,6 +43,7 @@ pnpm probe:eerc20
 pnpm railway:whoami
 pnpm verify:railway
 pnpm deploy:railway:apply -- --create-domain
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji
 pnpm record:fuji
@@ -106,7 +107,7 @@ devDependencies:
 + tsx 4.22.0
 + typescript 6.0.3
 
-Done in 1s using pnpm v11.1.2
+Done in 935ms using pnpm v11.1.2
 
 $ pnpm --filter @arkscore/api build
 CLI Building entry: src/server.ts
@@ -116,7 +117,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 30.17 KB
-ESM ⚡️ Build success in 465ms
+ESM ⚡️ Build success in 402ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -125,31 +126,31 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 21.026334
+  duration_ms: 20.093584
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 5.059458
+  duration_ms: 4.687417
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 3 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.836125
+  duration_ms: 2.653666
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 4 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.1615
+  duration_ms: 2.108458
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 5 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 6.137875
+  duration_ms: 5.833417
   type: 'test'
   ...
 1..5
@@ -160,36 +161,36 @@ ok 5 - score endpoint rate limits repeated clients
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 673.85
+# duration_ms 1269.200916
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 8.434459
+  duration_ms: 8.380917
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.612375
+  duration_ms: 0.618417
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 1.121833
+  duration_ms: 0.882417
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 4 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.500625
+  duration_ms: 0.436417
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.322375
+  duration_ms: 0.304042
   type: 'test'
   ...
 1..5
@@ -200,7 +201,7 @@ ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 151.762584
+# duration_ms 137.340292
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
@@ -291,14 +292,14 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 [warn] Fuji registry deployment proof: missing deployed registry address or Fuji deployment artifact
 [warn] Authorized scorer proof: missing ARKSCORE_SCORER_ADDRESS or SCORER_ADDRESS
 [pass] Latest on-chain score record proof: not configured yet; run pnpm record:fuji after live deployment
-[pass] Final live verification and evidence path: strict record verifier, finalizer, readiness, and evidence scripts are registered
+[pass] Final live verification and evidence path: strict record verifier, Railway API verifier, finalizer, readiness, and evidence scripts are registered
 
 ## Summary
 
 - Passing: 15
 - Warnings: 4
 - Failing: 0
-- Report id: c7972316bf13
+- Report id: 94528903337b
 ````
 
 ### Judge demo runbook
@@ -339,7 +340,9 @@ pnpm verify:live
 pnpm probe:wavy
 pnpm probe:fuji
 pnpm railway:whoami
+pnpm verify:railway
 pnpm deploy:railway:apply -- --create-domain
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji
 pnpm record:fuji
