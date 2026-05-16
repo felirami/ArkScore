@@ -15,6 +15,7 @@ type ScoreResponse = {
   chainId?: number;
   institution?: string;
   source?: "wavy" | "mock";
+  generatedAt?: string;
   evidenceHash?: string;
   wavy?: Record<string, unknown> & {
     analysisId?: string;
@@ -167,6 +168,8 @@ const scorerAddress = firstConfiguredValue([
 const scoreRecordArtifactPath =
   firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
   defaultScoreRecordArtifactPath;
+const scoreMaxAgeMs = 10 * 60 * 1000;
+const scoreFutureSkewMs = 60 * 1000;
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -579,9 +582,11 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       Number.isInteger(score.wavy?.traceability?.transactionsAnalyzed) &&
       Number.isInteger(score.wavy?.traceability?.patternsCount) &&
       isScore(score.composite?.creditScore) &&
+      typeof score.generatedAt === "string" &&
       Boolean(score.evidenceHash?.match(/^0x[a-f0-9]{64}$/));
     const evidenceHashValid =
       scoreShapeValid && scoreEvidenceHashMatches(score);
+    const scoreFresh = scoreShapeValid && scoreGeneratedAtIsFresh(score);
     const cacheControl = scoreResponse.headers.get("cache-control") ?? "";
     const rateLimit = scoreResponse.headers.get("ratelimit-limit") ?? "";
     const cacheValid = /\bno-store\b/i.test(cacheControl);
@@ -593,16 +598,20 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         : `response source is ${score?.source ?? "unknown"}`;
 
     checks.push(
-      scoreShapeValid && evidenceHashValid && cacheValid && rateLimitValid
+      scoreShapeValid &&
+        evidenceHashValid &&
+        scoreFresh &&
+        cacheValid &&
+        rateLimitValid
         ? {
             label: "Railway API score",
             status: requireWavy ? sourceStatus : "pass",
-            detail: `${sourceDetail}; Bankaool score response is valid, evidence-hashed, no-store, and rate-limited`,
+            detail: `${sourceDetail}; Bankaool score response is valid, fresh, evidence-hashed, no-store, and rate-limited`,
           }
         : {
             label: "Railway API score",
             status: "fail",
-            detail: `${url}/api/score/:address returned invalid shape, evidence hash, cache/rate-limit headers, or status ${scoreResponse.status}`,
+            detail: `${url}/api/score/:address returned invalid shape, freshness, evidence hash, cache/rate-limit headers, or status ${scoreResponse.status}`,
           },
     );
   } catch (error) {
@@ -630,6 +639,18 @@ function scoreEvidenceHashMatches(score: ScoreResponse | null): boolean {
   });
 
   return score.evidenceHash.toLowerCase() === expected;
+}
+
+function scoreGeneratedAtIsFresh(score: ScoreResponse | null): boolean {
+  if (!score?.generatedAt) return false;
+
+  const generatedAtMs = Date.parse(score.generatedAt);
+  if (!Number.isFinite(generatedAtMs)) return false;
+
+  const now = Date.now();
+  if (generatedAtMs > now + scoreFutureSkewMs) return false;
+
+  return now - generatedAtMs <= scoreMaxAgeMs;
 }
 
 async function verifyContract(address: string | undefined): Promise<Check[]> {

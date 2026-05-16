@@ -582,7 +582,10 @@ test("requirements audit maps repo readiness without leaking secrets", () => {
     result.output,
     /\[pass\] Wavy Node traceability and AI risk score:/,
   );
-  assert.match(result.output, /score recorder evidence hash check, finalizer/);
+  assert.match(
+    result.output,
+    /fresh score and recorder evidence hash checks, finalizer/,
+  );
   assert.match(result.output, /\[warn\] Railway live deployment proof:/);
   assert.doesNotMatch(result.output, /should-not-print/);
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
@@ -1478,7 +1481,7 @@ test("live verifier preflight skips Vercel and proves API plus registry", async 
   );
   assert.match(
     result.output,
-    /Railway API score: live Wavy Node response; Bankaool score response is valid, evidence-hashed, no-store, and rate-limited/,
+    /Railway API score: live Wavy Node response; Bankaool score response is valid, fresh, evidence-hashed, no-store, and rate-limited/,
   );
   assert.match(
     result.output,
@@ -1531,7 +1534,19 @@ test("live verifier fails when the Railway score evidence hash is stale", async 
   assert.equal(result.status, 1, result.output);
   assert.match(
     result.output,
-    /Railway API score: .*invalid shape, evidence hash, cache\/rate-limit headers/,
+    /Railway API score: .*invalid shape, freshness, evidence hash, cache\/rate-limit headers/,
+  );
+});
+
+test("live verifier fails when the Railway score response is stale", async () => {
+  const result = await runLivePreflightVerifierWithMocks({
+    scoreGeneratedAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Railway API score: .*invalid shape, freshness, evidence hash, cache\/rate-limit headers/,
   );
 });
 
@@ -2065,6 +2080,7 @@ async function runLivePreflightVerifierWithMocks(
     openApiServerUrl?: string;
     healthWavyChainId?: number;
     scoreEvidenceHash?: string;
+    scoreGeneratedAt?: string;
   } = {},
 ) {
   const registryAddress = "0x1111111111111111111111111111111111111111";
@@ -2100,7 +2116,10 @@ async function runLivePreflightVerifierWithMocks(
     }
 
     if (path?.startsWith("/api/score/")) {
-      const score = createLiveScoreFixture(options.scoreEvidenceHash);
+      const score = createLiveScoreFixture({
+        evidenceHashOverride: options.scoreEvidenceHash,
+        generatedAt: options.scoreGeneratedAt,
+      });
 
       response.writeHead(200, {
         "cache-control": "no-store",
@@ -2222,13 +2241,19 @@ async function runLivePreflightVerifierWithMocks(
   }
 }
 
-function createLiveScoreFixture(evidenceHashOverride?: string) {
+function createLiveScoreFixture(
+  options: {
+    evidenceHashOverride?: string;
+    generatedAt?: string;
+  } = {},
+) {
   const score = {
     address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     subjectHash: `0x${"a".repeat(64)}`,
     chainId: 43113,
     institution: "bankaool",
     source: "wavy",
+    generatedAt: options.generatedAt ?? new Date().toISOString(),
     wavy: {
       analysisId: "wavy-live-fixture",
       riskScore: 18,
@@ -2248,7 +2273,7 @@ function createLiveScoreFixture(evidenceHashOverride?: string) {
   return {
     ...score,
     evidenceHash:
-      evidenceHashOverride ??
+      options.evidenceHashOverride ??
       createEvidenceHash({
         address: score.address,
         subjectHash: score.subjectHash,

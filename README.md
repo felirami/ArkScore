@@ -125,6 +125,8 @@ See `docs/READINESS_AUDIT.md` and `docs/REQUIREMENTS_TRACE.md` for the current j
 
 The readiness, finalization, and live verification scripts accept the same Fuji registry aliases used by the Hardhat tooling: `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the generated `packages/contracts/deployments/fuji/CreditScoreRegistry.json` artifact.
 
+Strict live verification and `pnpm record:fuji` both require the Railway score `generatedAt` timestamp to be recent before accepting or storing a response, so a replayed score cannot satisfy the final evidence path just because its payload hash is internally consistent.
+
 ## Submission Placeholders
 
 - Live demo: `https://arkscore-seven.vercel.app`

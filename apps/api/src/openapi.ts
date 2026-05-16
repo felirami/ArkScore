@@ -474,6 +474,8 @@ export const openApiDocument = {
           generatedAt: {
             type: "string",
             format: "date-time",
+            description:
+              "Server-side timestamp used by final verification and Fuji recording to reject replayed score responses.",
           },
           evidenceHash: {
             type: "string",

@@ -141,6 +141,7 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
     assert.equal(payload.chainId, 43113);
     assert.equal(payload.institution, "bankaool");
     assert.equal(payload.source, "mock");
+    assert.ok(Date.now() - Date.parse(payload.generatedAt) < 5000);
     assert.match(payload.wavy.analysisId, /^mock-/);
     assert.ok(payload.wavy.riskScore >= 0 && payload.wavy.riskScore <= 100);
     assert.equal(payload.wavy.traceability.provider, "Wavy Node");

@@ -62,6 +62,7 @@ type ScoreApiResponse = {
   chainId: number;
   institution: Institution;
   source: ScoreSource;
+  generatedAt: string;
   evidenceHash: `0x${string}`;
   wavy: {
     analysisId: string;
@@ -121,6 +122,8 @@ const defaultScoreRecordArtifactPath =
 const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 const bytes32Regex = /^0x[a-fA-F0-9]{64}$/;
 const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
+const scoreMaxAgeMs = 10 * 60 * 1000;
+const scoreFutureSkewMs = 60 * 1000;
 const decisionContractEnum: Record<InstitutionDecision, number> = {
   REVIEW_REQUIRED: 0,
   APPROVE_IFC_EQUITY_ISSUANCE: 1,
@@ -296,6 +299,7 @@ async function fetchScore(input: {
   const scorePayload = parseJson(text);
   const score = parseScorePayload(scorePayload);
   assertScoreEvidenceHashMatches(scorePayload, score);
+  assertScoreGeneratedAtFresh(score.generatedAt);
 
   if (score.address.toLowerCase() !== input.wallet.toLowerCase()) {
     fail("Score API response address did not match the requested wallet.");
@@ -322,6 +326,22 @@ async function fetchScore(input: {
   }
 
   return score;
+}
+
+function assertScoreGeneratedAtFresh(generatedAt: string) {
+  const generatedAtMs = Date.parse(generatedAt);
+  if (!Number.isFinite(generatedAtMs)) {
+    fail("Score API generatedAt must be a valid ISO date-time.");
+  }
+
+  const now = Date.now();
+  if (generatedAtMs > now + scoreFutureSkewMs) {
+    fail("Score API generatedAt is too far in the future.");
+  }
+
+  if (now - generatedAtMs > scoreMaxAgeMs) {
+    fail("Score API generatedAt is too old to record to Fuji.");
+  }
 }
 
 function assertScoreEvidenceHashMatches(
@@ -377,6 +397,7 @@ function parseScorePayload(value: unknown): ScoreApiResponse {
       requireString(value.institution, "institution"),
     ),
     source: parseSource(requireString(value.source, "source")),
+    generatedAt: requireString(value.generatedAt, "generatedAt"),
     evidenceHash: requireBytes32(value.evidenceHash, "evidenceHash"),
     wavy: {
       analysisId: requireString(wavy.analysisId, "wavy.analysisId"),
