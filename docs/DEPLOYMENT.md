@@ -181,7 +181,8 @@ If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `pnpm
 After Railway prints the service URL or generated domain, prove the deployed API before continuing to Fuji/Vercel finalization:
 
 ```bash
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live
+export ARKSCORE_API_URL=https://your-railway-api.up.railway.app
+pnpm verify:railway:live
 ```
 
 `verify:railway:live` is the API-only strict live gate. It skips the Vercel bundle and Fuji contract checks, then verifies Railway `/health`, production subject-hash salt mode, live Wavy mode, `/openapi.json`, score response shape, no-store score cache headers, and score rate-limit headers.
@@ -226,8 +227,9 @@ If `NEXT_PUBLIC_API_BASE_URL` is not configured on a hosted Vercel deployment, A
 Once Railway and Fuji are live, set the Vercel variables and redeploy:
 
 ```bash
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
+export ARKSCORE_API_URL=https://your-railway-api.up.railway.app
+pnpm finalize:live
+pnpm finalize:live:apply
 ```
 
 `finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, checks Vercel CLI auth for `VERCEL_SCOPE`, links the local checkout to `VERCEL_PROJECT_NAME`, runs `pnpm verify:live:preflight` against Railway and Fuji before Vercel env/deploy mutation, sets public Vercel env values, redeploys the frontend, and runs strict live verification. If `LatestScoreRecord.json`, a custom `ARKSCORE_SCORE_RECORD_ARTIFACT`, or `ARKSCORE_REQUIRE_SCORE_RECORD=true` is present, it upgrades the preflight to `pnpm verify:live:preflight:record` and the final verifier to `pnpm verify:live:strict:record` or `pnpm verify:live:strict:eerc20:record`. The default artifact path in copied env files stays optional until `pnpm record:fuji` creates it or `ARKSCORE_REQUIRE_SCORE_RECORD=true` is set. If `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is present, it also publishes `NEXT_PUBLIC_EERC20_DEMO_ADDRESS`. It accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during preflight and strict verification.

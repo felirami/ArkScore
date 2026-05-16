@@ -85,13 +85,23 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000/);
   assert.match(result.output, /pnpm verify:railway/);
   assert.match(result.output, /pnpm probe:wavy/);
+  assert.match(
+    result.output,
+    /export ARKSCORE_API_URL=https:\/\/your-railway-api\.up\.railway\.app/,
+  );
   assert.match(result.output, /pnpm verify:railway:live/);
+  assert.match(result.output, /pnpm finalize:live:apply/);
+  assert.doesNotMatch(result.output, /^pnpm finalize:live$/m);
   assert.match(result.output, /WAVY_NODE_API_KEY='\[redacted\]'/);
   assert.match(result.output, /WAVY_NODE_PROJECT_ID='\[redacted\]'/);
   assert.match(result.output, /ARKSCORE_SUBJECT_HASH_SALT='\[redacted\]'/);
   assert.match(result.output, /echo '\[redacted\]' \|/);
   assert.match(result.output, /@railway\/cli up/);
   assert.match(result.output, /@railway\/cli domain/);
+  assert.doesNotMatch(
+    result.output,
+    /ARKSCORE_API_URL=https:\/\/your-railway-api\.up\.railway\.app pnpm/,
+  );
   assert.doesNotMatch(result.output, /super-secret-key/);
   assert.doesNotMatch(result.output, /project-secret-id/);
   assert.doesNotMatch(result.output, /salt-secret-value/);

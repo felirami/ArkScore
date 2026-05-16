@@ -67,8 +67,9 @@ function main() {
     for (const plan of commands) printCommand(plan);
     console.log(
       "\nAfter Railway prints the service URL, run:\n" +
-        "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live\n" +
-        "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live",
+        "export ARKSCORE_API_URL=https://your-railway-api.up.railway.app\n" +
+        "pnpm verify:railway:live\n\n" +
+        "Then deploy Fuji, authorize the scorer, record a live score, and run `pnpm finalize:live:apply`.",
     );
     return;
   }
