@@ -111,6 +111,9 @@ function buildCommands(): CommandPlan[] {
     WAVY_NODE_FOREIGN_USER_PREFIX:
       env.WAVY_NODE_FOREIGN_USER_PREFIX ?? "arkscore-wallet",
     WAVY_NODE_MOCK_MODE: wavyMockMode,
+    ARKSCORE_SCORE_RATE_LIMIT_MAX: env.ARKSCORE_SCORE_RATE_LIMIT_MAX ?? "120",
+    ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS:
+      env.ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS ?? "60000",
   };
 
   for (const [key, value] of Object.entries(plainVariables)) {

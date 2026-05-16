@@ -122,6 +122,42 @@ export const openApiDocument = {
               },
             },
           },
+          "429": {
+            description:
+              "Too many score requests from the same client in the configured rate-limit window.",
+            headers: {
+              "Retry-After": {
+                description:
+                  "Seconds to wait before the client should retry scoring.",
+                schema: {
+                  type: "string",
+                  example: "60",
+                },
+              },
+              "RateLimit-Limit": {
+                description:
+                  "Maximum score requests allowed in the current window.",
+                schema: {
+                  type: "string",
+                  example: "120",
+                },
+              },
+              "RateLimit-Remaining": {
+                description: "Remaining score requests in the current window.",
+                schema: {
+                  type: "string",
+                  example: "0",
+                },
+              },
+            },
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
           "502": {
             description: "Wavy Node request failed in live mode.",
             content: {

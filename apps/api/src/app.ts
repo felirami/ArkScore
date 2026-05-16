@@ -6,12 +6,13 @@ import { getAllowedOrigins } from "./config/env.js";
 import { HttpError } from "./lib/http-error.js";
 import { healthRouter } from "./routes/health.js";
 import { openApiRouter } from "./routes/openapi.js";
-import { scoreRouter } from "./routes/score.js";
+import { createScoreRouter } from "./routes/score.js";
 
 export function createApp() {
   const app = express();
   const allowedOrigins = getAllowedOrigins();
 
+  app.set("trust proxy", 1);
   app.use(helmet());
   app.use(express.json({ limit: "1mb" }));
   app.use(
@@ -27,8 +28,8 @@ export function createApp() {
         }
 
         callback(new HttpError(403, `Origin ${origin} is not allowed.`));
-      }
-    })
+      },
+    }),
   );
   if (process.env.NODE_ENV !== "test") {
     app.use(morgan("tiny"));
@@ -36,7 +37,7 @@ export function createApp() {
 
   app.use(openApiRouter);
   app.use(healthRouter);
-  app.use(scoreRouter);
+  app.use(createScoreRouter());
 
   app.use((_request, _response, next) => {
     next(new HttpError(404, "Route not found."));
@@ -47,18 +48,17 @@ export function createApp() {
       error: Error,
       _request: express.Request,
       response: express.Response,
-      _next: express.NextFunction
+      _next: express.NextFunction,
     ) => {
       void _next;
 
-      const statusCode =
-        error instanceof HttpError ? error.statusCode : 500;
+      const statusCode = error instanceof HttpError ? error.statusCode : 500;
 
       response.status(statusCode).json({
         error: error.message,
-        statusCode
+        statusCode,
       });
-    }
+    },
   );
 
   return app;

@@ -23,6 +23,8 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.match(result.output, /variable set WAVY_NODE_API_KEY/);
   assert.match(result.output, /variable set WAVY_NODE_PROJECT_ID/);
   assert.match(result.output, /variable set ARKSCORE_SUBJECT_HASH_SALT/);
+  assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_MAX=120/);
+  assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000/);
   assert.match(result.output, /echo '\[redacted\]' \|/);
   assert.match(result.output, /@railway\/cli up/);
   assert.match(result.output, /@railway\/cli domain/);

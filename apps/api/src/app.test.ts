@@ -3,6 +3,7 @@ import type { Server } from "node:http";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createApp } from "./app.js";
+import { env } from "./config/env.js";
 import type { ScoreApiResponse } from "@arkscore/shared";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
@@ -69,6 +70,7 @@ test("openapi document describes the public scoring contract", async () => {
     assert.ok(payload.paths["/api/score/{address}"]);
     assert.ok(scoreOperation?.get?.responses?.["400"]);
     assert.ok(scoreOperation?.get?.responses?.["404"]);
+    assert.ok(scoreOperation?.get?.responses?.["429"]);
     assert.ok(scoreOperation?.get?.responses?.["502"]);
     assert.ok(scoreOperation?.get?.responses?.["504"]);
     assert.ok(scoreOperation?.get?.responses?.["500"]);
@@ -138,6 +140,33 @@ test("score endpoint rejects unsupported institutions", async () => {
     assert.equal(response.status, 400);
     assert.match(response.headers.get("cache-control") ?? "", /no-store/);
     assert.match(payload.error, /Unsupported institution/);
+  });
+});
+
+test("score endpoint rate limits repeated clients", async () => {
+  await withTestServer(async (baseUrl) => {
+    const requestCount = env.ARKSCORE_SCORE_RATE_LIMIT_MAX + 1;
+    let response: Response | undefined;
+
+    for (let index = 0; index < requestCount; index += 1) {
+      response = await fetch(`${baseUrl}/api/score/${demoWallet}`, {
+        headers: {
+          "x-forwarded-for": "203.0.113.10",
+        },
+      });
+    }
+
+    assert(response);
+    const payload = (await response.json()) as { error: string };
+    assert.equal(response.status, 429);
+    assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+    assert.match(response.headers.get("retry-after") ?? "", /^\d+$/);
+    assert.equal(
+      response.headers.get("ratelimit-limit"),
+      String(env.ARKSCORE_SCORE_RATE_LIMIT_MAX),
+    );
+    assert.equal(response.headers.get("ratelimit-remaining"), "0");
+    assert.match(payload.error, /Too many score requests/);
   });
 });
 

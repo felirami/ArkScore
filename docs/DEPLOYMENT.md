@@ -74,6 +74,8 @@ WAVY_NODE_TIMEOUT_MS=15000
 WAVY_NODE_AUTO_REGISTER=true
 WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=auto
+ARKSCORE_SCORE_RATE_LIMIT_MAX=120
+ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000
 ARKSCORE_SUBJECT_HASH_SALT=replace_with_long_random_subject_hash_salt
 RAILWAY_PROJECT_NAME=arkscore-api
 RAILWAY_PROJECT_ID=
@@ -105,7 +107,7 @@ GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113
 x-api-key: ApiKey ...
 ```
 
-`ARKSCORE_SUBJECT_HASH_SALT` should be a long random backend-only value. ArkScore returns the derived `subjectHash` to the dashboard, and the Fuji registry stores that hash instead of the raw scored wallet address.
+`ARKSCORE_SUBJECT_HASH_SALT` should be a long random backend-only value. ArkScore returns the derived `subjectHash` to the dashboard, and the Fuji registry stores that hash instead of the raw scored wallet address. `ARKSCORE_SCORE_RATE_LIMIT_MAX` and `ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS` protect live Wavy scoring calls per client; set `ARKSCORE_SCORE_RATE_LIMIT_MAX=0` only for a controlled local demo where rate limiting should be disabled.
 
 For judge demos without credentials, set `WAVY_NODE_MOCK_MODE=true`.
 
@@ -148,6 +150,8 @@ railway variable set WAVY_NODE_TIMEOUT_MS=15000 --environment production --servi
 railway variable set WAVY_NODE_AUTO_REGISTER=true --environment production --service arkscore-api --skip-deploys --json
 railway variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --environment production --service arkscore-api --skip-deploys --json
 railway variable set WAVY_NODE_MOCK_MODE=auto --environment production --service arkscore-api --skip-deploys --json
+railway variable set ARKSCORE_SCORE_RATE_LIMIT_MAX=120 --environment production --service arkscore-api --skip-deploys --json
+railway variable set ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000 --environment production --service arkscore-api --skip-deploys --json
 echo "ApiKey ..." | railway variable set WAVY_NODE_API_KEY --environment production --service arkscore-api --stdin --skip-deploys --json
 echo "..." | railway variable set WAVY_NODE_PROJECT_ID --environment production --service arkscore-api --stdin --skip-deploys --json
 echo "..." | railway variable set ARKSCORE_SUBJECT_HASH_SALT --environment production --service arkscore-api --stdin --skip-deploys --json

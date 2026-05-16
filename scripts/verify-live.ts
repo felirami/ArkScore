@@ -401,6 +401,7 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       Boolean(openApi?.paths?.["/api/score/{address}"]) &&
       operationHasResponse(scoreOperation, "400") &&
       operationHasResponse(scoreOperation, "404") &&
+      operationHasResponse(scoreOperation, "429") &&
       operationHasResponse(scoreOperation, "502") &&
       operationHasResponse(scoreOperation, "504") &&
       operationHasResponse(scoreOperation, "500") &&
@@ -463,7 +464,9 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       isScore(score.composite?.creditScore) &&
       Boolean(score.evidenceHash?.match(/^0x[a-f0-9]{64}$/));
     const cacheControl = scoreResponse.headers.get("cache-control") ?? "";
+    const rateLimit = scoreResponse.headers.get("ratelimit-limit") ?? "";
     const cacheValid = /\bno-store\b/i.test(cacheControl);
+    const rateLimitValid = /^\d+$/.test(rateLimit);
     const sourceStatus = score?.source === "wavy" ? "pass" : "warn";
     const sourceDetail =
       score?.source === "wavy"
@@ -471,16 +474,16 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         : `response source is ${score?.source ?? "unknown"}`;
 
     checks.push(
-      scoreShapeValid && cacheValid
+      scoreShapeValid && cacheValid && rateLimitValid
         ? {
             label: "Railway API score",
             status: requireWavy ? sourceStatus : "pass",
-            detail: `${sourceDetail}; Bankaool score response is valid and no-store`,
+            detail: `${sourceDetail}; Bankaool score response is valid, no-store, and rate-limited`,
           }
         : {
             label: "Railway API score",
             status: "fail",
-            detail: `${url}/api/score/:address returned invalid shape, cache headers, or status ${scoreResponse.status}`,
+            detail: `${url}/api/score/:address returned invalid shape, cache/rate-limit headers, or status ${scoreResponse.status}`,
           },
     );
   } catch (error) {

@@ -17,6 +17,12 @@ const envSchema = z.object({
   WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
   WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
   WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto"),
+  ARKSCORE_SCORE_RATE_LIMIT_MAX: z.coerce.number().int().min(0).default(120),
+  ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60_000),
   ARKSCORE_SUBJECT_HASH_SALT: z.string().default(demoSubjectHashSalt),
 });
 

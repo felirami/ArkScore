@@ -59,13 +59,15 @@ WAVY_NODE_CHAIN_ID=43113
 WAVY_NODE_AUTO_REGISTER=true
 WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=auto
+ARKSCORE_SCORE_RATE_LIMIT_MAX=120
+ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000
 ARKSCORE_SUBJECT_HASH_SALT=replace_with_long_random_subject_hash_salt
 
 FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
 FUJI_PRIVATE_KEY=
 ```
 
-`WAVY_NODE_MOCK_MODE=auto` uses live Wavy Node only when both the API key and project id are configured. `ARKSCORE_SUBJECT_HASH_SALT` is used by the backend to derive the privacy-preserving `subjectHash` stored on Fuji instead of the raw wallet address.
+`WAVY_NODE_MOCK_MODE=auto` uses live Wavy Node only when both the API key and project id are configured. `ARKSCORE_SUBJECT_HASH_SALT` is used by the backend to derive the privacy-preserving `subjectHash` stored on Fuji instead of the raw wallet address. `ARKSCORE_SCORE_RATE_LIMIT_MAX` and `ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS` protect the live Wavy score endpoint from repeated client bursts.
 
 ## Local Setup
 
