@@ -27,7 +27,7 @@ const wavyApiKey = env.WAVY_NODE_API_KEY;
 const wavyProjectId = env.WAVY_NODE_PROJECT_ID;
 const subjectHashSalt = env.ARKSCORE_SUBJECT_HASH_SALT;
 const allowMock = env.RAILWAY_ALLOW_MOCK === "true";
-const wavyMockMode = allowMock ? "true" : (env.WAVY_NODE_MOCK_MODE ?? "auto");
+const wavyMockMode = allowMock ? "true" : "false";
 
 main();
 
@@ -49,6 +49,12 @@ function main() {
     );
     console.log(
       "[warn] Set RAILWAY_ALLOW_MOCK=true only for temporary judge-demo mock deployments.\n",
+    );
+  }
+
+  if (!allowMock && env.WAVY_NODE_MOCK_MODE === "true") {
+    console.log(
+      "[warn] Ignoring WAVY_NODE_MOCK_MODE=true. Railway live deployment forces WAVY_NODE_MOCK_MODE=false unless RAILWAY_ALLOW_MOCK=true.\n",
     );
   }
 

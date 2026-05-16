@@ -81,6 +81,7 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.match(result.output, /variable set WAVY_NODE_API_KEY/);
   assert.match(result.output, /variable set WAVY_NODE_PROJECT_ID/);
   assert.match(result.output, /variable set ARKSCORE_SUBJECT_HASH_SALT/);
+  assert.match(result.output, /WAVY_NODE_MOCK_MODE=false/);
   assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_MAX=120/);
   assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000/);
   assert.match(result.output, /pnpm verify:railway/);
@@ -105,6 +106,21 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.doesNotMatch(result.output, /super-secret-key/);
   assert.doesNotMatch(result.output, /project-secret-id/);
   assert.doesNotMatch(result.output, /salt-secret-value/);
+});
+
+test("Railway live dry run overrides stale local mock mode", () => {
+  const result = runScript("scripts/deploy-railway.ts", [], {
+    WAVY_NODE_API_KEY: "ApiKey super-secret-key",
+    WAVY_NODE_PROJECT_ID: "project-secret-id",
+    ARKSCORE_SUBJECT_HASH_SALT: "salt-secret-value",
+    WAVY_NODE_MOCK_MODE: "true",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Ignoring WAVY_NODE_MOCK_MODE=true/);
+  assert.match(result.output, /WAVY_NODE_MOCK_MODE=false/);
+  assert.doesNotMatch(result.output, /variable set WAVY_NODE_MOCK_MODE=true/);
+  assert.match(result.output, /pnpm probe:wavy/);
 });
 
 test("Railway dry run skips Wavy probe for explicit mock deployment", () => {

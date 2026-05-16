@@ -84,7 +84,7 @@ WAVY_NODE_CHAIN_ID=43113
 WAVY_NODE_TIMEOUT_MS=15000
 WAVY_NODE_AUTO_REGISTER=true
 WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
-WAVY_NODE_MOCK_MODE=auto
+WAVY_NODE_MOCK_MODE=false
 ARKSCORE_SCORE_RATE_LIMIT_MAX=120
 ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000
 ARKSCORE_SUBJECT_HASH_SALT=replace_with_long_random_subject_hash_salt
@@ -139,7 +139,7 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm deploy:railway:apply -- --create-domain
 ```
 
-In live mode, `deploy:railway:apply` runs `pnpm verify:railway` and `pnpm probe:wavy` before it touches Railway variables or uploads the service, so a broken deploy archive, invalid Wavy credentials, inactive Fuji support, or a weak subject-hash salt fail locally first.
+In live mode, `deploy:railway:apply` runs `pnpm verify:railway` and `pnpm probe:wavy` before it touches Railway variables or uploads the service, so a broken deploy archive, invalid Wavy credentials, inactive Fuji support, or a weak subject-hash salt fail locally first. It also forces the deployed Railway variable `WAVY_NODE_MOCK_MODE=false` unless `RAILWAY_ALLOW_MOCK=true` is explicitly set for a temporary mock deployment.
 
 Before deploying Railway, you can prove the Wavy credentials locally without printing the API key:
 
@@ -166,7 +166,7 @@ pnpm dlx @railway/cli variable set WAVY_NODE_CHAIN_ID=43113 --environment produc
 pnpm dlx @railway/cli variable set WAVY_NODE_TIMEOUT_MS=15000 --environment production --service arkscore-api --skip-deploys --json
 pnpm dlx @railway/cli variable set WAVY_NODE_AUTO_REGISTER=true --environment production --service arkscore-api --skip-deploys --json
 pnpm dlx @railway/cli variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --environment production --service arkscore-api --skip-deploys --json
-pnpm dlx @railway/cli variable set WAVY_NODE_MOCK_MODE=auto --environment production --service arkscore-api --skip-deploys --json
+pnpm dlx @railway/cli variable set WAVY_NODE_MOCK_MODE=false --environment production --service arkscore-api --skip-deploys --json
 pnpm dlx @railway/cli variable set ARKSCORE_SCORE_RATE_LIMIT_MAX=120 --environment production --service arkscore-api --skip-deploys --json
 pnpm dlx @railway/cli variable set ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000 --environment production --service arkscore-api --skip-deploys --json
 echo "ApiKey ..." | pnpm dlx @railway/cli variable set WAVY_NODE_API_KEY --environment production --service arkscore-api --stdin --skip-deploys --json
