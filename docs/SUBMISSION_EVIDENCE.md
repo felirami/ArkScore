@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T18:16:00.560Z
+Generated: 2026-05-16T18:19:55.252Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `1c1bf13`
+- Commit: `f906636`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -14,6 +14,7 @@ Generated: 2026-05-16T18:16:00.560Z
 - Railway backend: `TBD until Railway auth and Wavy credentials are configured`
 - Avalanche Fuji `CreditScoreRegistry`: `TBD until FUJI_PRIVATE_KEY is funded and deployed`
 - Optional eERC20 demo contract: `TBD unless the EncryptedERC demo is deployed`
+- Latest Fuji score record: `TBD until pnpm record:fuji writes LatestScoreRecord.json`
 
 ## Evidence Summary
 
