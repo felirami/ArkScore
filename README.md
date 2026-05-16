@@ -108,6 +108,8 @@ pnpm probe:eerc20
 pnpm smoke:web
 pnpm verify:live
 pnpm verify:railway:live
+pnpm verify:live:preflight
+pnpm verify:live:preflight:record
 pnpm submission:evidence
 pnpm railway:login
 pnpm railway:whoami
@@ -115,6 +117,8 @@ pnpm deploy:railway
 pnpm --filter @arkscore/contracts scorer:fuji
 pnpm record:fuji
 pnpm finalize:live
+pnpm finalize:live:apply
+pnpm verify:live:strict:record
 ```
 
 Use Node.js 22.19.0. The repository pins Node 22 because the verified Next.js 15 production server path uses that runtime.

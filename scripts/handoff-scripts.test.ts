@@ -1256,6 +1256,148 @@ if (args[0] === "verify:live:strict") {
   }
 });
 
+test("Vercel finalizer apply preserves score-record gates around deploy", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-vercel-record-apply-"));
+  const fakeBin = join(tempDir, "bin");
+  const logPath = join(tempDir, "pnpm-calls.jsonl");
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const fakePnpmPath = join(fakeBin, "pnpm");
+  const apiUrl = "https://arkscore-api.up.railway.app";
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const webUrl = "https://arkscore-seven.vercel.app";
+
+  mkdirSync(fakeBin, { recursive: true });
+  writeFileSync(artifactPath, "{}");
+  writeFileSync(
+    fakePnpmPath,
+    `#!/usr/bin/env node
+const fs = require("node:fs");
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.ARKSCORE_FAKE_PNPM_LOG, JSON.stringify({
+  args,
+  env: {
+    ARKSCORE_API_URL: process.env.ARKSCORE_API_URL || "",
+    ARKSCORE_REGISTRY_ADDRESS: process.env.ARKSCORE_REGISTRY_ADDRESS || "",
+    ARKSCORE_WEB_URL: process.env.ARKSCORE_WEB_URL || "",
+    ARKSCORE_SCORE_RECORD_ARTIFACT: process.env.ARKSCORE_SCORE_RECORD_ARTIFACT || "",
+    ARKSCORE_REQUIRE_SCORE_RECORD: process.env.ARKSCORE_REQUIRE_SCORE_RECORD || ""
+  }
+}) + "\\n");
+
+if (args[0] === "dlx" && args[1] === "vercel" && args[2] === "deploy") {
+  console.log("https://arkscore-live.vercel.app");
+}
+
+if (args[0] === "verify:live:preflight:record") {
+  console.log("record preflight verified " + process.env.ARKSCORE_SCORE_RECORD_ARTIFACT);
+}
+
+if (args[0] === "verify:live:strict:record") {
+  console.log("record strict verified " + process.env.ARKSCORE_WEB_URL);
+}
+`,
+  );
+  chmodSync(fakePnpmPath, 0o755);
+
+  try {
+    const result = spawnSync(
+      join(process.cwd(), "node_modules", ".bin", "tsx"),
+      ["scripts/finalize-live.ts", "--apply"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${fakeBin}${delimiter}${process.env.PATH ?? ""}`,
+          ARKSCORE_FAKE_PNPM_LOG: logPath,
+          ARKSCORE_API_URL: apiUrl,
+          ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+          ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+          ARKSCORE_WEB_URL: webUrl,
+          VERCEL_FINAL_VERIFY_TIMEOUT_MS: "1000",
+          VERCEL_FINAL_VERIFY_INTERVAL_MS: "1",
+        },
+      },
+    );
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
+
+    assert.equal(result.status, 0, output);
+    assert.match(output, /record preflight verified/);
+    assert.match(output, /record strict verified/);
+    assert.match(output, /Final Vercel live verification passed/);
+
+    const calls = readFileSync(logPath, "utf8")
+      .trim()
+      .split(/\n/)
+      .map(
+        (line) =>
+          JSON.parse(line) as {
+            args: string[];
+            env: {
+              ARKSCORE_API_URL: string;
+              ARKSCORE_REGISTRY_ADDRESS: string;
+              ARKSCORE_WEB_URL: string;
+              ARKSCORE_SCORE_RECORD_ARTIFACT: string;
+              ARKSCORE_REQUIRE_SCORE_RECORD: string;
+            };
+          },
+      );
+    const preflightIndex = calls.findIndex(
+      (call) => call.args[0] === "verify:live:preflight:record",
+    );
+    const envSetIndex = calls.findIndex(
+      (call) =>
+        call.args[0] === "dlx" &&
+        call.args[1] === "vercel" &&
+        call.args[2] === "env",
+    );
+    const deployIndex = calls.findIndex(
+      (call) =>
+        call.args[0] === "dlx" &&
+        call.args[1] === "vercel" &&
+        call.args[2] === "deploy",
+    );
+    const strictIndex = calls.findIndex(
+      (call) => call.args[0] === "verify:live:strict:record",
+    );
+
+    assert.notEqual(preflightIndex, -1, "expected record preflight call");
+    assert.notEqual(envSetIndex, -1, "expected Vercel env mutation");
+    assert.notEqual(deployIndex, -1, "expected Vercel deploy call");
+    assert.notEqual(strictIndex, -1, "expected strict record verifier call");
+    assert.ok(
+      preflightIndex < envSetIndex,
+      "expected record preflight before Vercel env mutation",
+    );
+    assert.ok(
+      preflightIndex < deployIndex,
+      "expected record preflight before deploy",
+    );
+    assert.ok(strictIndex > deployIndex, "expected strict record after deploy");
+    assert.equal(calls[preflightIndex]?.env.ARKSCORE_API_URL, apiUrl);
+    assert.equal(
+      calls[preflightIndex]?.env.ARKSCORE_REGISTRY_ADDRESS,
+      registryAddress,
+    );
+    assert.equal(
+      calls[preflightIndex]?.env.ARKSCORE_SCORE_RECORD_ARTIFACT,
+      artifactPath,
+    );
+    assert.equal(
+      calls[preflightIndex]?.env.ARKSCORE_REQUIRE_SCORE_RECORD,
+      "true",
+    );
+    assert.equal(calls[strictIndex]?.env.ARKSCORE_WEB_URL, webUrl);
+    assert.equal(
+      calls[strictIndex]?.env.ARKSCORE_SCORE_RECORD_ARTIFACT,
+      artifactPath,
+    );
+    assert.equal(calls[strictIndex]?.env.ARKSCORE_REQUIRE_SCORE_RECORD, "true");
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("Vercel finalizer ignores empty primary aliases and uses fallback env", () => {
   const apiUrl = "https://arkscore-api.up.railway.app";
   const fujiRpcUrl = "https://api.avax-test.network/ext/bc/C/rpc";
