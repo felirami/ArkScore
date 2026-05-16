@@ -56,6 +56,12 @@ WAVY_NODE_AUTO_REGISTER=true
 WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=auto
 ARKSCORE_SUBJECT_HASH_SALT=replace_with_long_random_subject_hash_salt
+RAILWAY_PROJECT_NAME=arkscore-api
+RAILWAY_PROJECT_ID=
+RAILWAY_SERVICE=arkscore-api
+RAILWAY_ENVIRONMENT=production
+RAILWAY_WORKSPACE=
+RAILWAY_TOKEN=
 ```
 
 Live scoring follows the Wavy Node quickstart sequence: register the wallet for project monitoring, then run the risk scan.
@@ -110,25 +116,26 @@ pnpm probe:wavy
 
 `probe:wavy` forces `WAVY_NODE_MOCK_MODE=false`, scores `ARKSCORE_TEST_WALLET` or the default demo wallet, and prints the Wavy analysis id, live risk score, composite score, subject hash, and evidence hash.
 
-The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow:
+The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow with explicit project, service, and environment targeting so a stale local Railway link cannot silently receive the deploy:
 
 ```bash
+railway whoami --json
 railway init --name arkscore-api --json
-railway variable set PORT=4000 --skip-deploys --json
-railway variable set ALLOWED_ORIGINS=https://arkscore-seven.vercel.app --skip-deploys --json
-railway variable set WAVY_NODE_BASE_URL=https://api.wavynode.com/v1 --skip-deploys --json
-railway variable set WAVY_NODE_CHAIN_ID=43113 --skip-deploys --json
-railway variable set WAVY_NODE_AUTO_REGISTER=true --skip-deploys --json
-railway variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --skip-deploys --json
-railway variable set WAVY_NODE_MOCK_MODE=auto --skip-deploys --json
-echo "ApiKey ..." | railway variable set WAVY_NODE_API_KEY --stdin --skip-deploys --json
-echo "..." | railway variable set WAVY_NODE_PROJECT_ID --stdin --skip-deploys --json
-echo "..." | railway variable set ARKSCORE_SUBJECT_HASH_SALT --stdin --skip-deploys --json
-railway up --detach --json --message "Deploy ArkScore API"
-railway domain --service arkscore-api --json
+railway variable set PORT=4000 --environment production --service arkscore-api --skip-deploys --json
+railway variable set ALLOWED_ORIGINS=https://arkscore-seven.vercel.app --environment production --service arkscore-api --skip-deploys --json
+railway variable set WAVY_NODE_BASE_URL=https://api.wavynode.com/v1 --environment production --service arkscore-api --skip-deploys --json
+railway variable set WAVY_NODE_CHAIN_ID=43113 --environment production --service arkscore-api --skip-deploys --json
+railway variable set WAVY_NODE_AUTO_REGISTER=true --environment production --service arkscore-api --skip-deploys --json
+railway variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --environment production --service arkscore-api --skip-deploys --json
+railway variable set WAVY_NODE_MOCK_MODE=auto --environment production --service arkscore-api --skip-deploys --json
+echo "ApiKey ..." | railway variable set WAVY_NODE_API_KEY --environment production --service arkscore-api --stdin --skip-deploys --json
+echo "..." | railway variable set WAVY_NODE_PROJECT_ID --environment production --service arkscore-api --stdin --skip-deploys --json
+echo "..." | railway variable set ARKSCORE_SUBJECT_HASH_SALT --environment production --service arkscore-api --stdin --skip-deploys --json
+railway up --detach --json --environment production --service arkscore-api --message "Deploy ArkScore API"
+railway domain --environment production --service arkscore-api --json
 ```
 
-If the project already exists, use `railway link <project-id>` instead of `railway init`.
+If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `railway link --project <project-id> --environment production --service arkscore-api --json` instead of `railway init`.
 
 ## Vercel Frontend
 

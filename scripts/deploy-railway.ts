@@ -72,14 +72,15 @@ function main() {
 }
 
 function buildCommands(): CommandPlan[] {
-  const commands: CommandPlan[] = [];
+  const commands: CommandPlan[] = [
+    {
+      command: railwayCommand("whoami", "--json"),
+    },
+  ];
 
   if (projectId) {
     commands.push({
-      command: [
-        "pnpm",
-        "dlx",
-        "@railway/cli",
+      command: railwayCommand(
         "link",
         "--project",
         projectId,
@@ -88,18 +89,10 @@ function buildCommands(): CommandPlan[] {
         "--service",
         service,
         "--json",
-      ],
+      ),
     });
   } else {
-    const initCommand = [
-      "pnpm",
-      "dlx",
-      "@railway/cli",
-      "init",
-      "--name",
-      projectName,
-      "--json",
-    ];
+    const initCommand = railwayCommand("init", "--name", projectName, "--json");
 
     if (workspace) {
       initCommand.push("--workspace", workspace);
@@ -140,29 +133,19 @@ function buildCommands(): CommandPlan[] {
   }
 
   commands.push({
-    command: [
-      "pnpm",
-      "dlx",
-      "@railway/cli",
+    command: railwayCommand(
       "up",
       "--detach",
       "--json",
+      ...railwayTargetOptions(),
       "--message",
       "Deploy ArkScore API",
-    ],
+    ),
   });
 
   if (createDomain) {
     commands.push({
-      command: [
-        "pnpm",
-        "dlx",
-        "@railway/cli",
-        "domain",
-        "--service",
-        service,
-        "--json",
-      ],
+      command: railwayCommand("domain", ...railwayTargetOptions(), "--json"),
     });
   } else {
     console.log(
@@ -173,6 +156,20 @@ function buildCommands(): CommandPlan[] {
   return commands;
 }
 
+function railwayCommand(...args: string[]) {
+  return ["pnpm", "dlx", "@railway/cli", ...args];
+}
+
+function railwayTargetOptions() {
+  return [
+    ...(projectId ? ["--project", projectId] : []),
+    "--environment",
+    environment,
+    "--service",
+    service,
+  ];
+}
+
 function variableSetCommand(
   value: string,
   stdinValue?: string,
@@ -180,33 +177,29 @@ function variableSetCommand(
 ): CommandPlan {
   if (stdinValue !== undefined) {
     return {
-      command: [
-        "pnpm",
-        "dlx",
-        "@railway/cli",
+      command: railwayCommand(
         "variable",
         "set",
         value,
+        ...railwayTargetOptions(),
         "--stdin",
         "--skip-deploys",
         "--json",
-      ],
+      ),
       input: stdinValue,
       redacted,
     };
   }
 
   return {
-    command: [
-      "pnpm",
-      "dlx",
-      "@railway/cli",
+    command: railwayCommand(
       "variable",
       "set",
       value,
+      ...railwayTargetOptions(),
       "--skip-deploys",
       "--json",
-    ],
+    ),
   };
 }
 
