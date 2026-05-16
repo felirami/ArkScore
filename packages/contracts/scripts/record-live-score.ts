@@ -27,6 +27,7 @@ type ScoreRecordArtifact = {
   institution: Institution;
   source: ScoreSource;
   chainId: number;
+  score: ScoreApiResponse;
   transactionHash: string;
   blockNumber: number | null;
   previousRecord: boolean;
@@ -510,6 +511,7 @@ function writeScoreRecordArtifact(input: {
     institution: input.score.institution,
     source: input.score.source,
     chainId: input.score.chainId,
+    score: input.score,
     transactionHash: input.transactionHash,
     blockNumber: input.blockNumber,
     previousRecord: input.hadRecord,

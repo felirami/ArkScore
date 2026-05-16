@@ -15,6 +15,18 @@ type Candidate = {
   value?: string;
 };
 
+type ScoreSnapshot = {
+  address?: string;
+  subjectHash?: string;
+  chainId?: number;
+  institution?: string;
+  source?: "wavy" | "mock";
+  generatedAt?: string;
+  evidenceHash?: string;
+  wavy?: Record<string, unknown>;
+  composite?: Record<string, unknown>;
+};
+
 type ScoreRecordProof = {
   blockNumber?: number | null;
   chainId?: number;
@@ -26,6 +38,8 @@ type ScoreRecordProof = {
   generatedAt?: string;
   institution?: string;
   registryAddress?: string;
+  requestedWallet?: string;
+  score?: ScoreSnapshot;
   scorerAddress?: string;
   source?: "wavy" | "mock";
   stored?: {
@@ -687,6 +701,84 @@ function validateScoreRecordProof(
     return `${scoreRecordArtifactPath} chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
   }
 
+  const scoreSnapshotError = validateScoreRecordSnapshot(proof);
+  if (scoreSnapshotError) {
+    return scoreSnapshotError;
+  }
+
+  return undefined;
+}
+
+function validateScoreRecordSnapshot(
+  proof: ScoreRecordProof,
+): string | undefined {
+  const score = proof.score;
+
+  if (!score || typeof score !== "object") {
+    return `${scoreRecordArtifactPath} is missing the exact score snapshot used for the Fuji write`;
+  }
+
+  if (!score.address || !isAddress(score.address)) {
+    return `${scoreRecordArtifactPath} score snapshot is missing a valid address`;
+  }
+
+  if (
+    proof.requestedWallet &&
+    isAddress(proof.requestedWallet) &&
+    score.address.toLowerCase() !== proof.requestedWallet.toLowerCase()
+  ) {
+    return `${scoreRecordArtifactPath} score snapshot address does not match requestedWallet`;
+  }
+
+  if (score.subjectHash?.toLowerCase() !== proof.subjectHash?.toLowerCase()) {
+    return `${scoreRecordArtifactPath} score snapshot subjectHash does not match record proof`;
+  }
+
+  if (score.chainId !== proof.chainId) {
+    return `${scoreRecordArtifactPath} score snapshot chainId does not match record proof`;
+  }
+
+  if (score.institution !== proof.institution) {
+    return `${scoreRecordArtifactPath} score snapshot institution does not match record proof`;
+  }
+
+  if (score.source !== proof.source) {
+    return `${scoreRecordArtifactPath} score snapshot source does not match record proof`;
+  }
+
+  if (!score.generatedAt || !isValidDateTime(score.generatedAt)) {
+    return `${scoreRecordArtifactPath} score snapshot is missing a valid generatedAt`;
+  }
+
+  if (!score.evidenceHash || !isBytes32(score.evidenceHash)) {
+    return `${scoreRecordArtifactPath} score snapshot is missing a valid evidenceHash`;
+  }
+
+  if (
+    score.evidenceHash.toLowerCase() !== proof.wavy?.evidenceHash?.toLowerCase()
+  ) {
+    return `${scoreRecordArtifactPath} score snapshot evidenceHash does not match record proof`;
+  }
+
+  if (!score.wavy || !score.composite) {
+    return `${scoreRecordArtifactPath} score snapshot is missing Wavy or composite payloads`;
+  }
+
+  const expected = createEvidenceHash({
+    address: score.address,
+    subjectHash: score.subjectHash,
+    chainId: score.chainId,
+    institution: score.institution,
+    source: score.source,
+    generatedAt: score.generatedAt,
+    wavy: score.wavy,
+    composite: score.composite,
+  });
+
+  if (score.evidenceHash.toLowerCase() !== expected) {
+    return `${scoreRecordArtifactPath} score snapshot evidenceHash does not match its generatedAt-bound payload`;
+  }
+
   return undefined;
 }
 
@@ -710,6 +802,31 @@ function isBytes32(value: string): boolean {
 
 function isScore(value: unknown): boolean {
   return typeof value === "number" && value >= 0 && value <= 100;
+}
+
+function isValidDateTime(value: string): boolean {
+  return Number.isFinite(Date.parse(value));
+}
+
+function createEvidenceHash(payload: unknown): string {
+  return `0x${createHash("sha256").update(stableStringify(payload)).digest("hex")}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableStringify(entry)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }
 
 function isPublicHttpsUrl(value: string): boolean {

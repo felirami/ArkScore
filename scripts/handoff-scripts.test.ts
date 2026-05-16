@@ -333,34 +333,7 @@ test("readiness reports a configured latest Fuji score record proof", () => {
 
   writeFileSync(
     artifactPath,
-    JSON.stringify({
-      generatedAt: "2026-05-16T00:00:00.000Z",
-      registryAddress,
-      scorerAddress,
-      subjectHash:
-        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      institution: "bankaool",
-      source: "wavy",
-      chainId: 43113,
-      transactionHash:
-        "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-      blockNumber: 12345,
-      wavy: {
-        analysisId: "wavy-live-123",
-        evidenceHash:
-          "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        riskScore: 18,
-      },
-      composite: {
-        creditScore: 82,
-        decision: "APPROVE_BANKAOOL_LOAN",
-        decisionEnum: 2,
-      },
-      stored: {
-        submitter: scorerAddress,
-        updatedAt: "1710000000",
-      },
-    }),
+    JSON.stringify(validScoreRecordProof({ registryAddress, scorerAddress })),
   );
 
   try {
@@ -377,10 +350,7 @@ test("readiness reports a configured latest Fuji score record proof", () => {
     assert.equal(result.status, 0, result.output);
     assert.match(result.output, /\[pass\] Latest Fuji score record:/);
     assert.match(result.output, /Wavy 18\/100, composite 82\/100/);
-    assert.match(
-      result.output,
-      /0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/,
-    );
+    assert.match(result.output, /0x[a-f0-9]{64}/);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -582,7 +552,10 @@ test("requirements audit maps repo readiness without leaking secrets", () => {
     result.output,
     /\[pass\] Wavy Node traceability and AI risk score:/,
   );
-  assert.match(result.output, /generatedAt-bound score hash checks, finalizer/);
+  assert.match(
+    result.output,
+    /generatedAt-bound score hash checks, offline score snapshot proof, finalizer/,
+  );
   assert.match(result.output, /\[warn\] Railway live deployment proof:/);
   assert.doesNotMatch(result.output, /should-not-print/);
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
@@ -1466,6 +1439,18 @@ test("live verifier rejects local API URLs in score record artifacts", async () 
   );
 });
 
+test("live verifier rejects score record artifacts with tampered score snapshots", async () => {
+  const result = await runLiveVerifierWithMockScoreRecord({
+    tamperScoreGeneratedAt: true,
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Fuji score record proof: .*score snapshot evidenceHash does not match its generatedAt-bound payload/,
+  );
+});
+
 test("live verifier preflight skips Vercel and proves API plus registry", async () => {
   const result = await runLivePreflightVerifierWithMocks();
 
@@ -1921,6 +1906,7 @@ type ScoreRecordRpcOptions = {
   apiUrl?: string;
   source?: string;
   storedEvidenceHash?: string;
+  tamperScoreGeneratedAt?: boolean;
 };
 
 async function runLiveVerifierWithMockScoreRecord(
@@ -1932,19 +1918,29 @@ async function runLiveVerifierWithMockScoreRecord(
   const scorerAddress = "0x4444444444444444444444444444444444444444";
   const subjectHash =
     "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-  const evidenceHash =
-    "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+  const requestedWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+  const source = options.source ?? "wavy";
+  const score = createScoreSnapshot({
+    address: requestedWallet,
+    subjectHash,
+    source,
+  });
+  const evidenceHash = score.evidenceHash;
   const storedEvidenceHash = options.storedEvidenceHash ?? evidenceHash;
+  if (options.tamperScoreGeneratedAt) {
+    score.generatedAt = "2026-05-16T00:01:00.000Z";
+  }
   const artifact = {
     generatedAt: "2026-05-16T00:00:00.000Z",
     apiUrl: options.apiUrl ?? "https://arkscore-api.up.railway.app",
     registryAddress,
     scorerAddress,
     subjectHash,
-    requestedWallet: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    requestedWallet,
     institution: "bankaool",
-    source: options.source ?? "wavy",
+    source,
     chainId: 43113,
+    score,
     transactionHash:
       "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
     blockNumber: 12345,
@@ -1953,11 +1949,13 @@ async function runLiveVerifierWithMockScoreRecord(
       analysisId: "wavy-live-123",
       riskScore: 18,
       evidenceHash,
+      traceability: score.wavy.traceability,
     },
     composite: {
       creditScore: 82,
       decision: "APPROVE_BANKAOOL_LOAN",
       decisionEnum: 2,
+      decisionLabel: "Approve Bankaool loan",
     },
     stored: {
       submitter: scorerAddress,
@@ -2395,36 +2393,107 @@ function validScoreRecordProof(
     input.registryAddress ?? "0x1111111111111111111111111111111111111111";
   const scorerAddress =
     input.scorerAddress ?? "0x4444444444444444444444444444444444444444";
+  const source = input.source ?? "wavy";
+  const subjectHash =
+    "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+  const requestedWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+  const score = createScoreSnapshot({
+    address: requestedWallet,
+    subjectHash,
+    source,
+  });
 
   return {
     generatedAt: "2026-05-16T00:00:00.000Z",
     apiUrl: input.apiUrl ?? "https://arkscore-api.up.railway.app",
     registryAddress,
     scorerAddress,
-    subjectHash:
-      "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    subjectHash,
+    requestedWallet,
     institution: "bankaool",
-    source: input.source ?? "wavy",
+    source,
     chainId: 43113,
+    score,
     transactionHash:
       "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     blockNumber: 12345,
     wavy: {
       analysisId: "wavy-live-123",
-      evidenceHash:
-        "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      evidenceHash: score.evidenceHash,
       riskScore: 18,
+      traceability: score.wavy.traceability,
     },
     composite: {
       creditScore: 82,
       decision: "APPROVE_BANKAOOL_LOAN",
       decisionEnum: 2,
+      decisionLabel: "Approve Bankaool loan",
     },
     stored: {
       submitter: scorerAddress,
       updatedAt: "1710000000",
     },
   };
+}
+
+function createScoreSnapshot(input: {
+  address: string;
+  subjectHash: string;
+  source: string;
+}) {
+  const wavy = {
+    analysisId: "wavy-live-123",
+    address: input.address,
+    chainId: 43113,
+    riskScore: 18,
+    riskLevel: "minimal",
+    riskReason: "Low-risk Fuji wallet activity.",
+    suspiciousActivity: false,
+    patternsDetected: [],
+    transactionsAnalyzed: 128,
+    completedAt: "2026-05-16T00:00:00.000Z",
+    traceability: {
+      provider: "Wavy Node",
+      network: "Avalanche Fuji",
+      scanType: "wallet-risk",
+      riskScoreScale: "0-100",
+      addressRegistration: "auto-registered-or-reused",
+      transactionsAnalyzed: 128,
+      patternsCount: 0,
+      completedAt: "2026-05-16T00:00:00.000Z",
+    },
+  };
+  const composite = {
+    creditScore: 82,
+    decision: "APPROVE_BANKAOOL_LOAN",
+    decisionLabel: "Approve Bankaool loan",
+    recommendation:
+      "Bankaool can proceed to loan terms while retaining the on-chain score record for audit.",
+  };
+  const score = {
+    address: input.address,
+    subjectHash: input.subjectHash,
+    chainId: 43113,
+    institution: "bankaool",
+    source: input.source,
+    generatedAt: "2026-05-16T00:00:00.000Z",
+    evidenceHash: "0x",
+    wavy,
+    composite,
+  };
+
+  score.evidenceHash = createEvidenceHash({
+    address: score.address,
+    subjectHash: score.subjectHash,
+    chainId: score.chainId,
+    institution: score.institution,
+    source: score.source,
+    generatedAt: score.generatedAt,
+    wavy: score.wavy,
+    composite: score.composite,
+  });
+
+  return score;
 }
 
 function encodeAddress(address: string) {
