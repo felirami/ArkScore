@@ -162,6 +162,46 @@ test("Vercel finalizer refuses invalid registry address", () => {
   assert.doesNotMatch(result.output, /vercel env add/);
 });
 
+test("Fuji registry deployer refuses missing private key before deployment", () => {
+  const result = runPnpm(
+    [
+      "--filter",
+      "@arkscore/contracts",
+      "exec",
+      "hardhat",
+      "run",
+      "scripts/deploy-credit-score-registry.ts",
+    ],
+    { FUJI_PRIVATE_KEY: "" },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /FUJI_PRIVATE_KEY is required/);
+  assert.doesNotMatch(result.output, /CreditScoreRegistry deployed/);
+});
+
+test("Fuji registry deployer refuses malformed private key with project error", () => {
+  const result = runPnpm(
+    [
+      "--filter",
+      "@arkscore/contracts",
+      "exec",
+      "hardhat",
+      "run",
+      "scripts/deploy-credit-score-registry.ts",
+    ],
+    { FUJI_PRIVATE_KEY: "0x1234" },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /FUJI_PRIVATE_KEY must be a 32-byte 0x-prefixed hex private key/,
+  );
+  assert.doesNotMatch(result.output, /Invalid config/);
+  assert.doesNotMatch(result.output, /CreditScoreRegistry deployed/);
+});
+
 test("live verifier proves registry getScore readback ABI", async () => {
   const result = await runLiveVerifierWithMockRegistry();
 
@@ -209,7 +249,11 @@ function runScript(
   args: string[] = [],
   env: Record<string, string> = {},
 ) {
-  const result = spawnSync("pnpm", ["exec", "tsx", scriptPath, ...args], {
+  return runPnpm(["exec", "tsx", scriptPath, ...args], env);
+}
+
+function runPnpm(args: string[] = [], env: Record<string, string> = {}) {
+  const result = spawnSync("pnpm", args, {
     cwd: process.cwd(),
     encoding: "utf8",
     env: {

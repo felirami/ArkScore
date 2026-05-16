@@ -17,10 +17,12 @@ loadEnv({
 
 const fujiRpcUrl =
   process.env.FUJI_RPC_URL ?? "https://api.avax-test.network/ext/bc/C/rpc";
+const fujiPrivateKey = process.env.FUJI_PRIVATE_KEY?.trim();
 
-const fujiAccounts = process.env.FUJI_PRIVATE_KEY
-  ? [process.env.FUJI_PRIVATE_KEY]
-  : [];
+const fujiAccounts =
+  fujiPrivateKey && /^0x[a-fA-F0-9]{64}$/.test(fujiPrivateKey)
+    ? [fujiPrivateKey]
+    : [];
 
 const config = defineConfig({
   plugins: [hardhatEthers, hardhatEthersChaiMatchers, hardhatMocha],
