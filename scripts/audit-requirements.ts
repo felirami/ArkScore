@@ -275,17 +275,25 @@ function checkWavyIntegration(): Check {
     Boolean(apiEnv?.includes("avalancheFujiChainId = 43113")) &&
     Boolean(apiEnv?.includes("WAVY_NODE_CHAIN_ID must be Avalanche Fuji")) &&
     Boolean(apiPackage?.scripts?.test?.includes("src/config/env.test.ts"));
+  const hasUpstreamResultGuard =
+    Boolean(adapter?.includes("requireMatchingChainId")) &&
+    Boolean(adapter?.includes("validateReturnedAddress"));
   const hasTraceability =
     Boolean(shared?.includes('riskScoreScale: "0-100"')) &&
     Boolean(shared?.includes('provider: "Wavy Node"')) &&
     Boolean(shared?.includes('scanType: "wallet-risk"'));
 
-  if (hasWavyFlow && hasFujiRuntimePin && hasTraceability) {
+  if (
+    hasWavyFlow &&
+    hasFujiRuntimePin &&
+    hasUpstreamResultGuard &&
+    hasTraceability
+  ) {
     return {
       label: "Wavy Node traceability and AI risk score",
       status: "pass",
       detail:
-        "adapter includes chains/register/scan-risk flow, Fuji-only runtime config, and 0-100 traceability fields",
+        "adapter includes chains/register/scan-risk flow, Fuji-only runtime config, upstream result matching, and 0-100 traceability fields",
     };
   }
 
@@ -293,7 +301,7 @@ function checkWavyIntegration(): Check {
     label: "Wavy Node traceability and AI risk score",
     status: "fail",
     detail:
-      "missing Wavy API flow, Fuji-only runtime config, or explicit traceability fields",
+      "missing Wavy API flow, Fuji-only runtime config, upstream result matching, or explicit traceability fields",
   };
 }
 

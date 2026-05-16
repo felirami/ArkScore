@@ -199,6 +199,78 @@ test("fetchWavyRiskResult treats duplicate address registration as reusable", as
   );
 });
 
+test("fetchWavyRiskResult rejects upstream chain mismatches", async () => {
+  globalThis.fetch = (async (_input, init) => {
+    if (init?.method === "POST") {
+      return jsonResponse({ success: true });
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        results: [
+          {
+            analysisId: "analysis-mainnet",
+            address: demoWallet,
+            chainId: "1",
+            riskScore: 12,
+            suspiciousActivity: false,
+          },
+        ],
+      },
+    });
+  }) as typeof fetch;
+
+  await assert.rejects(
+    fetchWavyRiskResult({
+      address: demoWallet,
+      chainId: 43113,
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof HttpError);
+      assert.equal(error.statusCode, 502);
+      assert.match(error.message, /returned chainId 1, expected 43113/);
+      return true;
+    },
+  );
+});
+
+test("fetchWavyRiskResult rejects upstream address mismatches", async () => {
+  globalThis.fetch = (async (_input, init) => {
+    if (init?.method === "POST") {
+      return jsonResponse({ success: true });
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        results: [
+          {
+            analysisId: "analysis-wrong-wallet",
+            address: "0x1111111111111111111111111111111111111111",
+            chainId: "43113",
+            riskScore: 12,
+            suspiciousActivity: false,
+          },
+        ],
+      },
+    });
+  }) as typeof fetch;
+
+  await assert.rejects(
+    fetchWavyRiskResult({
+      address: demoWallet,
+      chainId: 43113,
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof HttpError);
+      assert.equal(error.statusCode, 502);
+      assert.match(error.message, /returned address .* expected/);
+      return true;
+    },
+  );
+});
+
 test("fetchWavyRiskResult preserves upstream Wavy Node errors", async () => {
   globalThis.fetch = (async (_input, init) => {
     if (init?.method === "POST") {

@@ -137,7 +137,8 @@ export async function fetchWavyRiskResult(input: {
   }
 
   const riskScore = clampWavyScore(firstResult.riskScore);
-  const chainId = Number(firstResult.chainId ?? input.chainId);
+  const chainId = requireMatchingChainId(firstResult.chainId, input.chainId);
+  validateReturnedAddress(firstResult.address, input.address);
   const patternsDetected = firstResult.patternsDetected ?? [];
   const transactionsAnalyzed = firstResult.transactionsAnalyzed ?? 0;
   const completedAt = firstResult.completedAt ?? new Date().toISOString();
@@ -204,6 +205,41 @@ async function registerWavyAddress(input: {
 function clampWavyScore(score: number | undefined): number {
   if (typeof score !== "number" || !Number.isFinite(score)) return 0;
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function requireMatchingChainId(
+  value: string | number | undefined,
+  expected: number,
+): number {
+  const chainId = Number(value ?? expected);
+
+  if (!Number.isInteger(chainId) || chainId <= 0) {
+    throw new HttpError(502, "Wavy Node returned an invalid chainId.");
+  }
+
+  if (chainId !== expected) {
+    throw new HttpError(
+      502,
+      `Wavy Node returned chainId ${chainId}, expected ${expected}.`,
+    );
+  }
+
+  return chainId;
+}
+
+function validateReturnedAddress(
+  returnedAddress: string | undefined,
+  expectedAddress: `0x${string}`,
+) {
+  if (
+    returnedAddress &&
+    returnedAddress.toLowerCase() !== expectedAddress.toLowerCase()
+  ) {
+    throw new HttpError(
+      502,
+      `Wavy Node returned address ${returnedAddress}, expected ${expectedAddress}.`,
+    );
+  }
 }
 
 async function fetchWavyJson<T>(
