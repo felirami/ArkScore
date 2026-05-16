@@ -582,10 +582,7 @@ test("requirements audit maps repo readiness without leaking secrets", () => {
     result.output,
     /\[pass\] Wavy Node traceability and AI risk score:/,
   );
-  assert.match(
-    result.output,
-    /fresh score and recorder evidence hash checks, finalizer/,
-  );
+  assert.match(result.output, /generatedAt-bound score hash checks, finalizer/);
   assert.match(result.output, /\[warn\] Railway live deployment proof:/);
   assert.doesNotMatch(result.output, /should-not-print/);
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
@@ -1550,6 +1547,20 @@ test("live verifier fails when the Railway score response is stale", async () =>
   );
 });
 
+test("live verifier fails when the Railway score timestamp is not evidence-hashed", async () => {
+  const result = await runLivePreflightVerifierWithMocks({
+    scoreEvidenceGeneratedAt: new Date(
+      Date.now() - 20 * 60 * 1000,
+    ).toISOString(),
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Railway API score: .*invalid shape, freshness, evidence hash, cache\/rate-limit headers/,
+  );
+});
+
 test("live verifier proves configured public Fuji RPC in the hosted bundle", async () => {
   const fujiRpcUrl = "https://rpc.example.com/avalanche/fuji";
   const result = await runLiveVerifierWithMockRegistry({
@@ -2081,6 +2092,7 @@ async function runLivePreflightVerifierWithMocks(
     healthWavyChainId?: number;
     scoreEvidenceHash?: string;
     scoreGeneratedAt?: string;
+    scoreEvidenceGeneratedAt?: string;
   } = {},
 ) {
   const registryAddress = "0x1111111111111111111111111111111111111111";
@@ -2119,6 +2131,7 @@ async function runLivePreflightVerifierWithMocks(
       const score = createLiveScoreFixture({
         evidenceHashOverride: options.scoreEvidenceHash,
         generatedAt: options.scoreGeneratedAt,
+        evidenceGeneratedAt: options.scoreEvidenceGeneratedAt,
       });
 
       response.writeHead(200, {
@@ -2245,6 +2258,7 @@ function createLiveScoreFixture(
   options: {
     evidenceHashOverride?: string;
     generatedAt?: string;
+    evidenceGeneratedAt?: string;
   } = {},
 ) {
   const score = {
@@ -2280,6 +2294,7 @@ function createLiveScoreFixture(
         chainId: score.chainId,
         institution: score.institution,
         source: score.source,
+        generatedAt: options.evidenceGeneratedAt ?? score.generatedAt,
         wavy: score.wavy,
         composite: score.composite,
       }),

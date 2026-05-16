@@ -634,6 +634,7 @@ function scoreEvidenceHashMatches(score: ScoreResponse | null): boolean {
     chainId: score.chainId,
     institution: score.institution,
     source: score.source,
+    generatedAt: score.generatedAt,
     wavy: score.wavy,
     composite: score.composite,
   });

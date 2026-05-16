@@ -481,7 +481,7 @@ export const openApiDocument = {
             type: "string",
             pattern: "^0x[a-fA-F0-9]{64}$",
             description:
-              "Hash over wallet, subject hash, Wavy trace, composite score, source, and institution for on-chain registry audit.",
+              "Hash over wallet, subject hash, Wavy trace, composite score, source, institution, and generatedAt for on-chain registry audit.",
           },
           wavy: {
             $ref: "#/components/schemas/WavyRiskResult",

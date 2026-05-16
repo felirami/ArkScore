@@ -40,6 +40,7 @@ export async function scoreWallet(input: {
     chainId: wavy.chainId,
     institution,
     source,
+    generatedAt,
     wavy,
     composite,
   });

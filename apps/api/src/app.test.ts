@@ -164,6 +164,7 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
         chainId: payload.chainId,
         institution: payload.institution,
         source: payload.source,
+        generatedAt: payload.generatedAt,
         wavy: payload.wavy,
         composite: payload.composite,
       }),

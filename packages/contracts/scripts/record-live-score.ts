@@ -358,6 +358,7 @@ function assertScoreEvidenceHashMatches(
     chainId: score.chainId,
     institution: score.institution,
     source: score.source,
+    generatedAt: score.generatedAt,
     wavy: payload.wavy,
     composite: payload.composite,
   });
