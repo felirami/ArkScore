@@ -23,6 +23,7 @@
     "probe:eerc20:strict": "tsx scripts/probe-eerc20.ts --strict",
     "record:fuji": "pnpm --filter @arkscore/contracts record-live-score:fuji",
     "verify:live": "tsx scripts/verify-live.ts",
+    "verify:live:preflight": "tsx scripts/verify-live.ts --skip-web --strict --require-wavy",
     "verify:live:strict": "tsx scripts/verify-live.ts --strict --require-wavy",
     "verify:live:strict:eerc20": "tsx scripts/verify-live.ts --strict --require-wavy --require-eerc20",
     "smoke:web": "tsx scripts/smoke-hosted-demo.ts",

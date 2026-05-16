@@ -73,6 +73,10 @@ const env = {
   ...process.env,
 };
 const strict = process.argv.includes("--strict");
+const skipWeb = process.argv.includes("--skip-web");
+const skipApi = process.argv.includes("--skip-api");
+const skipContract = process.argv.includes("--skip-contract");
+const skipEerc20 = process.argv.includes("--skip-eerc20");
 const requireWavy =
   process.argv.includes("--require-wavy") ||
   env.ARKSCORE_REQUIRE_WAVY === "true";
@@ -109,10 +113,12 @@ main().catch((error: unknown) => {
 async function main() {
   const checks: Check[] = [];
 
-  checks.push(...(await verifyWeb(webUrl)));
-  checks.push(...(await verifyApi(apiUrl)));
-  checks.push(...(await verifyContract(registryAddress)));
-  checks.push(...(await verifyOptionalEerc20(eerc20DemoAddress)));
+  if (!skipWeb) checks.push(...(await verifyWeb(webUrl)));
+  if (!skipApi) checks.push(...(await verifyApi(apiUrl)));
+  if (!skipContract) checks.push(...(await verifyContract(registryAddress)));
+  if (!skipEerc20) {
+    checks.push(...(await verifyOptionalEerc20(eerc20DemoAddress)));
+  }
 
   const failed = checks.filter((check) => check.status === "fail");
   const warnings = checks.filter((check) => check.status === "warn");

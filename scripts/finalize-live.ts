@@ -97,8 +97,9 @@ function main() {
   const verifyScript = requireEerc20
     ? "verify:live:strict:eerc20"
     : "verify:live:strict";
+  const preflightCommand = ["pnpm", "verify:live:preflight"];
   const verifyCommand = ["pnpm", verifyScript];
-  const verifyEnv = {
+  const liveVerificationEnv = {
     ...process.env,
     ARKSCORE_API_URL: apiUrl,
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
@@ -107,6 +108,9 @@ function main() {
       : {}),
     ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
+  };
+  const verifyEnv = {
+    ...liveVerificationEnv,
     ARKSCORE_WEB_URL: webUrl,
   };
 
@@ -117,6 +121,7 @@ function main() {
     if (eerc20ProbeCommand) {
       console.log(`${renderEerc20ProbeEnv()} ${eerc20ProbeCommand.join(" ")}`);
     }
+    console.log(`${renderPreflightEnv()} pnpm verify:live:preflight`);
     for (const command of envCommands) printCommand(command);
     printCommand(deployCommand);
     console.log(`${renderVerifyEnv()} pnpm ${verifyScript}`);
@@ -126,6 +131,7 @@ function main() {
   run(authCommand);
   run(linkCommand);
   if (eerc20ProbeCommand) run(eerc20ProbeCommand, eerc20ProbeEnv);
+  run(preflightCommand, liveVerificationEnv);
   for (const command of envCommands) run(command);
   run(deployCommand);
   run(verifyCommand, verifyEnv);
@@ -192,6 +198,22 @@ function renderVerifyEnv() {
   };
 
   return Object.entries(verifyEnv)
+    .map(([key, value]) => `${key}=${shellEscape(value)}`)
+    .join(" ");
+}
+
+function renderPreflightEnv() {
+  const preflightEnv: Record<string, string> = {
+    ARKSCORE_API_URL: apiUrl ?? "",
+    ARKSCORE_REGISTRY_ADDRESS: registryAddress ?? "",
+    ...(eerc20DemoAddress
+      ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
+      : {}),
+    ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
+    ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
+  };
+
+  return Object.entries(preflightEnv)
     .map(([key, value]) => `${key}=${shellEscape(value)}`)
     .join(" ");
 }

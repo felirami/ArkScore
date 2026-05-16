@@ -178,6 +178,9 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
   const finalizeCommand = requireEerc20
     ? "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REQUIRE_EERC20=true pnpm finalize:live:apply"
     : "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply";
+  const preflightCommand = requireEerc20
+    ? "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:preflight"
+    : "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... pnpm verify:live:preflight";
   const verifyCommand = requireEerc20
     ? "pnpm verify:live:strict:eerc20"
     : "pnpm verify:live:strict";
@@ -190,6 +193,7 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm --filter @arkscore/contracts deploy:fuji",
     "pnpm --filter @arkscore/contracts scorer:fuji",
     "pnpm record:fuji",
+    preflightCommand,
     finalizeCommand,
     verifyCommand,
   ].join("\n");

@@ -213,9 +213,9 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
 ```
 
-`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, checks Vercel CLI auth for `VERCEL_SCOPE`, links the local checkout to `VERCEL_PROJECT_NAME`, sets public Vercel env values, redeploys the frontend, and runs strict live verification. If `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is present, it also publishes `NEXT_PUBLIC_EERC20_DEMO_ADDRESS`. It accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during strict verification.
+`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, checks Vercel CLI auth for `VERCEL_SCOPE`, links the local checkout to `VERCEL_PROJECT_NAME`, runs `pnpm verify:live:preflight` against Railway and Fuji before Vercel env/deploy mutation, sets public Vercel env values, redeploys the frontend, and runs strict live verification. If `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is present, it also publishes `NEXT_PUBLIC_EERC20_DEMO_ADDRESS`. It accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during preflight and strict verification.
 
-The strict verifier fetches the hosted Vercel page plus its Next.js chunks and proves the production bundle contains the configured Railway API URL, Fuji registry address, and optional eERC20 demo address when provided. If either required value is missing from the static bundle, redeploy Vercel after setting the public env vars.
+`pnpm verify:live:preflight` uses the same strict live gates as final verification but skips the static Vercel bundle check, so it can prove Railway health, live Wavy source, production subject-hash salt, OpenAPI, score shape, Fuji bytecode, registry ABI, authorized scorer, and optional eERC20 bytecode before Vercel env values are changed. The strict verifier fetches the hosted Vercel page plus its Next.js chunks and proves the production bundle contains the configured Railway API URL, Fuji registry address, and optional eERC20 demo address when provided. If either required value is missing from the static bundle, redeploy Vercel after setting the public env vars.
 
 ## Final Smoke Test
 
@@ -236,6 +236,8 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
 ```
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
+
+Use `pnpm verify:live:preflight` immediately before `pnpm finalize:live:apply` if you want a standalone proof that the live API and Fuji registry are ready before the frontend is republished.
 
 Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable and rebuilt with the live public env values, checks the Railway health, live Wavy credential mode, production subject-hash salt, OpenAPI, score response shape, and no-store score cache headers, and verifies that the Fuji registry address has bytecode plus callable `owner()`, `hasScore(bytes32)`, and `getScore(bytes32)` functions. Use `pnpm verify:live:strict:eerc20` or `ARKSCORE_REQUIRE_EERC20=true` when the optional EncryptedERC demo is part of the judged flow.
 Set `ARKSCORE_SCORER_ADDRESS` or `SCORER_ADDRESS` before the strict run to prove the dashboard signing wallet is authorized to store score records.

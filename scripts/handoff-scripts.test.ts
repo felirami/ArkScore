@@ -171,6 +171,12 @@ test("Vercel finalizer dry run prints public env and strict verification command
   );
   assert.match(
     result.output,
+    new RegExp(
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:preflight`,
+    ),
+  );
+  assert.match(
+    result.output,
     /NEXT_PUBLIC_ENABLE_DEMO_FALLBACK production --value false/,
   );
   assert.match(result.output, /vercel deploy \. --prod/);
@@ -207,6 +213,12 @@ test("Vercel finalizer dry run prints strict eERC20 verification when required",
     result.output,
     new RegExp(
       `ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm probe:eerc20:strict`,
+    ),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:preflight`,
     ),
   );
   assert.match(
@@ -384,6 +396,22 @@ test("live verifier proves registry getScore readback ABI", async () => {
   assert.match(
     result.output,
     /Fuji registry getScore ABI: getScore\(bytes32\) reverted with MissingScore\(\)/,
+  );
+});
+
+test("live verifier preflight skips Vercel and proves API plus registry", async () => {
+  const result = await runLivePreflightVerifierWithMocks();
+
+  assert.equal(result.status, 0, result.output);
+  assert.doesNotMatch(result.output, /Vercel web/);
+  assert.match(result.output, /Railway API health: .*returned ok/);
+  assert.match(
+    result.output,
+    /Railway API score: live Wavy Node response; Bankaool score response is valid, no-store, and rate-limited/,
+  );
+  assert.match(
+    result.output,
+    /Fuji scorer authorization: 0x4444444444444444444444444444444444444444 is authorized/,
   );
 });
 
@@ -669,6 +697,220 @@ async function runLiveVerifierWithMockRegistry(
     await webServer.close();
     await rpcServer.close();
   }
+}
+
+async function runLivePreflightVerifierWithMocks() {
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+  const apiServer = await listen((request, response) => {
+    const path = request.url?.split("?")[0];
+
+    if (path === "/health") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({
+          ok: true,
+          service: "arkscore-api",
+          wavyCredentialsConfigured: true,
+          subjectHashSaltConfigured: true,
+          mockMode: false,
+        }),
+      );
+      return;
+    }
+
+    if (path === "/openapi.json") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify(createOpenApiFixture()));
+      return;
+    }
+
+    if (path?.startsWith("/api/score/")) {
+      response.writeHead(200, {
+        "cache-control": "no-store",
+        "content-type": "application/json",
+        "ratelimit-limit": "120",
+      });
+      response.end(
+        JSON.stringify({
+          address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+          subjectHash: `0x${"a".repeat(64)}`,
+          chainId: 43113,
+          institution: "bankaool",
+          source: "wavy",
+          evidenceHash: `0x${"b".repeat(64)}`,
+          wavy: {
+            analysisId: "wavy-live-fixture",
+            riskScore: 18,
+            traceability: {
+              provider: "Wavy Node",
+              riskScoreScale: "0-100",
+              transactionsAnalyzed: 42,
+              patternsCount: 2,
+            },
+          },
+          composite: {
+            creditScore: 82,
+            decisionLabel: "Approve Bankaool loan",
+          },
+        }),
+      );
+      return;
+    }
+
+    response.writeHead(404, { "content-type": "application/json" });
+    response.end(JSON.stringify({ error: "not found" }));
+  });
+  const rpcServer = await listen(async (request, response) => {
+    const body = (await readJson(request)) as {
+      id?: number;
+      method?: string;
+      params?: Array<{ data?: string } | string>;
+    };
+    const data =
+      body.params?.[0] && typeof body.params[0] === "object"
+        ? body.params[0].data
+        : undefined;
+
+    response.writeHead(200, { "content-type": "application/json" });
+
+    if (body.method === "eth_getCode") {
+      response.end(
+        JSON.stringify({ jsonrpc: "2.0", id: body.id, result: "0x6000" }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data === "0x8da5cb5b") {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeAddress("0x2222222222222222222222222222222222222222"),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x92b8c652")) {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeBool(false),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x7ba53285")) {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          error: {
+            code: 3,
+            message: "execution reverted",
+            data: "0xe5fa9471",
+          },
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x73c4502c")) {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeBool(true),
+        }),
+      );
+      return;
+    }
+
+    response.end(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: body.id,
+        error: { code: -32601, message: "method not mocked" },
+      }),
+    );
+  });
+
+  try {
+    return await runScriptAsync(
+      "scripts/verify-live.ts",
+      ["--skip-web", "--strict", "--require-wavy"],
+      {
+        ARKSCORE_API_URL: apiServer.url,
+        FUJI_RPC_URL: rpcServer.url,
+        ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+        ARKSCORE_SCORER_ADDRESS: scorerAddress,
+      },
+    );
+  } finally {
+    await apiServer.close();
+    await rpcServer.close();
+  }
+}
+
+function createOpenApiFixture() {
+  return {
+    openapi: "3.1.0",
+    info: { title: "ArkScore API" },
+    paths: {
+      "/health": { get: { responses: { "200": {} } } },
+      "/api/score/{address}": {
+        get: {
+          responses: {
+            "200": { headers: { "Cache-Control": {} } },
+            "400": {},
+            "404": {},
+            "429": {},
+            "500": {},
+            "502": {},
+            "504": {},
+          },
+        },
+      },
+    },
+    components: {
+      schemas: {
+        HealthResponse: {
+          required: [
+            "wavyCredentialsConfigured",
+            "subjectHashSaltConfigured",
+            "mockMode",
+          ],
+          properties: {
+            wavyCredentialsConfigured: {},
+            subjectHashSaltConfigured: {},
+            mockMode: {},
+          },
+        },
+        ScoreApiResponse: {
+          required: ["subjectHash"],
+          properties: {
+            subjectHash: { pattern: "^0x[a-fA-F0-9]{64}$" },
+          },
+        },
+        WavyRiskResult: {
+          required: ["traceability"],
+          properties: {
+            traceability: {},
+          },
+        },
+        WavyTraceability: {
+          required: ["riskScoreScale"],
+          properties: {
+            riskScoreScale: {},
+            addressRegistration: {},
+          },
+        },
+      },
+    },
+  };
 }
 
 function encodeAddress(address: string) {
