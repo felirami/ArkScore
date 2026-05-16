@@ -28,7 +28,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `.github/workflows/ci.yml` runs `pnpm verify` and `pnpm readiness` for push, pull request, and manual workflow dispatch events.
 
-`pnpm readiness` produces a non-secret live-gate report covering Vercel reachability, Railway auth, Wavy credentials, Fuji deployer configuration, and frontend deployment variables.
+`pnpm readiness` produces a non-secret live-gate report covering Vercel reachability, Railway auth, Wavy credentials, Fuji deployer configuration, and frontend deployment variables. It accepts the same Railway API, Fuji registry, and scorer aliases used by the finalization and Hardhat scripts, so the report mirrors the actual handoff flow.
 
 `pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, subject hash, evidence hash, scorer status, and Store on Fuji flow.
 

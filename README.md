@@ -100,7 +100,7 @@ See `docs/READINESS_AUDIT.md` and `docs/REQUIREMENTS_TRACE.md` for the current j
 
 `pnpm readiness` checks local configuration gates without printing secrets. GitHub Actions runs `pnpm verify` and `pnpm readiness` on pushes and pull requests. `pnpm smoke:web` confirms the hosted Vercel demo is public and includes the judge-facing score flow, subject hash, and Store on Fuji path. `pnpm deploy:railway` prints the Railway project/env/deploy commands, and `pnpm deploy:railway:apply` runs them once Railway auth and Wavy credentials are available. `pnpm verify:live` checks reachable deployments; use `pnpm verify:live:strict` after Railway, Wavy Node, subject-hash salt, Fuji, and Vercel environment variables are all configured. The Railway API publishes its integration contract at `/openapi.json`. `pnpm finalize:live` prints the final Vercel env/deploy commands, and `pnpm finalize:live:apply` applies them.
 
-The finalization and live verification scripts accept the same Fuji registry aliases used by the Hardhat tooling: `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the generated `packages/contracts/deployments/fuji/CreditScoreRegistry.json` artifact.
+The readiness, finalization, and live verification scripts accept the same Fuji registry aliases used by the Hardhat tooling: `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the generated `packages/contracts/deployments/fuji/CreditScoreRegistry.json` artifact.
 
 ## Submission Placeholders
 

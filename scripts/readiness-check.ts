@@ -10,6 +10,11 @@ type Check = {
   detail: string;
 };
 
+type Candidate = {
+  key: string;
+  value?: string;
+};
+
 const strict = process.argv.includes("--strict");
 const rootEnv = readEnvFile(".env");
 const contractEnv = readEnvFile("packages/contracts/.env");
@@ -55,19 +60,49 @@ async function main() {
       ["FUJI_PRIVATE_KEY"],
       "required to deploy CreditScoreRegistry to Avalanche Fuji",
     ),
-    checkSecretPresence(
+    checkUrlPresence(
       "Frontend API URL",
-      ["NEXT_PUBLIC_API_BASE_URL"],
-      "required to point Vercel at the Railway API",
+      [
+        { key: "ARKSCORE_API_URL", value: combinedEnv.ARKSCORE_API_URL },
+        {
+          key: "NEXT_PUBLIC_API_BASE_URL",
+          value: combinedEnv.NEXT_PUBLIC_API_BASE_URL,
+        },
+      ],
+      "required to point Vercel at the Railway API during finalization",
     ),
-    checkSecretPresence(
+    checkAddressPresence(
       "Frontend registry address",
-      ["NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS"],
-      "required to enable Store on Fuji",
+      [
+        {
+          key: "ARKSCORE_REGISTRY_ADDRESS",
+          value: combinedEnv.ARKSCORE_REGISTRY_ADDRESS,
+        },
+        {
+          key: "CREDIT_SCORE_REGISTRY_ADDRESS",
+          value: combinedEnv.CREDIT_SCORE_REGISTRY_ADDRESS,
+        },
+        { key: "REGISTRY_ADDRESS", value: combinedEnv.REGISTRY_ADDRESS },
+        {
+          key: "NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
+          value: combinedEnv.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS,
+        },
+        {
+          key: "packages/contracts/deployments/fuji/CreditScoreRegistry.json",
+          value: readRegistryDeployment()?.address,
+        },
+      ],
+      "required to enable Store on Fuji and set Vercel public env",
     ),
-    checkSecretPresence(
+    checkAddressPresence(
       "Demo scorer address",
-      ["ARKSCORE_SCORER_ADDRESS"],
+      [
+        {
+          key: "ARKSCORE_SCORER_ADDRESS",
+          value: combinedEnv.ARKSCORE_SCORER_ADDRESS,
+        },
+        { key: "SCORER_ADDRESS", value: combinedEnv.SCORER_ADDRESS },
+      ],
       "required to prove the dashboard signer can store scores on Fuji",
     ),
     checkRailwayAuth(),
@@ -139,6 +174,53 @@ function checkSecretPresence(
       };
 }
 
+function checkUrlPresence(
+  label: string,
+  candidates: Candidate[],
+  detail: string,
+): Check {
+  return checkCandidatePresence(label, candidates, detail, isUrl);
+}
+
+function checkAddressPresence(
+  label: string,
+  candidates: Candidate[],
+  detail: string,
+): Check {
+  return checkCandidatePresence(label, candidates, detail, isAddress);
+}
+
+function checkCandidatePresence(
+  label: string,
+  candidates: Candidate[],
+  detail: string,
+  isValid: (value: string) => boolean,
+): Check {
+  const usableCandidates = candidates.filter((candidate) =>
+    hasUsableValue(candidate.value),
+  );
+  const validCandidate = usableCandidates.find((candidate) =>
+    isValid(candidate.value ?? ""),
+  );
+
+  if (validCandidate) {
+    return {
+      label,
+      status: "pass",
+      detail: `${detail}; source ${validCandidate.key}`,
+    };
+  }
+
+  return {
+    label,
+    status: "warn",
+    detail:
+      usableCandidates.length > 0
+        ? `${detail}; invalid value in ${usableCandidates.map((candidate) => candidate.key).join(", ")}`
+        : `${detail}; missing ${candidates.map((candidate) => candidate.key).join(", ")}`,
+  };
+}
+
 function checkRailwayAuth(): Check {
   const result = spawnSync("pnpm", ["dlx", "@railway/cli", "whoami"], {
     encoding: "utf8",
@@ -197,6 +279,18 @@ function readEnvFile(path: string): Record<string, string> {
   );
 }
 
+function readRegistryDeployment(): { address?: string } | undefined {
+  const path = "packages/contracts/deployments/fuji/CreditScoreRegistry.json";
+
+  if (!existsSync(path)) return undefined;
+
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as { address?: string };
+  } catch {
+    return undefined;
+  }
+}
+
 function hasUsableValue(value: string | undefined): boolean {
   return Boolean(
     value &&
@@ -205,6 +299,20 @@ function hasUsableValue(value: string | undefined): boolean {
     !value.includes("your-") &&
     value !== "0x...",
   );
+}
+
+function isAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function isUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function icon(status: CheckStatus): string {

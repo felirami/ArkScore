@@ -164,7 +164,7 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
   pnpm verify:live
 ```
 
-Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing.
+Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
 
 Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable, checks the Railway health, production subject-hash salt, OpenAPI, and score response shape, and verifies that the Fuji registry address has bytecode plus a callable `owner()`.
 Set `ARKSCORE_SCORER_ADDRESS` or `SCORER_ADDRESS` before the strict run to prove the dashboard signing wallet is authorized to store score records.
