@@ -14,7 +14,7 @@ pnpm --filter @arkscore/contracts test
 pnpm --filter @arkscore/contracts deploy:fuji
 ```
 
-After deployment, add the registry address to Vercel:
+The deploy script writes `packages/contracts/deployments/fuji/CreditScoreRegistry.json`. After deployment, add the registry address to Vercel:
 
 ```bash
 NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x...
@@ -99,11 +99,11 @@ If `NEXT_PUBLIC_API_BASE_URL` is not configured on a hosted Vercel deployment, A
 Once Railway and Fuji are live, set the Vercel variables and redeploy:
 
 ```bash
-vercel env add NEXT_PUBLIC_API_BASE_URL production
-vercel env add NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS production
-vercel env add NEXT_PUBLIC_ENABLE_DEMO_FALLBACK production
-vercel deploy --prod --scope feliramis-projects
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
 ```
+
+`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS` or the Fuji deployment artifact, sets public Vercel env values, redeploys the frontend, and runs strict live verification.
 
 ## Final Smoke Test
 

@@ -27,6 +27,8 @@ The API endpoint test suite passes in mock mode and is included in `pnpm verify`
 
 `pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict`.
 
+`pnpm finalize:live` is a dry-run finalizer for the Vercel handoff. `pnpm finalize:live:apply` sets `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false`, deploys production, then runs strict live verification.
+
 ## Pending Credentials
 
 - `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` for live Wavy Node traceability and AI risk scoring.

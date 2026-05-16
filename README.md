@@ -85,13 +85,14 @@ pnpm -r lint
 pnpm verify
 pnpm readiness
 pnpm verify:live
+pnpm finalize:live
 ```
 
 Use Node.js 22.19.0. The repository pins Node 22 because the verified Next.js 15 production server path uses that runtime.
 
 See `docs/READINESS_AUDIT.md` and `docs/REQUIREMENTS_TRACE.md` for the current judge-readiness checklist and remaining credential-dependent deployment items.
 
-`pnpm readiness` checks local configuration gates without printing secrets. `pnpm verify:live` checks reachable deployments; use `pnpm verify:live:strict` after Railway, Wavy Node, Fuji, and Vercel environment variables are all configured.
+`pnpm readiness` checks local configuration gates without printing secrets. `pnpm verify:live` checks reachable deployments; use `pnpm verify:live:strict` after Railway, Wavy Node, Fuji, and Vercel environment variables are all configured. `pnpm finalize:live` prints the final Vercel env/deploy commands, and `pnpm finalize:live:apply` applies them.
 
 ## Submission Placeholders
 

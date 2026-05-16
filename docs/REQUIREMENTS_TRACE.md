@@ -22,6 +22,6 @@ Status date: May 16, 2026
 - Railway API URL from a successful `railway up` deployment.
 - Live `/health` response from the Railway API.
 - Live Wavy Node score response with `source: "wavy"` after `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` are configured.
-- Fuji `CreditScoreRegistry` address from `pnpm --filter @arkscore/contracts deploy:fuji`.
-- Vercel environment update for `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, followed by a production redeploy.
+- Fuji `CreditScoreRegistry` address from `pnpm --filter @arkscore/contracts deploy:fuji`; the deploy script writes `packages/contracts/deployments/fuji/CreditScoreRegistry.json`.
+- Vercel environment update for `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`, followed by a production redeploy through `pnpm finalize:live:apply`.
 - Final `pnpm verify:live:strict` run proving the public frontend, Railway API, live Wavy `source: "wavy"` response, and Fuji registry contract are all reachable.

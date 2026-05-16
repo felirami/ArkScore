@@ -17,6 +17,8 @@
     "readiness:strict": "tsx scripts/readiness-check.ts --strict",
     "verify:live": "tsx scripts/verify-live.ts",
     "verify:live:strict": "tsx scripts/verify-live.ts --strict --require-wavy",
+    "finalize:live": "tsx scripts/finalize-live.ts",
+    "finalize:live:apply": "tsx scripts/finalize-live.ts --apply",
     "format": "prettier --write ."
   },
   "engines": {

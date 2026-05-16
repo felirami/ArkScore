@@ -44,7 +44,8 @@ const apiUrl = normalizeBaseUrl(
 );
 const registryAddress =
   env.ARKSCORE_REGISTRY_ADDRESS ??
-  env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS;
+  env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
+  readRegistryDeployment()?.address;
 const fujiRpcUrl =
   env.FUJI_RPC_URL ?? "https://api.avax-test.network/ext/bc/C/rpc";
 const testWallet =
@@ -308,6 +309,17 @@ function readEnvFile(path: string): Record<string, string> {
         return [key, value];
       })
   );
+}
+
+function readRegistryDeployment(): { address?: string } | undefined {
+  const path = "packages/contracts/deployments/fuji/CreditScoreRegistry.json";
+  if (!existsSync(path)) return undefined;
+
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as { address?: string };
+  } catch {
+    return undefined;
+  }
 }
 
 function normalizeBaseUrl(value: string | undefined): string | undefined {
