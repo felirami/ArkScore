@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T18:38:11.976Z
+Generated: 2026-05-16T18:44:16.168Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `7bff528`
+- Commit: `02bac19`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -35,6 +35,7 @@ Generated: 2026-05-16T18:38:11.976Z
 ```bash
 pnpm probe:wavy
 pnpm probe:fuji
+pnpm plan:eerc20
 pnpm probe:eerc20
 pnpm deploy:railway:apply -- --create-domain
 pnpm --filter @arkscore/contracts deploy:fuji
