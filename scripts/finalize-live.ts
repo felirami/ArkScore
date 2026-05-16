@@ -26,10 +26,18 @@ const eerc20DemoAddress =
   env.EERC20_DEMO_ADDRESS ??
   env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS;
 const requireEerc20 = env.ARKSCORE_REQUIRE_EERC20 === "true";
+const requireScoreRecord = env.ARKSCORE_REQUIRE_SCORE_RECORD === "true";
 const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
 const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
 const webUrl = env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app";
+const scoreRecordArtifactPath =
+  env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const shouldVerifyScoreRecord =
+  requireScoreRecord ||
+  Boolean(env.ARKSCORE_SCORE_RECORD_ARTIFACT) ||
+  existsSync(scoreRecordArtifactPath);
 
 main();
 
@@ -52,6 +60,12 @@ function main() {
 
   if (requireEerc20 && !eerc20DemoAddress) {
     fail("Missing eERC20 demo address while ARKSCORE_REQUIRE_EERC20=true.");
+  }
+
+  if (shouldVerifyScoreRecord && !existsSync(scoreRecordArtifactPath)) {
+    fail(
+      `Missing latest score record artifact at ${scoreRecordArtifactPath}. Run pnpm record:fuji first or unset ARKSCORE_REQUIRE_SCORE_RECORD/ARKSCORE_SCORE_RECORD_ARTIFACT.`,
+    );
   }
 
   const envCommands = [
@@ -94,10 +108,11 @@ function main() {
     vercelScope,
     "--non-interactive",
   ];
-  const verifyScript = requireEerc20
-    ? "verify:live:strict:eerc20"
-    : "verify:live:strict";
-  const preflightCommand = ["pnpm", "verify:live:preflight"];
+  const verifyScript = finalVerifyScript();
+  const preflightScript = shouldVerifyScoreRecord
+    ? "verify:live:preflight:record"
+    : "verify:live:preflight";
+  const preflightCommand = ["pnpm", preflightScript];
   const verifyCommand = ["pnpm", verifyScript];
   const liveVerificationEnv = {
     ...process.env,
@@ -108,6 +123,12 @@ function main() {
       : {}),
     ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
+    ...(shouldVerifyScoreRecord
+      ? {
+          ARKSCORE_SCORE_RECORD_ARTIFACT: scoreRecordArtifactPath,
+          ARKSCORE_REQUIRE_SCORE_RECORD: "true",
+        }
+      : {}),
   };
   const verifyEnv = {
     ...liveVerificationEnv,
@@ -121,7 +142,7 @@ function main() {
     if (eerc20ProbeCommand) {
       console.log(`${renderEerc20ProbeEnv()} ${eerc20ProbeCommand.join(" ")}`);
     }
-    console.log(`${renderPreflightEnv()} pnpm verify:live:preflight`);
+    console.log(`${renderPreflightEnv()} pnpm ${preflightScript}`);
     for (const command of envCommands) printCommand(command);
     printCommand(deployCommand);
     console.log(`${renderVerifyEnv()} pnpm ${verifyScript}`);
@@ -186,6 +207,20 @@ function printCommand(command: string[]) {
   console.log(`$ ${command.map(shellEscape).join(" ")}`);
 }
 
+function finalVerifyScript() {
+  if (requireEerc20 && shouldVerifyScoreRecord) {
+    return "verify:live:strict:eerc20:record";
+  }
+
+  if (requireEerc20) {
+    return "verify:live:strict:eerc20";
+  }
+
+  return shouldVerifyScoreRecord
+    ? "verify:live:strict:record"
+    : "verify:live:strict";
+}
+
 function renderVerifyEnv() {
   const verifyEnv: Record<string, string> = {
     ARKSCORE_API_URL: apiUrl ?? "",
@@ -195,6 +230,12 @@ function renderVerifyEnv() {
       : {}),
     ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
+    ...(shouldVerifyScoreRecord
+      ? {
+          ARKSCORE_SCORE_RECORD_ARTIFACT: scoreRecordArtifactPath,
+          ARKSCORE_REQUIRE_SCORE_RECORD: "true",
+        }
+      : {}),
   };
 
   return Object.entries(verifyEnv)
@@ -211,6 +252,12 @@ function renderPreflightEnv() {
       : {}),
     ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
+    ...(shouldVerifyScoreRecord
+      ? {
+          ARKSCORE_SCORE_RECORD_ARTIFACT: scoreRecordArtifactPath,
+          ARKSCORE_REQUIRE_SCORE_RECORD: "true",
+        }
+      : {}),
   };
 
   return Object.entries(preflightEnv)

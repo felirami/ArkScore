@@ -280,6 +280,76 @@ test("Vercel finalizer dry run prints strict eERC20 verification when required",
   assert.doesNotMatch(result.output, /pnpm verify:live:strict$/m);
 });
 
+test("Vercel finalizer dry run uses record verification when artifact is configured", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-finalize-record-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const apiUrl = "https://arkscore-api.up.railway.app";
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+
+  writeFileSync(artifactPath, "{}");
+
+  try {
+    const result = runScript("scripts/finalize-live.ts", [], {
+      ARKSCORE_API_URL: `${apiUrl}/`,
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      VERCEL_SCOPE: "arkscore-scope",
+      VERCEL_PROJECT_NAME: "arkscore-project",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /pnpm verify:live:preflight:record/);
+    assert.match(result.output, /ARKSCORE_REQUIRE_SCORE_RECORD=true/);
+    assert.match(result.output, /pnpm verify:live:strict:record/);
+    assert.doesNotMatch(result.output, /pnpm verify:live:strict$/m);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("Vercel finalizer dry run uses eERC20 record verification when both are required", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-finalize-eerc20-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const apiUrl = "https://arkscore-api.up.railway.app";
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const eerc20DemoAddress = "0x3333333333333333333333333333333333333333";
+
+  writeFileSync(artifactPath, "{}");
+
+  try {
+    const result = runScript("scripts/finalize-live.ts", [], {
+      ARKSCORE_API_URL: `${apiUrl}/`,
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress,
+      ARKSCORE_REQUIRE_EERC20: "true",
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      VERCEL_SCOPE: "arkscore-scope",
+      VERCEL_PROJECT_NAME: "arkscore-project",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /pnpm verify:live:preflight:record/);
+    assert.match(result.output, /ARKSCORE_REQUIRE_EERC20=true/);
+    assert.match(result.output, /ARKSCORE_REQUIRE_SCORE_RECORD=true/);
+    assert.match(result.output, /pnpm verify:live:strict:eerc20:record/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("Vercel finalizer refuses a missing required score record artifact", () => {
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: "https://arkscore-api.up.railway.app",
+    ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
+    ARKSCORE_REQUIRE_SCORE_RECORD: "true",
+    ARKSCORE_SCORE_RECORD_ARTIFACT: "/tmp/arkscore-missing-record.json",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Missing latest score record artifact/);
+  assert.doesNotMatch(result.output, /vercel deploy/);
+});
+
 test("Vercel finalizer refuses missing API URL before printing deploy commands", () => {
   const result = runScript("scripts/finalize-live.ts", [], {
     ARKSCORE_API_URL: "",
