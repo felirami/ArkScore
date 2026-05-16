@@ -41,6 +41,10 @@ type OpenApiOperation = {
   responses?: Record<string, unknown>;
 };
 
+type OpenApiResponseObject = {
+  headers?: Record<string, unknown>;
+};
+
 type OpenApiResponse = {
   openapi?: string;
   info?: {
@@ -400,6 +404,7 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       operationHasResponse(scoreOperation, "502") &&
       operationHasResponse(scoreOperation, "504") &&
       operationHasResponse(scoreOperation, "500") &&
+      responseDocumentsHeader(scoreOperation, "200", "Cache-Control") &&
       schemaRequires(healthSchema, "wavyCredentialsConfigured") &&
       schemaHasProperty(healthSchema, "wavyCredentialsConfigured") &&
       schemaRequires(healthSchema, "subjectHashSaltConfigured") &&
@@ -457,6 +462,8 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       Number.isInteger(score.wavy?.traceability?.patternsCount) &&
       isScore(score.composite?.creditScore) &&
       Boolean(score.evidenceHash?.match(/^0x[a-f0-9]{64}$/));
+    const cacheControl = scoreResponse.headers.get("cache-control") ?? "";
+    const cacheValid = /\bno-store\b/i.test(cacheControl);
     const sourceStatus = score?.source === "wavy" ? "pass" : "warn";
     const sourceDetail =
       score?.source === "wavy"
@@ -464,16 +471,16 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         : `response source is ${score?.source ?? "unknown"}`;
 
     checks.push(
-      scoreShapeValid
+      scoreShapeValid && cacheValid
         ? {
             label: "Railway API score",
             status: requireWavy ? sourceStatus : "pass",
-            detail: `${sourceDetail}; Bankaool score response is valid`,
+            detail: `${sourceDetail}; Bankaool score response is valid and no-store`,
           }
         : {
             label: "Railway API score",
             status: "fail",
-            detail: `${url}/api/score/:address returned invalid shape or status ${scoreResponse.status}`,
+            detail: `${url}/api/score/:address returned invalid shape, cache headers, or status ${scoreResponse.status}`,
           },
     );
   } catch (error) {
@@ -822,6 +829,20 @@ function operationHasResponse(
   statusCode: string,
 ): boolean {
   return Boolean(operation?.responses?.[statusCode]);
+}
+
+function responseDocumentsHeader(
+  operation: OpenApiOperation | undefined,
+  statusCode: string,
+  header: string,
+): boolean {
+  const response = operation?.responses?.[statusCode];
+
+  return Boolean(
+    response &&
+    typeof response === "object" &&
+    (response as OpenApiResponseObject).headers?.[header],
+  );
 }
 
 function schemaRequires(

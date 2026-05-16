@@ -83,6 +83,16 @@ export const openApiDocument = {
           "200": {
             description:
               "Wallet score, Wavy traceability result, composite decision, and evidence hash.",
+            headers: {
+              "Cache-Control": {
+                description:
+                  "Always `no-store, max-age=0` because score responses include wallet-derived risk evidence.",
+                schema: {
+                  type: "string",
+                  example: "no-store, max-age=0",
+                },
+              },
+            },
             content: {
               "application/json": {
                 schema: {

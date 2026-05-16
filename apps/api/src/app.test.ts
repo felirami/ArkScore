@@ -16,6 +16,10 @@ type OpenApiOperation = {
   responses?: Record<string, unknown>;
 };
 
+type OpenApiResponseObject = {
+  headers?: Record<string, unknown>;
+};
+
 type StringSchema = {
   pattern?: string;
 };
@@ -68,6 +72,13 @@ test("openapi document describes the public scoring contract", async () => {
     assert.ok(scoreOperation?.get?.responses?.["502"]);
     assert.ok(scoreOperation?.get?.responses?.["504"]);
     assert.ok(scoreOperation?.get?.responses?.["500"]);
+    assert.ok(
+      (
+        scoreOperation?.get?.responses?.["200"] as
+          | OpenApiResponseObject
+          | undefined
+      )?.headers?.["Cache-Control"],
+    );
     assert.ok(healthSchema);
     assert.ok(scoreSchema);
     assert.ok(wavySchema);
@@ -93,6 +104,8 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
     const payload = (await response.json()) as ScoreApiResponse;
 
     assert.equal(response.status, 200);
+    assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+    assert.match(response.headers.get("pragma") ?? "", /no-cache/);
     assert.equal(payload.address, demoWallet);
     assert.match(payload.subjectHash, /^0x[a-f0-9]{64}$/);
     assert.equal(payload.chainId, 43113);
@@ -123,6 +136,7 @@ test("score endpoint rejects unsupported institutions", async () => {
     const payload = (await response.json()) as { error: string };
 
     assert.equal(response.status, 400);
+    assert.match(response.headers.get("cache-control") ?? "", /no-store/);
     assert.match(payload.error, /Unsupported institution/);
   });
 });
