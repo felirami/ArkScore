@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 
 type CommandPlan = {
   command: string[];
+  env?: Record<string, string>;
   input?: string;
   redacted?: boolean;
 };
@@ -33,11 +34,12 @@ main();
 function main() {
   console.log("# ArkScore Railway Deployment\n");
 
-  const missingCredentials = [
+  const requiredCredentials: Array<[string, string | undefined]> = [
     ["WAVY_NODE_API_KEY", wavyApiKey],
     ["WAVY_NODE_PROJECT_ID", wavyProjectId],
     ["ARKSCORE_SUBJECT_HASH_SALT", subjectHashSalt],
-  ]
+  ];
+  const missingCredentials = requiredCredentials
     .filter(([, value]) => !hasUsableValue(value))
     .map(([key]) => key);
 
@@ -56,10 +58,12 @@ function main() {
     );
   }
 
+  const preflightCommands = buildPreflightCommands(missingCredentials);
   const commands = buildCommands();
 
   if (!apply) {
     console.log("Dry run. Re-run `pnpm deploy:railway:apply` to apply.\n");
+    for (const plan of preflightCommands) printCommand(plan);
     for (const plan of commands) printCommand(plan);
     console.log(
       "\nAfter Railway prints the service URL, run:\n" +
@@ -68,7 +72,26 @@ function main() {
     return;
   }
 
+  for (const plan of preflightCommands) run(plan);
   for (const plan of commands) run(plan);
+}
+
+function buildPreflightCommands(missingCredentials: string[]): CommandPlan[] {
+  if (allowMock || missingCredentials.length > 0) return [];
+
+  return [
+    {
+      command: ["pnpm", "probe:wavy"],
+      env: {
+        WAVY_NODE_MOCK_MODE: "false",
+        ...(wavyApiKey ? { WAVY_NODE_API_KEY: wavyApiKey } : {}),
+        ...(wavyProjectId ? { WAVY_NODE_PROJECT_ID: wavyProjectId } : {}),
+        ...(subjectHashSalt
+          ? { ARKSCORE_SUBJECT_HASH_SALT: subjectHashSalt }
+          : {}),
+      },
+    },
+  ];
 }
 
 function buildCommands(): CommandPlan[] {
@@ -211,6 +234,7 @@ function run(plan: CommandPlan) {
   printCommand(plan);
   const [binary, ...args] = plan.command;
   const result = spawnSync(binary, args, {
+    env: plan.env ? { ...process.env, ...plan.env } : process.env,
     input: plan.input,
     encoding: "utf8",
     stdio:
@@ -224,13 +248,27 @@ function run(plan: CommandPlan) {
 
 function printCommand(plan: CommandPlan) {
   const rendered = plan.command.map(shellEscape).join(" ");
+  const envPrefix = plan.env
+    ? `${Object.entries(plan.env)
+        .map(([key, value]) => {
+          const renderedValue =
+            key === "WAVY_NODE_API_KEY" ||
+            key === "WAVY_NODE_PROJECT_ID" ||
+            key === "ARKSCORE_SUBJECT_HASH_SALT"
+              ? "[redacted]"
+              : value;
+
+          return `${key}=${shellEscape(renderedValue)}`;
+        })
+        .join(" ")} `
+    : "";
   const prefix = plan.input
     ? plan.redacted
       ? "echo '[redacted]' | "
       : `echo ${shellEscape(plan.input)} | `
     : "";
 
-  console.log(`$ ${prefix}${rendered}`);
+  console.log(`$ ${prefix}${envPrefix}${rendered}`);
 }
 
 function readEnvFile(path: string): Record<string, string> {

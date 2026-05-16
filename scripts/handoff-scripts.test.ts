@@ -25,12 +25,29 @@ test("Railway dry run prints redacted secret variable commands", () => {
   assert.match(result.output, /variable set ARKSCORE_SUBJECT_HASH_SALT/);
   assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_MAX=120/);
   assert.match(result.output, /ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000/);
+  assert.match(result.output, /pnpm probe:wavy/);
+  assert.match(result.output, /WAVY_NODE_API_KEY='\[redacted\]'/);
+  assert.match(result.output, /WAVY_NODE_PROJECT_ID='\[redacted\]'/);
+  assert.match(result.output, /ARKSCORE_SUBJECT_HASH_SALT='\[redacted\]'/);
   assert.match(result.output, /echo '\[redacted\]' \|/);
   assert.match(result.output, /@railway\/cli up/);
   assert.match(result.output, /@railway\/cli domain/);
   assert.doesNotMatch(result.output, /super-secret-key/);
   assert.doesNotMatch(result.output, /project-secret-id/);
   assert.doesNotMatch(result.output, /salt-secret-value/);
+});
+
+test("Railway dry run skips Wavy probe for explicit mock deployment", () => {
+  const result = runScript("scripts/deploy-railway.ts", [], {
+    WAVY_NODE_API_KEY: "",
+    WAVY_NODE_PROJECT_ID: "",
+    ARKSCORE_SUBJECT_HASH_SALT: "",
+    RAILWAY_ALLOW_MOCK: "true",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /WAVY_NODE_MOCK_MODE=true/);
+  assert.doesNotMatch(result.output, /pnpm probe:wavy/);
 });
 
 test("Railway apply refuses missing live credentials unless mock is explicit", () => {

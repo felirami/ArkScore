@@ -134,6 +134,8 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm deploy:railway:apply -- --create-domain
 ```
 
+In live mode, `deploy:railway:apply` runs `pnpm probe:wavy` before it touches Railway variables or uploads the service, so invalid Wavy credentials, inactive Fuji support, or a weak subject-hash salt fail locally first.
+
 Before deploying Railway, you can prove the Wavy credentials locally without printing the API key:
 
 ```bash
@@ -148,6 +150,7 @@ pnpm probe:wavy
 The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow with explicit project, service, and environment targeting so a stale local Railway link cannot silently receive the deploy:
 
 ```bash
+pnpm probe:wavy
 railway whoami --json
 railway init --name arkscore-api --json
 railway variable set PORT=4000 --environment production --service arkscore-api --skip-deploys --json
