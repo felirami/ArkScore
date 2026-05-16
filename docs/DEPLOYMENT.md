@@ -148,6 +148,13 @@ NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x...
 NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false
 ```
 
+Local finalizer variables:
+
+```bash
+VERCEL_SCOPE=feliramis-projects
+VERCEL_PROJECT_NAME=arkscore
+```
+
 The dashboard uses injected wallet providers through wagmi and viem. Core Wallet, MetaMask, Rabby, and other injected EVM wallets can connect to Avalanche Fuji.
 
 Set the Node.js version to `22.x` in Vercel and Railway. The repo includes `.nvmrc`, `.node-version`, and `engines.node` for that runtime.
@@ -163,7 +170,7 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
 ```
 
-`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, sets public Vercel env values, redeploys the frontend, and runs strict live verification. It also accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during strict verification.
+`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, checks Vercel CLI auth for `VERCEL_SCOPE`, links the local checkout to `VERCEL_PROJECT_NAME`, sets public Vercel env values, redeploys the frontend, and runs strict live verification. It also accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during strict verification.
 
 The strict verifier fetches the hosted Vercel page plus its Next.js chunks and proves the production bundle contains the configured Railway API URL and Fuji registry address. If either value is missing from the static bundle, redeploy Vercel after setting the public env vars.
 

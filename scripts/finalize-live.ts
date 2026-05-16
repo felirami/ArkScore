@@ -23,6 +23,7 @@ const registryAddress =
   readRegistryDeployment()?.address;
 const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
+const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
 const webUrl = env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app";
 
 main();
@@ -48,6 +49,13 @@ function main() {
     ),
     vercelEnvCommand("NEXT_PUBLIC_ENABLE_DEMO_FALLBACK", "false"),
   ];
+  const authCommand = vercelCommand("whoami");
+  const linkCommand = vercelCommand(
+    "link",
+    "--yes",
+    "--project",
+    vercelProject,
+  );
   const deployCommand = [
     "pnpm",
     "dlx",
@@ -58,6 +66,7 @@ function main() {
     "-y",
     "--scope",
     vercelScope,
+    "--non-interactive",
   ];
   const verifyCommand = ["pnpm", "verify:live:strict"];
   const verifyEnv = {
@@ -70,15 +79,31 @@ function main() {
 
   if (!apply) {
     console.log("Dry run. Re-run `pnpm finalize:live:apply` to apply.\n");
+    printCommand(authCommand);
+    printCommand(linkCommand);
     for (const command of envCommands) printCommand(command);
     printCommand(deployCommand);
     console.log(`${renderVerifyEnv()} pnpm verify:live:strict`);
     return;
   }
 
+  run(authCommand);
+  run(linkCommand);
   for (const command of envCommands) run(command);
   run(deployCommand);
   run(verifyCommand, verifyEnv);
+}
+
+function vercelCommand(...args: string[]) {
+  return [
+    "pnpm",
+    "dlx",
+    "vercel",
+    ...args,
+    "--scope",
+    vercelScope,
+    "--non-interactive",
+  ];
 }
 
 function vercelEnvCommand(name: string, value: string) {
@@ -97,6 +122,7 @@ function vercelEnvCommand(name: string, value: string) {
     "--scope",
     vercelScope,
     "--no-sensitive",
+    "--non-interactive",
   ];
 }
 

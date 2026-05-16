@@ -106,6 +106,7 @@ async function main() {
       "required to prove the dashboard signer can store scores on Fuji",
     ),
     checkRailwayAuth(),
+    checkVercelAuth(),
   ];
 
   checks.push(
@@ -239,6 +240,34 @@ function checkRailwayAuth(): Check {
     label: "Railway CLI auth",
     status: "warn",
     detail: "not authenticated; run railway login or provide RAILWAY_TOKEN",
+  };
+}
+
+function checkVercelAuth(): Check {
+  const scope = combinedEnv.VERCEL_SCOPE ?? "feliramis-projects";
+  const result = spawnSync(
+    "pnpm",
+    ["dlx", "vercel", "whoami", "--scope", scope, "--non-interactive"],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+
+  if (result.status === 0) {
+    const account = result.stdout.trim() || scope;
+
+    return {
+      label: "Vercel CLI auth",
+      status: "pass",
+      detail: `authenticated for ${account}`,
+    };
+  }
+
+  return {
+    label: "Vercel CLI auth",
+    status: "warn",
+    detail: `not authenticated for scope ${scope}; run vercel login or provide VERCEL_TOKEN`,
   };
 }
 
