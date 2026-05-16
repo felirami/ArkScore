@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T18:59:45.802Z
+Generated: 2026-05-16T19:04:36.772Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `7572c05`
+- Commit: `f34a530`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -39,6 +39,7 @@ pnpm probe:wavy
 pnpm probe:fuji
 pnpm plan:eerc20
 pnpm probe:eerc20
+pnpm railway:whoami
 pnpm deploy:railway:apply -- --create-domain
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji
@@ -179,6 +180,7 @@ pnpm readiness
 pnpm verify:live
 pnpm probe:wavy
 pnpm probe:fuji
+pnpm railway:whoami
 pnpm deploy:railway:apply -- --create-domain
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji
@@ -222,7 +224,7 @@ pnpm verify:live:strict:record
 [pass] Optional eERC20 demo address: optional EncryptedERC privacy token demo address; not configured
 [warn] Demo scorer address: required to prove the dashboard signer can store scores on Fuji; missing ARKSCORE_SCORER_ADDRESS, SCORER_ADDRESS
 [pass] Latest Fuji score record: not configured yet; run pnpm record:fuji for final submission proof
-[warn] Railway CLI auth: not authenticated; run railway login or provide RAILWAY_TOKEN
+[warn] Railway CLI auth: not authenticated; run pnpm railway:login, pnpm railway:login:browserless, or provide RAILWAY_TOKEN
 [pass] Vercel CLI auth: authenticated for felirami
 [pass] Vercel production URL: https://arkscore-seven.vercel.app returned 200
 
@@ -231,5 +233,5 @@ pnpm verify:live:strict:record
 - Passing: 11
 - Warnings: 7
 - Failing: 0
-- Report id: da7cb1931d12
+- Report id: e6fbbf584cec
 ````
