@@ -15,6 +15,32 @@ type Candidate = {
   value?: string;
 };
 
+type ScoreRecordProof = {
+  blockNumber?: number | null;
+  chainId?: number;
+  composite?: {
+    creditScore?: number;
+    decision?: string;
+    decisionEnum?: number;
+  };
+  generatedAt?: string;
+  institution?: string;
+  registryAddress?: string;
+  scorerAddress?: string;
+  source?: "wavy" | "mock";
+  stored?: {
+    submitter?: string;
+    updatedAt?: string;
+  };
+  subjectHash?: string;
+  transactionHash?: string;
+  wavy?: {
+    analysisId?: string;
+    evidenceHash?: string;
+    riskScore?: number;
+  };
+};
+
 const strict = process.argv.includes("--strict");
 const rootEnv = readEnvFile(".env");
 const contractEnv = readEnvFile("packages/contracts/.env");
@@ -30,6 +56,16 @@ const combinedEnv = {
 const requireEerc20 =
   process.argv.includes("--require-eerc20") ||
   combinedEnv.ARKSCORE_REQUIRE_EERC20 === "true";
+const requireScoreRecord =
+  process.argv.includes("--require-score-record") ||
+  combinedEnv.ARKSCORE_REQUIRE_SCORE_RECORD === "true";
+const skipExternal =
+  process.argv.includes("--skip-external") ||
+  combinedEnv.ARKSCORE_READINESS_SKIP_EXTERNAL === "true";
+const allowMockRecord = combinedEnv.ARKSCORE_ALLOW_MOCK_RECORD === "true";
+const scoreRecordArtifactPath =
+  combinedEnv.ARKSCORE_SCORE_RECORD_ARTIFACT ??
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -37,6 +73,32 @@ main().catch((error: unknown) => {
 });
 
 async function main() {
+  const registryCandidates: Candidate[] = [
+    {
+      key: "ARKSCORE_REGISTRY_ADDRESS",
+      value: combinedEnv.ARKSCORE_REGISTRY_ADDRESS,
+    },
+    {
+      key: "CREDIT_SCORE_REGISTRY_ADDRESS",
+      value: combinedEnv.CREDIT_SCORE_REGISTRY_ADDRESS,
+    },
+    { key: "REGISTRY_ADDRESS", value: combinedEnv.REGISTRY_ADDRESS },
+    {
+      key: "NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
+      value: combinedEnv.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS,
+    },
+    {
+      key: "packages/contracts/deployments/fuji/CreditScoreRegistry.json",
+      value: readRegistryDeployment()?.address,
+    },
+  ];
+  const scorerCandidates: Candidate[] = [
+    {
+      key: "ARKSCORE_SCORER_ADDRESS",
+      value: combinedEnv.ARKSCORE_SCORER_ADDRESS,
+    },
+    { key: "SCORER_ADDRESS", value: combinedEnv.SCORER_ADDRESS },
+  ];
   const checks: Check[] = [
     checkNodeVersion(),
     checkFile("apps/web/src/app/page.tsx", "Next.js App Router entry"),
@@ -76,25 +138,7 @@ async function main() {
     ),
     checkAddressPresence(
       "Frontend registry address",
-      [
-        {
-          key: "ARKSCORE_REGISTRY_ADDRESS",
-          value: combinedEnv.ARKSCORE_REGISTRY_ADDRESS,
-        },
-        {
-          key: "CREDIT_SCORE_REGISTRY_ADDRESS",
-          value: combinedEnv.CREDIT_SCORE_REGISTRY_ADDRESS,
-        },
-        { key: "REGISTRY_ADDRESS", value: combinedEnv.REGISTRY_ADDRESS },
-        {
-          key: "NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
-          value: combinedEnv.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS,
-        },
-        {
-          key: "packages/contracts/deployments/fuji/CreditScoreRegistry.json",
-          value: readRegistryDeployment()?.address,
-        },
-      ],
+      registryCandidates,
       "required to enable Store on Fuji and set Vercel public env",
     ),
     checkOptionalAddressPresence(
@@ -118,25 +162,31 @@ async function main() {
     ),
     checkAddressPresence(
       "Demo scorer address",
-      [
-        {
-          key: "ARKSCORE_SCORER_ADDRESS",
-          value: combinedEnv.ARKSCORE_SCORER_ADDRESS,
-        },
-        { key: "SCORER_ADDRESS", value: combinedEnv.SCORER_ADDRESS },
-      ],
+      scorerCandidates,
       "required to prove the dashboard signer can store scores on Fuji",
     ),
-    checkRailwayAuth(),
-    checkVercelAuth(),
+    checkScoreRecordArtifact(
+      findValidCandidate(registryCandidates, isAddress)?.value,
+      findValidCandidate(scorerCandidates, isAddress)?.value,
+    ),
   ];
 
-  checks.push(
-    await checkUrl(
-      "Vercel production URL",
-      "https://arkscore-seven.vercel.app",
-    ),
-  );
+  if (skipExternal) {
+    checks.push({
+      label: "External readiness probes",
+      status: "pass",
+      detail: "skipped by --skip-external",
+    });
+  } else {
+    checks.push(
+      checkRailwayAuth(),
+      checkVercelAuth(),
+      await checkUrl(
+        "Vercel production URL",
+        "https://arkscore-seven.vercel.app",
+      ),
+    );
+  }
 
   const failed = checks.filter((check) => check.status === "fail");
   const warnings = checks.filter((check) => check.status === "warn");
@@ -251,6 +301,61 @@ function checkOptionalAddressPresence(
   };
 }
 
+function checkScoreRecordArtifact(
+  configuredRegistryAddress?: string,
+  configuredScorerAddress?: string,
+): Check {
+  const artifactConfigured = hasUsableValue(
+    combinedEnv.ARKSCORE_SCORE_RECORD_ARTIFACT,
+  );
+
+  if (!existsSync(scoreRecordArtifactPath)) {
+    if (!requireScoreRecord && !artifactConfigured) {
+      return {
+        label: "Latest Fuji score record",
+        status: "pass",
+        detail:
+          "not configured yet; run pnpm record:fuji for final submission proof",
+      };
+    }
+
+    return {
+      label: "Latest Fuji score record",
+      status: "warn",
+      detail: `${scoreRecordArtifactPath} is missing; run pnpm record:fuji first`,
+    };
+  }
+
+  const proof = readScoreRecordProof();
+  if (!proof) {
+    return {
+      label: "Latest Fuji score record",
+      status: "warn",
+      detail: `${scoreRecordArtifactPath} is not valid JSON`,
+    };
+  }
+
+  const validationError = validateScoreRecordProof(
+    proof,
+    configuredRegistryAddress,
+    configuredScorerAddress,
+  );
+
+  if (validationError) {
+    return {
+      label: "Latest Fuji score record",
+      status: "warn",
+      detail: validationError,
+    };
+  }
+
+  return {
+    label: "Latest Fuji score record",
+    status: "pass",
+    detail: `${scoreRecordArtifactPath} records Wavy ${proof.wavy?.riskScore}/100, composite ${proof.composite?.creditScore}/100, tx ${proof.transactionHash}`,
+  };
+}
+
 function checkCandidatePresence(
   label: string,
   candidates: Candidate[],
@@ -280,6 +385,16 @@ function checkCandidatePresence(
         ? `${detail}; invalid value in ${usableCandidates.map((candidate) => candidate.key).join(", ")}`
         : `${detail}; missing ${candidates.map((candidate) => candidate.key).join(", ")}`,
   };
+}
+
+function findValidCandidate(
+  candidates: Candidate[],
+  isValid: (value: string) => boolean,
+): Candidate | undefined {
+  return candidates.find(
+    (candidate) =>
+      hasUsableValue(candidate.value) && isValid(candidate.value ?? ""),
+  );
 }
 
 function checkRailwayAuth(): Check {
@@ -380,6 +495,105 @@ function readRegistryDeployment(): { address?: string } | undefined {
   }
 }
 
+function readScoreRecordProof(): ScoreRecordProof | undefined {
+  try {
+    return JSON.parse(readFileSync(scoreRecordArtifactPath, "utf8")) as
+      | ScoreRecordProof
+      | undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function validateScoreRecordProof(
+  proof: ScoreRecordProof,
+  configuredRegistryAddress?: string,
+  configuredScorerAddress?: string,
+): string | undefined {
+  if (!proof.registryAddress || !isAddress(proof.registryAddress)) {
+    return `${scoreRecordArtifactPath} is missing a valid registryAddress`;
+  }
+
+  if (
+    configuredRegistryAddress &&
+    proof.registryAddress.toLowerCase() !==
+      configuredRegistryAddress.toLowerCase()
+  ) {
+    return `${scoreRecordArtifactPath} registryAddress does not match the configured registry`;
+  }
+
+  if (!proof.scorerAddress || !isAddress(proof.scorerAddress)) {
+    return `${scoreRecordArtifactPath} is missing a valid scorerAddress`;
+  }
+
+  if (
+    configuredScorerAddress &&
+    proof.scorerAddress.toLowerCase() !== configuredScorerAddress.toLowerCase()
+  ) {
+    return `${scoreRecordArtifactPath} scorerAddress does not match the configured scorer`;
+  }
+
+  if (!proof.subjectHash || !isBytes32(proof.subjectHash)) {
+    return `${scoreRecordArtifactPath} is missing a valid subjectHash`;
+  }
+
+  if (!proof.wavy?.evidenceHash || !isBytes32(proof.wavy.evidenceHash)) {
+    return `${scoreRecordArtifactPath} is missing a valid Wavy evidence hash`;
+  }
+
+  if (!proof.transactionHash || !isBytes32(proof.transactionHash)) {
+    return `${scoreRecordArtifactPath} is missing a valid transaction hash`;
+  }
+
+  if (!isScore(proof.wavy.riskScore)) {
+    return `${scoreRecordArtifactPath} is missing a valid Wavy risk score`;
+  }
+
+  if (!isScore(proof.composite?.creditScore)) {
+    return `${scoreRecordArtifactPath} is missing a valid composite score`;
+  }
+
+  if (
+    typeof proof.composite?.decisionEnum !== "number" ||
+    proof.composite.decisionEnum < 0 ||
+    proof.composite.decisionEnum > 3
+  ) {
+    return `${scoreRecordArtifactPath} is missing a valid decision enum`;
+  }
+
+  if (!proof.wavy.analysisId) {
+    return `${scoreRecordArtifactPath} is missing the Wavy analysis id`;
+  }
+
+  if (!proof.institution) {
+    return `${scoreRecordArtifactPath} is missing the institution`;
+  }
+
+  if (!proof.stored?.submitter || !isAddress(proof.stored.submitter)) {
+    return `${scoreRecordArtifactPath} is missing the stored submitter`;
+  }
+
+  if (
+    proof.stored.submitter.toLowerCase() !== proof.scorerAddress.toLowerCase()
+  ) {
+    return `${scoreRecordArtifactPath} stored submitter does not match scorerAddress`;
+  }
+
+  if (!proof.stored.updatedAt || !/^\d+$/.test(proof.stored.updatedAt)) {
+    return `${scoreRecordArtifactPath} is missing the stored update timestamp`;
+  }
+
+  if (!allowMockRecord && proof.source !== "wavy") {
+    return `${scoreRecordArtifactPath} source is ${proof.source ?? "unknown"}, expected wavy`;
+  }
+
+  if (proof.chainId !== 43113) {
+    return `${scoreRecordArtifactPath} chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  }
+
+  return undefined;
+}
+
 function hasUsableValue(value: string | undefined): boolean {
   return Boolean(
     value &&
@@ -392,6 +606,14 @@ function hasUsableValue(value: string | undefined): boolean {
 
 function isAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function isBytes32(value: string): boolean {
+  return /^0x[a-fA-F0-9]{64}$/.test(value);
+}
+
+function isScore(value: unknown): boolean {
+  return typeof value === "number" && value >= 0 && value <= 100;
 }
 
 function isUrl(value: string): boolean {

@@ -17,6 +17,7 @@
     "scripts:test": "tsx --test scripts/*.test.ts",
     "readiness": "tsx scripts/readiness-check.ts",
     "readiness:strict": "tsx scripts/readiness-check.ts --strict",
+    "readiness:strict:record": "tsx scripts/readiness-check.ts --strict --require-score-record",
     "probe:wavy": "tsx scripts/probe-wavy.ts",
     "probe:fuji": "pnpm --filter @arkscore/contracts probe:fuji",
     "probe:eerc20": "tsx scripts/probe-eerc20.ts",

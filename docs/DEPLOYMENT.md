@@ -233,9 +233,10 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
   ARKSCORE_REGISTRY_ADDRESS=0x... \
   ARKSCORE_INSTITUTION=bankaool \
   pnpm record:fuji
+pnpm readiness:strict:record
 ```
 
-Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
+Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. Use `pnpm readiness:strict:record` after `pnpm record:fuji` to additionally require the non-secret `LatestScoreRecord.json` proof. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
 
 Use `pnpm verify:live:preflight` immediately before `pnpm finalize:live:apply` if you want a standalone proof that the live API and Fuji registry are ready before the frontend is republished.
 

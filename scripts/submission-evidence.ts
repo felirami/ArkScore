@@ -205,6 +205,9 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
   const preflightCommand = requireEerc20
     ? "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:preflight"
     : "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... pnpm verify:live:preflight";
+  const readinessCommand = requireEerc20
+    ? "ARKSCORE_REQUIRE_EERC20=true pnpm readiness:strict:record"
+    : "pnpm readiness:strict:record";
   const verifyCommand = requireEerc20
     ? "pnpm verify:live:strict:eerc20:record"
     : "pnpm verify:live:strict:record";
@@ -217,6 +220,7 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm --filter @arkscore/contracts deploy:fuji",
     "pnpm --filter @arkscore/contracts scorer:fuji",
     "pnpm record:fuji",
+    readinessCommand,
     preflightCommand,
     finalizeCommand,
     verifyCommand,

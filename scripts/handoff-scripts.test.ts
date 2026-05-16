@@ -159,6 +159,88 @@ test("submission evidence includes the latest Fuji score record proof", () => {
   }
 });
 
+test("readiness reports a configured latest Fuji score record proof", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-readiness-record-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify({
+      generatedAt: "2026-05-16T00:00:00.000Z",
+      registryAddress,
+      scorerAddress,
+      subjectHash:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      institution: "bankaool",
+      source: "wavy",
+      chainId: 43113,
+      transactionHash:
+        "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      blockNumber: 12345,
+      wavy: {
+        analysisId: "wavy-live-123",
+        evidenceHash:
+          "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        riskScore: 18,
+      },
+      composite: {
+        creditScore: 82,
+        decision: "APPROVE_BANKAOOL_LOAN",
+        decisionEnum: 2,
+      },
+      stored: {
+        submitter: scorerAddress,
+        updatedAt: "1710000000",
+      },
+    }),
+  );
+
+  try {
+    const result = runScript(
+      "scripts/readiness-check.ts",
+      ["--skip-external"],
+      {
+        ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+        ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+        ARKSCORE_SCORER_ADDRESS: scorerAddress,
+      },
+    );
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /\[pass\] Latest Fuji score record:/);
+    assert.match(result.output, /Wavy 18\/100, composite 82\/100/);
+    assert.match(
+      result.output,
+      /0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/,
+    );
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("readiness strict record warns when the score record proof is missing", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-readiness-missing-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+
+  try {
+    const result = runScript(
+      "scripts/readiness-check.ts",
+      ["--skip-external", "--strict", "--require-score-record"],
+      {
+        ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      },
+    );
+
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /\[warn\] Latest Fuji score record:/);
+    assert.match(result.output, /run pnpm record:fuji first/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("submission evidence renders strict eERC20 handoff when required", () => {
   const result = runScript(
     "scripts/submission-evidence.ts",
