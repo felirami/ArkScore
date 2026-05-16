@@ -116,6 +116,10 @@ function runChecks(): CommandResult[] {
       label: "Requirements audit",
       command: "pnpm --silent audit:requirements",
     },
+    {
+      label: "Judge demo runbook",
+      command: "pnpm --silent judge:demo",
+    },
     { label: "Readiness gate", command: "pnpm --silent readiness" },
   ];
 
@@ -152,9 +156,9 @@ function renderReport(input: ReportInput) {
 - Command: \`${result.command}\`
 - Exit code: \`${result.exitCode}\`
 
-\`\`\`text
+\`\`\`\`text
 ${result.output.trim() || "(no output)"}
-\`\`\``,
+\`\`\`\``,
           )
           .join("\n\n")}\n`;
   const worktreeDetails = input.gitStatus
@@ -270,7 +274,10 @@ function getDeploymentTargets(): DeploymentTargets {
       normalizeBaseUrl(env.ARKSCORE_WEB_URL) ??
       "https://arkscore-seven.vercel.app",
     apiUrl: normalizeBaseUrl(
-      env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL,
+      firstConfiguredValue([
+        env.ARKSCORE_API_URL,
+        env.NEXT_PUBLIC_API_BASE_URL,
+      ]),
     ),
     registryAddress: firstValidAddress([
       env.ARKSCORE_REGISTRY_ADDRESS,
@@ -335,6 +342,10 @@ function readScoreRecordProof(): ScoreRecordProof | undefined {
 
 function firstValidAddress(values: Array<string | undefined>) {
   return values.find((value) => value && isAddress(value));
+}
+
+function firstConfiguredValue(values: Array<string | undefined>) {
+  return values.find((value) => value?.trim())?.trim();
 }
 
 function normalizeBaseUrl(value: string | undefined): string | undefined {

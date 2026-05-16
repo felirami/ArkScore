@@ -31,12 +31,14 @@ ArkScore turns Wavy Node wallet traceability and AI risk into an auditable Avala
 - The dashboard has an optional eERC20 card for the EncryptedERC privacy-preserving credit token demo; `pnpm plan:eerc20`, `pnpm probe:eerc20:strict`, and `pnpm verify:live:strict:eerc20:record` plan and prove deployed Fuji bytecode when that address is part of the final pitch.
 - Authorized scorer permissions keep the registry closer to an institutional oracle model.
 - `pnpm audit:requirements` gives judges a non-secret requirement-by-requirement map of ready components and remaining live proofs.
+- `pnpm judge:demo` prints a current environment-aware walkthrough for fallback demos and final live proof mode.
 - `pnpm submission:evidence:write` generates `docs/SUBMISSION_EVIDENCE.md`, a non-secret evidence packet with the current commit, hosted demo smoke, live verifier, requirements audit, readiness output, and final handoff commands.
 
 ## Links
 
 - Live demo: `https://arkscore-seven.vercel.app`
 - Submission evidence: `docs/SUBMISSION_EVIDENCE.md`
+- Judge demo runbook: `docs/JUDGE_DEMO.md`
 - Frontend repository path: `apps/web`
 - Backend repository path: `apps/api`
 - Contracts repository path: `packages/contracts`

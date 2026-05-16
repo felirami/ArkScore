@@ -423,6 +423,7 @@ function checkHackathonDocs(): Check {
     "docs/DEPLOYMENT.md",
     "docs/READINESS_AUDIT.md",
     "docs/REQUIREMENTS_TRACE.md",
+    "docs/JUDGE_DEMO.md",
     "docs/HACKATHON_SUBMISSION.md",
     "docs/SUBMISSION_EVIDENCE.md",
     "docs/EERC20_DEMO.md",
@@ -434,7 +435,7 @@ function checkHackathonDocs(): Check {
       label: "Hackathon documentation packet",
       status: "pass",
       detail:
-        "README, deployment, audit, trace, submission, evidence, and eERC20 docs exist",
+        "README, deployment, audit, trace, judge demo, submission, evidence, and eERC20 docs exist",
     };
   }
 

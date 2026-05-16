@@ -81,7 +81,8 @@ test("submission evidence renders configured public deployment targets only", ()
     ["--skip-checks"],
     {
       ARKSCORE_WEB_URL: "https://arkscore-demo.vercel.app/",
-      ARKSCORE_API_URL: "https://arkscore-api.up.railway.app/",
+      ARKSCORE_API_URL: "",
+      NEXT_PUBLIC_API_BASE_URL: "https://arkscore-api.up.railway.app/",
       ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
       ARKSCORE_EERC20_DEMO_ADDRESS:
         "0x3333333333333333333333333333333333333333",
@@ -277,6 +278,62 @@ test("requirements audit strict mode fails while live proof is missing", () => {
   assert.match(result.output, /Railway live deployment proof/);
   assert.match(result.output, /Live Wavy credential proof/);
   assert.match(result.output, /Fuji registry deployment proof/);
+});
+
+test("judge demo runbook renders fallback blockers without leaking secrets", () => {
+  const result = runScript("scripts/judge-demo.ts", [], {
+    WAVY_NODE_API_KEY: "ApiKey should-not-print",
+    FUJI_PRIVATE_KEY:
+      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    ARKSCORE_WEB_URL: "https://arkscore-demo.vercel.app/",
+    ARKSCORE_API_URL: "",
+    NEXT_PUBLIC_API_BASE_URL: "",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /ArkScore Judge Demo Runbook/);
+  assert.match(result.output, /https:\/\/arkscore-demo\.vercel\.app/);
+  assert.match(result.output, /hosted fallback demo/);
+  assert.match(result.output, /Three-Minute Walkthrough/);
+  assert.match(result.output, /Railway API URL is missing/);
+  assert.doesNotMatch(result.output, /should-not-print/);
+  assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
+});
+
+test("judge demo runbook renders live proof mode when configured", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-judge-demo-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+
+  writeFileSync(artifactPath, "{}");
+
+  try {
+    const result = runScript("scripts/judge-demo.ts", [], {
+      ARKSCORE_API_URL: "https://arkscore-api.up.railway.app/",
+      ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
+      ARKSCORE_SCORER_ADDRESS: "0x4444444444444444444444444444444444444444",
+      ARKSCORE_EERC20_DEMO_ADDRESS:
+        "0x3333333333333333333333333333333333333333",
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      WAVY_NODE_API_KEY: "ApiKey live-key",
+      WAVY_NODE_PROJECT_ID: "project-live",
+      ARKSCORE_SUBJECT_HASH_SALT: "production-subject-hash-salt-for-judge-demo",
+      FUJI_PRIVATE_KEY:
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /final live oracle proof path/);
+    assert.match(
+      result.output,
+      /Optional eERC20: 0x3333333333333333333333333333333333333333/,
+    );
+    assert.match(result.output, /None detected by local configuration/);
+    assert.match(result.output, /verify:live:strict:eerc20:record/);
+    assert.doesNotMatch(result.output, /live-key/);
+    assert.doesNotMatch(result.output, /bbbbbbbbbbbbbbbb/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test("submission evidence renders strict eERC20 handoff when required", () => {

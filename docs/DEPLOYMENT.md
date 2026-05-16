@@ -224,6 +224,7 @@ curl https://your-railway-api.up.railway.app/health
 curl https://your-railway-api.up.railway.app/openapi.json
 curl "https://your-railway-api.up.railway.app/api/score/0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045?institution=bankaool"
 pnpm audit:requirements
+pnpm judge:demo
 pnpm readiness
 pnpm plan:eerc20
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
@@ -239,6 +240,8 @@ pnpm readiness:strict:record
 ```
 
 Use `pnpm audit:requirements` for a requirement-by-requirement handoff report. It exits zero while only live proofs are missing, and `pnpm audit:requirements:strict` exits non-zero until Railway, Wavy, Fuji, scorer, and score-record evidence are configured.
+
+Use `pnpm judge:demo` for a concise, environment-aware walkthrough before presenting to judges. It prints fallback/live mode, the click path, proof commands, and current blockers without exposing secrets.
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. Use `pnpm readiness:strict:record` after `pnpm record:fuji` to additionally require the non-secret `LatestScoreRecord.json` proof. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
 

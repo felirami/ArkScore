@@ -17,6 +17,7 @@
     "scripts:test": "tsx --test scripts/*.test.ts",
     "audit:requirements": "tsx scripts/audit-requirements.ts",
     "audit:requirements:strict": "tsx scripts/audit-requirements.ts --strict",
+    "judge:demo": "tsx scripts/judge-demo.ts",
     "readiness": "tsx scripts/readiness-check.ts",
     "readiness:strict": "tsx scripts/readiness-check.ts --strict",
     "readiness:strict:record": "tsx scripts/readiness-check.ts --strict --require-score-record",
