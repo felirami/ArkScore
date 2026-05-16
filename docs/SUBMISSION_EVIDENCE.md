@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T19:26:39.414Z
+Generated: 2026-05-16T19:33:47.470Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `2df30aa`
+- Commit: `af9b1e5`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -106,7 +106,7 @@ devDependencies:
 + tsx 4.22.0
 + typescript 6.0.3
 
-Done in 975ms using pnpm v11.1.2
+Done in 1s using pnpm v11.1.2
 
 $ pnpm --filter @arkscore/api build
 CLI Building entry: src/server.ts
@@ -116,7 +116,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 30.17 KB
-ESM ⚡️ Build success in 439ms
+ESM ⚡️ Build success in 465ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -125,31 +125,31 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 19.992
+  duration_ms: 21.026334
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 4.47425
+  duration_ms: 5.059458
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 3 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.826459
+  duration_ms: 2.836125
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 4 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.18525
+  duration_ms: 2.1615
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 5 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 5.926
+  duration_ms: 6.137875
   type: 'test'
   ...
 1..5
@@ -160,36 +160,36 @@ ok 5 - score endpoint rate limits repeated clients
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 680.094125
+# duration_ms 673.85
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 8.779375
+  duration_ms: 8.434459
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.619167
+  duration_ms: 0.612375
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 0.890333
+  duration_ms: 1.121833
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 4 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.510583
+  duration_ms: 0.500625
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.301083
+  duration_ms: 0.322375
   type: 'test'
   ...
 1..5
@@ -200,7 +200,7 @@ ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 143.6255
+# duration_ms 151.762584
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
@@ -275,7 +275,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 
 [pass] Next.js 15 App Router frontend: next 15.5.18, app router entrypoints present
 [pass] Tailwind, shadcn-style UI, wagmi, viem: frontend dependencies and local UI primitives are present
-[pass] Vercel frontend deployment config: vercel.json builds and serves the Next.js static export
+[pass] Vercel frontend deployment config: vercel.json builds the static export and web public env example is present
 [pass] Express score API: Express dependency, score route, health, and OpenAPI route are present
 [pass] Railway backend deployment config: railway.toml builds, starts, healthchecks, watches shared config, and registers the archive verifier
 [pass] Wavy Node traceability and AI risk score: adapter includes chains/register/scan-risk flow and 0-100 traceability fields
@@ -298,7 +298,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 - Passing: 15
 - Warnings: 4
 - Failing: 0
-- Report id: c68b20afd2e7
+- Report id: c7972316bf13
 ````
 
 ### Judge demo runbook
@@ -369,6 +369,7 @@ pnpm verify:live:strict:record
 
 [pass] Node.js runtime: using 22.19.0
 [pass] Next.js App Router entry: apps/web/src/app/page.tsx
+[pass] Frontend public env example: apps/web/.env.local.example
 [pass] Railway score endpoint: apps/api/src/routes/score.ts
 [pass] Railway OpenAPI endpoint: apps/api/src/routes/openapi.ts
 [pass] CreditScoreRegistry contract: packages/contracts/contracts/CreditScoreRegistry.sol
@@ -388,8 +389,8 @@ pnpm verify:live:strict:record
 
 ## Summary
 
-- Passing: 11
+- Passing: 12
 - Warnings: 7
 - Failing: 0
-- Report id: e6fbbf584cec
+- Report id: 09f6b0e03049
 ````
