@@ -117,6 +117,9 @@ const skipWeb = process.argv.includes("--skip-web");
 const skipApi = process.argv.includes("--skip-api");
 const skipContract = process.argv.includes("--skip-contract");
 const skipEerc20 = process.argv.includes("--skip-eerc20");
+const allowLocalApi =
+  process.argv.includes("--allow-local-api") ||
+  env.ARKSCORE_ALLOW_LOCAL_LIVE_VERIFY === "true";
 const requireWavy =
   process.argv.includes("--require-wavy") ||
   env.ARKSCORE_REQUIRE_WAVY === "true";
@@ -367,6 +370,17 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
         label: "Railway API",
         status: "warn",
         detail: "missing ARKSCORE_API_URL or NEXT_PUBLIC_API_BASE_URL",
+      },
+    ];
+  }
+
+  if (!allowLocalApi && !isPublicHttpsUrl(url)) {
+    return [
+      {
+        label: "Railway API",
+        status: strict ? "fail" : "warn",
+        detail:
+          "configured API URL must be a public HTTPS Railway API URL for live verification",
       },
     ];
   }
@@ -1174,6 +1188,32 @@ function wordToBigInt(word: string) {
 function normalizeBaseUrl(value: string | undefined): string | undefined {
   if (!value?.trim()) return undefined;
   return value.trim().replace(/\/$/, "");
+}
+
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" && !isLocalHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  return (
+    value === "localhost" ||
+    value === "::1" ||
+    value.endsWith(".local") ||
+    value === "0.0.0.0" ||
+    /^127\./.test(value) ||
+    /^10\./.test(value) ||
+    /^192\.168\./.test(value) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+    /^169\.254\./.test(value)
+  );
 }
 
 function firstConfiguredValue(values: Array<string | undefined>) {

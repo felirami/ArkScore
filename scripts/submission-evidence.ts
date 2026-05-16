@@ -213,18 +213,18 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
   const eerc20ProbeCommand = requireEerc20
     ? "pnpm probe:eerc20:strict"
     : "pnpm probe:eerc20";
-  const finalizeCommand = requireEerc20
-    ? "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REQUIRE_EERC20=true pnpm finalize:live:apply"
-    : "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply";
-  const preflightCommand = requireEerc20
-    ? "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:preflight"
-    : "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... pnpm verify:live:preflight";
   const readinessCommand = requireEerc20
     ? "ARKSCORE_REQUIRE_EERC20=true pnpm readiness:strict:record"
     : "pnpm readiness:strict:record";
   const verifyCommand = requireEerc20
     ? "pnpm verify:live:strict:eerc20:record"
     : "pnpm verify:live:strict:record";
+  const eerc20Exports = requireEerc20
+    ? [
+        "export ARKSCORE_EERC20_DEMO_ADDRESS=0x...",
+        "export ARKSCORE_REQUIRE_EERC20=true",
+      ]
+    : [];
 
   return [
     "pnpm probe:wavy",
@@ -234,13 +234,17 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm railway:whoami",
     "pnpm verify:railway",
     "pnpm deploy:railway:apply -- --create-domain",
-    "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live",
+    "export ARKSCORE_API_URL=https://your-railway-api.up.railway.app",
+    "pnpm verify:railway:live",
     "pnpm --filter @arkscore/contracts deploy:fuji",
+    "export ARKSCORE_REGISTRY_ADDRESS=0x...",
+    "export ARKSCORE_SCORER_ADDRESS=0x...",
+    ...eerc20Exports,
     "pnpm --filter @arkscore/contracts scorer:fuji",
     "pnpm record:fuji",
     readinessCommand,
-    preflightCommand,
-    finalizeCommand,
+    "pnpm verify:live:preflight",
+    "pnpm finalize:live:apply",
     verifyCommand,
   ].join("\n");
 }

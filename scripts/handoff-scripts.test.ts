@@ -435,6 +435,19 @@ test("judge demo runbook renders fallback blockers without leaking secrets", () 
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
 });
 
+test("judge demo runbook treats local API URLs as fallback blockers", () => {
+  const result = runScript("scripts/judge-demo.ts", [], {
+    ARKSCORE_API_URL: "http://localhost:4000",
+    NEXT_PUBLIC_API_BASE_URL: "http://127.0.0.1:4000",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /hosted fallback demo/);
+  assert.match(result.output, /Railway API URL must be a public HTTPS URL/);
+  assert.doesNotMatch(result.output, /Railway API at http:\/\/localhost/);
+  assert.doesNotMatch(result.output, /Railway API at http:\/\/127\.0\.0\.1/);
+});
+
 test("judge demo runbook renders live proof mode when configured", () => {
   const tempDir = mkdtempSync(join(tmpdir(), "arkscore-judge-demo-"));
   const artifactPath = join(tempDir, "LatestScoreRecord.json");
@@ -484,7 +497,8 @@ test("submission evidence renders strict eERC20 handoff when required", () => {
 
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /pnpm probe:eerc20:strict/);
-  assert.match(result.output, /ARKSCORE_REQUIRE_EERC20=true pnpm finalize/);
+  assert.match(result.output, /export ARKSCORE_REQUIRE_EERC20=true/);
+  assert.match(result.output, /^pnpm finalize:live:apply$/m);
   assert.match(result.output, /pnpm verify:live:strict:eerc20:record/);
   assert.doesNotMatch(result.output, /^pnpm probe:eerc20$/m);
   assert.doesNotMatch(result.output, /^pnpm verify:live:strict$/m);
@@ -1010,6 +1024,22 @@ test("live verifier preflight ignores empty primary aliases", async () => {
   assert.doesNotMatch(
     result.output,
     /missing ARKSCORE_REGISTRY_ADDRESS or NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS/,
+  );
+});
+
+test("live verifier strict mode rejects local API URLs by default", () => {
+  const result = runScript(
+    "scripts/verify-live.ts",
+    ["--skip-web", "--skip-contract", "--skip-eerc20", "--strict"],
+    {
+      ARKSCORE_API_URL: "http://localhost:4000",
+    },
+  );
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /configured API URL must be a public HTTPS Railway API URL/,
   );
 });
 
@@ -1630,7 +1660,7 @@ async function runLivePreflightVerifierWithMocks(
 
     return await runScriptAsync(
       "scripts/verify-live.ts",
-      ["--skip-web", "--strict", "--require-wavy"],
+      ["--skip-web", "--strict", "--require-wavy", "--allow-local-api"],
       verifierEnv,
     );
   } finally {

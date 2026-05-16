@@ -52,21 +52,26 @@ pnpm probe:eerc20
 pnpm railway:whoami
 pnpm verify:railway
 pnpm deploy:railway:apply -- --create-domain
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live
+export ARKSCORE_API_URL=https://your-railway-api.up.railway.app
+pnpm verify:railway:live
 pnpm --filter @arkscore/contracts deploy:fuji
+export ARKSCORE_REGISTRY_ADDRESS=0x...
+export ARKSCORE_SCORER_ADDRESS=0x...
 pnpm --filter @arkscore/contracts scorer:fuji
 pnpm record:fuji
 pnpm readiness:strict:record
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... pnpm verify:live:preflight
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
+pnpm verify:live:preflight
+pnpm finalize:live:apply
 pnpm verify:live:strict:record
 ```
 
 If the optional EncryptedERC demo is included, use:
 
 ```bash
-ARKSCORE_REQUIRE_EERC20=true pnpm probe:eerc20:strict
-ARKSCORE_REQUIRE_EERC20=true pnpm readiness:strict:record
+export ARKSCORE_EERC20_DEMO_ADDRESS=0x...
+export ARKSCORE_REQUIRE_EERC20=true
+pnpm probe:eerc20:strict
+pnpm readiness:strict:record
 pnpm verify:live:strict:eerc20:record
 ```
 

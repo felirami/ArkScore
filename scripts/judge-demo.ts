@@ -13,9 +13,9 @@ const env = {
 const webUrl = normalizeBaseUrl(
   env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app",
 );
-const apiUrl = normalizeOptionalBaseUrl(
-  firstConfiguredValue([env.ARKSCORE_API_URL, env.NEXT_PUBLIC_API_BASE_URL]),
-);
+const apiUrlCandidates = [env.ARKSCORE_API_URL, env.NEXT_PUBLIC_API_BASE_URL];
+const configuredApiUrl = firstConfiguredValue(apiUrlCandidates);
+const apiUrl = firstPublicHttpsUrl(apiUrlCandidates);
 const registryAddress =
   firstConfiguredValue([
     env.ARKSCORE_REGISTRY_ADDRESS,
@@ -48,6 +48,7 @@ function main() {
     liveApiReady && registryReady && scorerReady && scoreRecordReady;
   const blockers = currentBlockers({
     liveApiReady,
+    apiUrlConfigured: Boolean(configuredApiUrl),
     registryReady,
     scorerReady,
     scoreRecordReady,
@@ -107,16 +108,23 @@ function main() {
   if (!liveModeReady) {
     console.log("pnpm probe:wavy");
     console.log("pnpm probe:fuji");
+    console.log("pnpm plan:eerc20");
+    console.log(eerc20Ready ? "pnpm probe:eerc20:strict" : "pnpm probe:eerc20");
     console.log("pnpm railway:whoami");
     console.log("pnpm verify:railway");
     console.log("pnpm deploy:railway:apply -- --create-domain");
     console.log(
-      "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live",
+      "export ARKSCORE_API_URL=https://your-railway-api.up.railway.app",
     );
+    console.log("pnpm verify:railway:live");
     console.log("pnpm --filter @arkscore/contracts deploy:fuji");
+    console.log("export ARKSCORE_REGISTRY_ADDRESS=0x...");
+    console.log("export ARKSCORE_SCORER_ADDRESS=0x...");
     console.log("pnpm --filter @arkscore/contracts scorer:fuji");
     console.log("pnpm record:fuji");
     console.log("pnpm readiness:strict:record");
+    console.log("pnpm verify:live:preflight");
+    console.log("pnpm finalize:live:apply");
   }
   console.log(
     eerc20Ready
@@ -135,6 +143,7 @@ function main() {
 
 function currentBlockers(input: {
   liveApiReady: boolean;
+  apiUrlConfigured: boolean;
   registryReady: boolean;
   scorerReady: boolean;
   scoreRecordReady: boolean;
@@ -142,7 +151,11 @@ function currentBlockers(input: {
   const blockers: string[] = [];
 
   if (!input.liveApiReady) {
-    blockers.push("Railway API URL is missing.");
+    blockers.push(
+      input.apiUrlConfigured
+        ? "Railway API URL must be a public HTTPS URL."
+        : "Railway API URL is missing.",
+    );
   }
 
   if (!hasUsableValue(env.WAVY_NODE_API_KEY)) {
@@ -233,12 +246,39 @@ function normalizeBaseUrl(value: string | undefined): string {
   );
 }
 
-function normalizeOptionalBaseUrl(
-  value: string | undefined,
-): string | undefined {
-  if (!value?.trim()) return undefined;
+function firstPublicHttpsUrl(values: Array<string | undefined>) {
+  const value = values.find((candidate) => {
+    if (!hasUsableValue(candidate)) return false;
+    return isPublicHttpsUrl(candidate.trim());
+  });
 
-  return value.trim().replace(/\/$/, "");
+  return value?.trim().replace(/\/$/, "");
+}
+
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" && !isLocalHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  return (
+    value === "localhost" ||
+    value === "::1" ||
+    value.endsWith(".local") ||
+    value === "0.0.0.0" ||
+    /^127\./.test(value) ||
+    /^10\./.test(value) ||
+    /^192\.168\./.test(value) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+    /^169\.254\./.test(value)
+  );
 }
 
 function isAddress(value: string): boolean {

@@ -244,21 +244,18 @@ pnpm audit:requirements
 pnpm judge:demo
 pnpm readiness
 pnpm plan:eerc20
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
-  ARKSCORE_REGISTRY_ADDRESS=0x... \
-  ARKSCORE_EERC20_DEMO_ADDRESS=0x... \
-  ARKSCORE_SCORER_ADDRESS=0x... \
-  pnpm verify:live
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
-  ARKSCORE_REGISTRY_ADDRESS=0x... \
-  ARKSCORE_INSTITUTION=bankaool \
-  pnpm record:fuji
+export ARKSCORE_API_URL=https://your-railway-api.up.railway.app
+export ARKSCORE_REGISTRY_ADDRESS=0x...
+export ARKSCORE_SCORER_ADDRESS=0x...
+export ARKSCORE_EERC20_DEMO_ADDRESS=0x...
+pnpm verify:live
+ARKSCORE_INSTITUTION=bankaool pnpm record:fuji
 pnpm readiness:strict:record
 ```
 
 Use `pnpm audit:requirements` for a requirement-by-requirement handoff report. It exits zero while only live proofs are missing, and `pnpm audit:requirements:strict` exits non-zero until Railway, Wavy, Fuji, scorer, and score-record evidence are configured.
 
-Use `pnpm verify:railway` before `pnpm deploy:railway:apply` when you want a standalone proof that the repository-root Railway payload can install, build, and test the API with only the files Railway should receive. Use `ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm verify:railway:live` immediately after Railway deployment to prove the uploaded API is serving live Wavy responses before contract deployment and frontend finalization.
+Use `pnpm verify:railway` before `pnpm deploy:railway:apply` when you want a standalone proof that the repository-root Railway payload can install, build, and test the API with only the files Railway should receive. Export `ARKSCORE_API_URL=https://your-railway-api.up.railway.app`, then use `pnpm verify:railway:live` immediately after Railway deployment to prove the uploaded API is serving live Wavy responses before contract deployment and frontend finalization.
 
 Use `pnpm judge:demo` for a concise, environment-aware walkthrough before presenting to judges. It prints fallback/live mode, the click path, proof commands, and current blockers without exposing secrets.
 
