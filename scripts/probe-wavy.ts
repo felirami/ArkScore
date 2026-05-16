@@ -46,9 +46,26 @@ async function main() {
 
   const address = env.ARKSCORE_TEST_WALLET ?? demoWallet;
   const institution = parseInstitution(env.ARKSCORE_INSTITUTION);
+  const chainId = parseChainId(env.WAVY_NODE_CHAIN_ID);
 
   if (!isAddress(address)) {
     fail("ARKSCORE_TEST_WALLET must be a valid EVM address.");
+  }
+
+  const { fetchWavySupportedChains } =
+    await import("../apps/api/src/services/wavy-node.js");
+  const supportedChain = (await fetchWavySupportedChains()).find(
+    (chain) => chain.id === chainId,
+  );
+
+  if (!supportedChain) {
+    fail(`Wavy Node /chains did not include configured chainId ${chainId}.`);
+  }
+
+  if (!supportedChain.active) {
+    fail(
+      `Wavy Node /chains includes chainId ${chainId}, but it is not active.`,
+    );
   }
 
   const { scoreWallet } = await import("../apps/api/src/services/score.js");
@@ -60,6 +77,9 @@ async function main() {
 
   console.log(
     `[pass] Wavy credentials accepted for project ${redactProjectId()}`,
+  );
+  console.log(
+    `[pass] Wavy supported chain active: ${supportedChain.name} (${supportedChain.id})`,
   );
   console.log(
     `[pass] Live Wavy score returned for ${shortAddress(score.address)}`,
@@ -92,6 +112,16 @@ function parseInstitution(value: string | undefined): Institution {
   if (value === "arkangeles" || value === "bankaool") return value;
 
   fail("ARKSCORE_INSTITUTION must be arkangeles or bankaool.");
+}
+
+function parseChainId(value: string | undefined): number {
+  const chainId = Number(value ?? "43113");
+
+  if (!Number.isInteger(chainId) || chainId <= 0) {
+    fail("WAVY_NODE_CHAIN_ID must be a positive integer.");
+  }
+
+  return chainId;
 }
 
 function readEnvFile(path: string): Record<string, string> {

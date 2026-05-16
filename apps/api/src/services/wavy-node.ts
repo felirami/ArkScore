@@ -24,10 +24,73 @@ type WavyScanRiskResponse = {
   error?: string;
 };
 
+type WavyChainsResponse = {
+  success?: boolean;
+  data?: Array<{
+    id?: string | number;
+    name?: string;
+    active?: boolean;
+    explorer_url?: string;
+    currency_symbol?: string;
+  }>;
+  message?: string;
+  error?: string;
+};
+
 type WavyApiResponse = {
   message?: string;
   error?: string;
 };
+
+export type WavySupportedChain = {
+  id: number;
+  name: string;
+  active: boolean;
+  explorerUrl?: string;
+  currencySymbol?: string;
+};
+
+export async function fetchWavySupportedChains(): Promise<
+  WavySupportedChain[]
+> {
+  const authHeader = getWavyAuthHeader();
+  const url = new URL(`${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/chains`);
+  const response = await fetch(url, {
+    headers: {
+      "x-api-key": authHeader,
+      accept: "application/json",
+    },
+  });
+  const payload = (await response
+    .json()
+    .catch(() => null)) as WavyChainsResponse | null;
+
+  if (!response.ok || payload?.success === false) {
+    throw new HttpError(
+      response.ok ? 502 : response.status,
+      payload?.message ??
+        payload?.error ??
+        `Wavy Node chains request failed with status ${response.status}.`,
+    );
+  }
+
+  return (payload?.data ?? [])
+    .map((chain) => {
+      const id = Number(chain.id);
+      if (!Number.isInteger(id) || id <= 0) return undefined;
+
+      return {
+        id,
+        name: chain.name ?? `Chain ${id}`,
+        active: chain.active !== false,
+        ...(chain.explorer_url ? { explorerUrl: chain.explorer_url } : {}),
+        ...(chain.currency_symbol
+          ? { currencySymbol: chain.currency_symbol }
+          : {}),
+      };
+    })
+    .filter((chain): chain is WavySupportedChain => Boolean(chain));
+}
 
 export async function fetchWavyRiskResult(input: {
   address: `0x${string}`;
@@ -62,9 +125,9 @@ export async function fetchWavyRiskResult(input: {
     .json()
     .catch(() => null)) as WavyScanRiskResponse | null;
 
-  if (!response.ok) {
+  if (!response.ok || payload?.success === false) {
     throw new HttpError(
-      response.status,
+      response.ok ? 502 : response.status,
       payload?.message ??
         payload?.error ??
         `Wavy Node request failed with status ${response.status}.`,

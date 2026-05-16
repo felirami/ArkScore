@@ -26,7 +26,7 @@ pnpm verify
 
 The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify address registration, the live `scan-risk` URL, `x-api-key` header, traceability normalization, duplicate registration handling, and upstream error propagation. Both are included in `pnpm verify`.
 
-`pnpm probe:wavy` is available for the final credential handoff. It refuses placeholder Wavy credentials or demo subject-hash salts, forces live Wavy mode, and prints only non-secret scoring evidence: Wavy analysis id, risk score, traceability provider, wallet-risk scan type, AI risk scale, address registration mode, composite score, subject hash, and evidence hash.
+`pnpm probe:wavy` is available for the final credential handoff. It refuses placeholder Wavy credentials or demo subject-hash salts, forces live Wavy mode, checks Wavy Node `/chains` for the configured chain id, and prints only non-secret scoring evidence: active supported chain, Wavy analysis id, risk score, traceability provider, wallet-risk scan type, AI risk scale, address registration mode, composite score, subject hash, and evidence hash.
 
 `pnpm probe:fuji` is available for the Fuji deployer handoff. It refuses missing or malformed private keys, checks the live Fuji chain id, and prints only the deployer address plus AVAX balance before deployment.
 

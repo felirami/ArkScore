@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { HttpError } from "../lib/http-error.js";
-import { fetchWavyRiskResult } from "./wavy-node.js";
+import { fetchWavyRiskResult, fetchWavySupportedChains } from "./wavy-node.js";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const originalFetch = globalThis.fetch;
@@ -14,6 +14,49 @@ type CapturedRequest = {
   url: URL;
   init: RequestInit | undefined;
 };
+
+test("fetchWavySupportedChains requests the Wavy chains endpoint", async () => {
+  let request: CapturedRequest | undefined;
+
+  globalThis.fetch = (async (input, init) => {
+    request = {
+      url: new URL(getFetchUrl(input)),
+      init,
+    };
+
+    return jsonResponse({
+      success: true,
+      data: [
+        {
+          id: 43113,
+          name: "Avalanche Fuji",
+          active: true,
+          explorer_url: "https://testnet.snowtrace.io",
+          currency_symbol: "AVAX",
+        },
+      ],
+    });
+  }) as typeof fetch;
+
+  const chains = await fetchWavySupportedChains();
+
+  assert.ok(request);
+  assert.equal(
+    `${request.url.origin}${request.url.pathname}`,
+    "https://api.wavynode.com/v1/chains",
+  );
+  assert.equal(getHeader(request.init, "x-api-key"), "ApiKey wavy_test_key");
+  assert.equal(getHeader(request.init, "accept"), "application/json");
+  assert.deepEqual(chains, [
+    {
+      id: 43113,
+      name: "Avalanche Fuji",
+      active: true,
+      explorerUrl: "https://testnet.snowtrace.io",
+      currencySymbol: "AVAX",
+    },
+  ]);
+});
 
 test("fetchWavyRiskResult registers then scans the wallet", async () => {
   const requests: CapturedRequest[] = [];

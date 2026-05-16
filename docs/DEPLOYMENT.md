@@ -126,7 +126,7 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm probe:wavy
 ```
 
-`probe:wavy` forces `WAVY_NODE_MOCK_MODE=false`, scores `ARKSCORE_TEST_WALLET` or the default demo wallet, and prints the Wavy analysis id, live risk score, traceability provider, wallet-risk scan type, AI risk scale, address registration mode, composite score, subject hash, and evidence hash.
+`probe:wavy` forces `WAVY_NODE_MOCK_MODE=false`, checks Wavy Node `/chains` for the configured `WAVY_NODE_CHAIN_ID`, scores `ARKSCORE_TEST_WALLET` or the default demo wallet, and prints the active supported chain, Wavy analysis id, live risk score, traceability provider, wallet-risk scan type, AI risk scale, address registration mode, composite score, subject hash, and evidence hash.
 
 The helper refuses to apply without Wavy credentials unless `RAILWAY_ALLOW_MOCK=true` is set for a temporary mock deployment. Under the hood, it performs this flow with explicit project, service, and environment targeting so a stale local Railway link cannot silently receive the deploy:
 
