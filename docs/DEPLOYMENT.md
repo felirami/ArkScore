@@ -111,6 +111,11 @@ vercel deploy --prod --scope feliramis-projects
 curl https://your-railway-api.up.railway.app/health
 curl "https://your-railway-api.up.railway.app/api/score/0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045?institution=bankaool"
 pnpm readiness
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
+  ARKSCORE_REGISTRY_ADDRESS=0x... \
+  pnpm verify:live
 ```
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing.
+
+Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable, checks the Railway score response shape, and verifies that the Fuji registry address has bytecode plus a callable `owner()`.
