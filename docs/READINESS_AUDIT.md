@@ -8,7 +8,7 @@ Status date: May 16, 2026
 - Next.js 15 App Router dashboard builds as a static Vercel export and includes Avalanche Fuji wallet connection, Wavy score intake, composite scoring, institutional decisioning, and on-chain write flow.
 - Dashboard reads `isScorer(connectedWallet)` from the Fuji registry and disables score storage until the connected wallet is authorized.
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
-- API tests cover `/health`, `/openapi.json`, a Bankaool score response, and invalid institution rejection in mock mode.
+- API tests cover `/health`, `/openapi.json`, a Bankaool score response, invalid institution rejection in mock mode, and the live Wavy Node adapter request shape.
 - Simulated Railway archive install/build/test passes with `.railwayignore` applied, confirming the pruned backend workspace can deploy from the repository root.
 - Wavy Node adapter is live-ready for `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113` with deterministic mock mode for judge demos before credentials are added.
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
@@ -23,7 +23,7 @@ Status date: May 16, 2026
 pnpm verify
 ```
 
-The API endpoint test suite passes in mock mode and is included in `pnpm verify`.
+The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify the live `scan-risk` URL, `x-api-key` header, response normalization, and upstream error propagation. Both are included in `pnpm verify`.
 
 `.github/workflows/ci.yml` runs `pnpm verify` and `pnpm readiness` for push, pull request, and manual workflow dispatch events.
 
