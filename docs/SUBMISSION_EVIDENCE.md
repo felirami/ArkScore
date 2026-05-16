@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T21:21:01.405Z
+Generated: 2026-05-16T21:29:44.154Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `2150245`
+- Commit: `103e51d`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -111,7 +111,7 @@ devDependencies:
 + tsx 4.22.0
 + typescript 6.0.3
 
-Done in 1s using pnpm v11.1.2
+Done in 968ms using pnpm v11.1.2
 
 $ pnpm --filter @arkscore/api build
 CLI Building entry: src/server.ts
@@ -121,7 +121,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 31.09 KB
-ESM ⚡️ Build success in 408ms
+ESM ⚡️ Build success in 403ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -130,37 +130,37 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 21.873625
+  duration_ms: 19.161959
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 5.114542
+  duration_ms: 4.275458
   type: 'test'
   ...
 # Subtest: openapi document honors Railway forwarded origin headers
 ok 3 - openapi document honors Railway forwarded origin headers
   ---
-  duration_ms: 2.347292
+  duration_ms: 2.104458
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 4 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.587083
+  duration_ms: 2.400333
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 5 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.171541
+  duration_ms: 2.040125
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 6 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 6.148834
+  duration_ms: 5.579375
   type: 'test'
   ...
 1..6
@@ -171,36 +171,36 @@ ok 6 - score endpoint rate limits repeated clients
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 717.122959
+# duration_ms 647.148625
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 8.677916
+  duration_ms: 7.875208
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.644834
+  duration_ms: 0.604042
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 0.925791
+  duration_ms: 0.949542
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 4 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.536917
+  duration_ms: 0.559292
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.320167
+  duration_ms: 0.311958
   type: 'test'
   ...
 1..5
@@ -211,7 +211,7 @@ ok 5 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 149.906416
+# duration_ms 143.914292
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
@@ -397,6 +397,7 @@ pnpm verify:live:strict:record
 [pass] Railway root deployment config: railway.toml
 [pass] Vercel root deployment config: vercel.json
 [warn] Wavy Node credentials: required for live Wavy Node source=wavy responses; missing WAVY_NODE_API_KEY, WAVY_NODE_PROJECT_ID
+[pass] Wavy Node chain ID: required so Wavy Node scores the same Avalanche Fuji network stored by the oracle; using default 43113
 [warn] Subject hash salt: required to keep on-chain subject hashes environment-specific; missing ARKSCORE_SUBJECT_HASH_SALT
 [warn] Fuji deployer key: required to deploy CreditScoreRegistry to Avalanche Fuji; missing FUJI_PRIVATE_KEY
 [warn] Frontend API URL: required to point Vercel at the public HTTPS Railway API during finalization; missing ARKSCORE_API_URL, NEXT_PUBLIC_API_BASE_URL
@@ -411,8 +412,8 @@ pnpm verify:live:strict:record
 
 ## Summary
 
-- Passing: 13
+- Passing: 14
 - Warnings: 7
 - Failing: 0
-- Report id: cf0fc8a78bde
+- Report id: 8c6150f2c4fc
 ````
