@@ -164,6 +164,7 @@ ${checkSummary}
 \`\`\`bash
 pnpm probe:wavy
 pnpm probe:fuji
+pnpm probe:eerc20
 pnpm deploy:railway:apply -- --create-domain
 pnpm --filter @arkscore/contracts deploy:fuji
 pnpm --filter @arkscore/contracts scorer:fuji

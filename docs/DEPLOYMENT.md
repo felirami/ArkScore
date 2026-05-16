@@ -27,6 +27,14 @@ If the optional Ava Labs EncryptedERC demo is deployed, expose it to the dashboa
 NEXT_PUBLIC_EERC20_DEMO_ADDRESS=0x...
 ```
 
+Before including that address in the pitch, prove it has deployed Fuji bytecode:
+
+```bash
+ARKSCORE_EERC20_DEMO_ADDRESS=0x... pnpm probe:eerc20
+```
+
+Use `pnpm probe:eerc20:strict` when the optional privacy-token demo is required for a final evidence packet.
+
 The deploying wallet is the first authorized scorer. Use `setScorer(address,bool)` from the owner wallet if another institutional signer should write records.
 
 `pnpm probe:fuji` checks that `FUJI_PRIVATE_KEY` is present, formatted as a 32-byte hex key, connected to Avalanche Fuji chain id `43113`, and funded with Fuji AVAX before deployment. It prints the deployer address and balance, but never prints the private key.

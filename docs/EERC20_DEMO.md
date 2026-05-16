@@ -23,11 +23,20 @@ git clone https://github.com/ava-labs/EncryptedERC.git ../EncryptedERC
 4. Add the deployed address to the ArkScore submission:
 
 ```bash
+ARKSCORE_EERC20_DEMO_ADDRESS=0x...
 EERC20_DEMO_ADDRESS=0x...
 NEXT_PUBLIC_EERC20_DEMO_ADDRESS=0x...
 ```
 
-5. In the live demo, the dashboard's `eERC20` card links to the configured Fuji address. `pnpm verify:live` checks the optional address for deployed bytecode when `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is set.
+5. Prove the deployed address has bytecode on Avalanche Fuji:
+
+```bash
+ARKSCORE_EERC20_DEMO_ADDRESS=0x... pnpm probe:eerc20
+```
+
+Use `pnpm probe:eerc20:strict` when the eERC20 demo is part of the final judged submission and should fail if the address is missing.
+
+6. In the live demo, the dashboard's `eERC20` card links to the configured Fuji address. `pnpm verify:live` checks the optional address for deployed bytecode when `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is set.
 
 ## Submission Placeholder
 

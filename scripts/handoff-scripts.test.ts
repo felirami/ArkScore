@@ -164,6 +164,44 @@ test("Vercel finalizer refuses invalid registry address", () => {
   assert.doesNotMatch(result.output, /vercel env add/);
 });
 
+test("eERC20 probe is optional by default when no address is configured", () => {
+  const result = runScript("scripts/probe-eerc20.ts", [], {
+    ARKSCORE_EERC20_DEMO_ADDRESS: "",
+    EERC20_DEMO_ADDRESS: "",
+    NEXT_PUBLIC_EERC20_DEMO_ADDRESS: "",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Optional eERC20 demo address is not configured/);
+});
+
+test("eERC20 strict probe refuses a missing optional demo address", () => {
+  const result = runScript("scripts/probe-eerc20.ts", ["--strict"], {
+    ARKSCORE_EERC20_DEMO_ADDRESS: "",
+    EERC20_DEMO_ADDRESS: "",
+    NEXT_PUBLIC_EERC20_DEMO_ADDRESS: "",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Missing optional eERC20 demo address/);
+});
+
+test("eERC20 probe verifies deployed Fuji bytecode", async () => {
+  const result = await runEerc20ProbeWithMockRpc();
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Connected to Avalanche Fuji/);
+  assert.match(result.output, /has deployed bytecode/);
+  assert.match(result.output, /NEXT_PUBLIC_EERC20_DEMO_ADDRESS/);
+});
+
+test("eERC20 probe fails when the configured address has no Fuji bytecode", async () => {
+  const result = await runEerc20ProbeWithMockRpc({ code: "0x" });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /has no deployed bytecode on Fuji/);
+});
+
 test("Fuji registry deployer refuses missing private key before deployment", () => {
   const result = runPnpm(
     [
@@ -339,6 +377,64 @@ async function readJson(request: IncomingMessage) {
   }
 
   return JSON.parse(body) as unknown;
+}
+
+type Eerc20RpcOptions = {
+  chainId?: string;
+  code?: string;
+};
+
+async function runEerc20ProbeWithMockRpc(options: Eerc20RpcOptions = {}) {
+  const eerc20DemoAddress = "0x3333333333333333333333333333333333333333";
+  const rpcServer = await listen(async (request, response) => {
+    const body = (await readJson(request)) as {
+      id?: number;
+      method?: string;
+    };
+
+    response.writeHead(200, { "content-type": "application/json" });
+
+    if (body.method === "eth_chainId") {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: options.chainId ?? "0xa869",
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_getCode") {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: options.code ?? "0x6000",
+        }),
+      );
+      return;
+    }
+
+    response.end(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: body.id,
+        error: { code: -32601, message: "method not mocked" },
+      }),
+    );
+  });
+
+  try {
+    return await runScriptAsync("scripts/probe-eerc20.ts", [], {
+      FUJI_RPC_URL: rpcServer.url,
+      ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress,
+      EERC20_DEMO_ADDRESS: "",
+      NEXT_PUBLIC_EERC20_DEMO_ADDRESS: "",
+    });
+  } finally {
+    await rpcServer.close();
+  }
 }
 
 type RegistryRpcOptions = {
