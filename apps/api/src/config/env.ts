@@ -13,6 +13,7 @@ const envSchema = z.object({
   WAVY_NODE_PROJECT_ID: z.string().optional(),
   WAVY_NODE_BASE_URL: z.string().url().default("https://api.wavynode.com/v1"),
   WAVY_NODE_CHAIN_ID: z.coerce.number().int().positive().default(43113),
+  WAVY_NODE_TIMEOUT_MS: z.coerce.number().int().positive().default(15000),
   WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
   WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
   WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto"),

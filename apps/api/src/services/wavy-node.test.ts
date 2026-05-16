@@ -228,6 +228,27 @@ test("fetchWavyRiskResult preserves upstream Wavy Node errors", async () => {
   );
 });
 
+test("fetchWavyRiskResult converts Wavy timeouts into a gateway timeout", async () => {
+  globalThis.fetch = (async () => {
+    const error = new Error("The operation timed out.");
+    error.name = "TimeoutError";
+    throw error;
+  }) as typeof fetch;
+
+  await assert.rejects(
+    fetchWavyRiskResult({
+      address: demoWallet,
+      chainId: 43113,
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof HttpError);
+      assert.equal(error.statusCode, 504);
+      assert.match(error.message, /timed out/);
+      return true;
+    },
+  );
+});
+
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,

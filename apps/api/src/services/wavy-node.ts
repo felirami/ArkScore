@@ -55,15 +55,12 @@ export async function fetchWavySupportedChains(): Promise<
 > {
   const authHeader = getWavyAuthHeader();
   const url = new URL(`${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/chains`);
-  const response = await fetch(url, {
+  const { response, payload } = await fetchWavyJson<WavyChainsResponse>(url, {
     headers: {
       "x-api-key": authHeader,
       accept: "application/json",
     },
   });
-  const payload = (await response
-    .json()
-    .catch(() => null)) as WavyChainsResponse | null;
 
   if (!response.ok || payload?.success === false) {
     throw new HttpError(
@@ -114,16 +111,12 @@ export async function fetchWavyRiskResult(input: {
   url.searchParams.set("addresses", input.address);
   url.searchParams.set("chainId", String(input.chainId));
 
-  const response = await fetch(url, {
+  const { response, payload } = await fetchWavyJson<WavyScanRiskResponse>(url, {
     headers: {
       "x-api-key": authHeader,
       accept: "application/json",
     },
   });
-
-  const payload = (await response
-    .json()
-    .catch(() => null)) as WavyScanRiskResponse | null;
 
   if (!response.ok || payload?.success === false) {
     throw new HttpError(
@@ -180,7 +173,7 @@ async function registerWavyAddress(input: {
   const url = new URL(
     `${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/projects/${input.projectId}/addresses`,
   );
-  const response = await fetch(url, {
+  const { response, payload } = await fetchWavyJson<WavyApiResponse>(url, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -196,9 +189,6 @@ async function registerWavyAddress(input: {
 
   if (response.ok) return;
 
-  const payload = (await response
-    .json()
-    .catch(() => null)) as WavyApiResponse | null;
   const message =
     payload?.message ??
     payload?.error ??
@@ -214,6 +204,37 @@ async function registerWavyAddress(input: {
 function clampWavyScore(score: number | undefined): number {
   if (typeof score !== "number" || !Number.isFinite(score)) return 0;
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+async function fetchWavyJson<T>(
+  url: URL,
+  init: RequestInit,
+): Promise<{ response: Response; payload: T | null }> {
+  try {
+    const response = await fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(env.WAVY_NODE_TIMEOUT_MS),
+    });
+    const payload = (await response.json().catch(() => null)) as T | null;
+
+    return { response, payload };
+  } catch (error) {
+    if (isAbortLikeError(error)) {
+      throw new HttpError(
+        504,
+        `Wavy Node request timed out after ${env.WAVY_NODE_TIMEOUT_MS}ms.`,
+      );
+    }
+
+    throw error;
+  }
+}
+
+function isAbortLikeError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
+  );
 }
 
 function createForeignUserId(address: `0x${string}`): string {

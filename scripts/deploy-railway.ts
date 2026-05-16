@@ -106,6 +106,7 @@ function buildCommands(): CommandPlan[] {
     ALLOWED_ORIGINS: webUrl,
     WAVY_NODE_BASE_URL: env.WAVY_NODE_BASE_URL ?? "https://api.wavynode.com/v1",
     WAVY_NODE_CHAIN_ID: env.WAVY_NODE_CHAIN_ID ?? "43113",
+    WAVY_NODE_TIMEOUT_MS: env.WAVY_NODE_TIMEOUT_MS ?? "15000",
     WAVY_NODE_AUTO_REGISTER: env.WAVY_NODE_AUTO_REGISTER ?? "true",
     WAVY_NODE_FOREIGN_USER_PREFIX:
       env.WAVY_NODE_FOREIGN_USER_PREFIX ?? "arkscore-wallet",
