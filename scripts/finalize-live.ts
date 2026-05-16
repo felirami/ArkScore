@@ -21,6 +21,10 @@ const registryAddress =
   env.REGISTRY_ADDRESS ??
   env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
   readRegistryDeployment()?.address;
+const eerc20DemoAddress =
+  env.ARKSCORE_EERC20_DEMO_ADDRESS ??
+  env.EERC20_DEMO_ADDRESS ??
+  env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS;
 const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
 const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
@@ -41,12 +45,19 @@ function main() {
     );
   }
 
+  if (eerc20DemoAddress && !isAddress(eerc20DemoAddress)) {
+    fail("Invalid optional eERC20 demo address.");
+  }
+
   const envCommands = [
     vercelEnvCommand("NEXT_PUBLIC_API_BASE_URL", apiUrl),
     vercelEnvCommand(
       "NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS",
       registryAddress,
     ),
+    ...(eerc20DemoAddress
+      ? [vercelEnvCommand("NEXT_PUBLIC_EERC20_DEMO_ADDRESS", eerc20DemoAddress)]
+      : []),
     vercelEnvCommand("NEXT_PUBLIC_ENABLE_DEMO_FALLBACK", "false"),
   ];
   const authCommand = vercelCommand("whoami");
@@ -73,6 +84,9 @@ function main() {
     ...process.env,
     ARKSCORE_API_URL: apiUrl,
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    ...(eerc20DemoAddress
+      ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
+      : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
     ARKSCORE_WEB_URL: webUrl,
   };
@@ -147,6 +161,9 @@ function renderVerifyEnv() {
   return Object.entries({
     ARKSCORE_API_URL: apiUrl,
     ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    ...(eerc20DemoAddress
+      ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
+      : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
   })
     .map(([key, value]) => `${key}=${shellEscape(value)}`)

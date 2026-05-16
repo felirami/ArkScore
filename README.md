@@ -13,6 +13,7 @@ ArkScore evaluates an EVM wallet with Wavy Node traceability and AI risk scoring
 - Wavy Node live integration using `GET /v1/projects/:projectId/addresses/scan-risk`, with a first-class traceability object plus AI risk score scale.
 - Deterministic mock mode for judging before real Wavy credentials are added.
 - Hardhat 3 Solidity `^0.8.24` contract and tests for storing Wavy-backed score records on Fuji.
+- Optional eERC20 demo slot for an Ava Labs EncryptedERC privacy-preserving credit token address.
 - Deployment notes for Vercel, Railway, Fuji, and optional Ava Labs EncryptedERC eERC20 demo work.
 
 ## Project Structure
@@ -47,6 +48,7 @@ Copy `.env.example` into the relevant app or deployment provider and replace the
 NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
 NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
 NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=
+NEXT_PUBLIC_EERC20_DEMO_ADDRESS=
 NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false
 
 WAVY_NODE_API_KEY=ApiKey wavy_replace_with_wavy_node_api_key

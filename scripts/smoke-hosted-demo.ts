@@ -9,7 +9,12 @@ type SmokeCheck = {
 const webUrl = normalizeBaseUrl(
   process.env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app",
 );
-const requiredHtml = ["ArkScore", "Avalanche Fuji"];
+const requiredHtml = [
+  "ArkScore",
+  "Avalanche Fuji",
+  "eERC20",
+  "Private credit token demo",
+];
 const forbiddenHtml = ["Authentication Required"];
 const requiredBundleText = [
   "Fetch Wavy score",

@@ -24,9 +24,10 @@ git clone https://github.com/ava-labs/EncryptedERC.git ../EncryptedERC
 
 ```bash
 EERC20_DEMO_ADDRESS=0x...
+NEXT_PUBLIC_EERC20_DEMO_ADDRESS=0x...
 ```
 
-5. In the live demo, present it as the privacy layer for a future confidential ArkScore credit token.
+5. In the live demo, the dashboard's `eERC20` card links to the configured Fuji address. `pnpm verify:live` checks the optional address for deployed bytecode when `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is set.
 
 ## Submission Placeholder
 

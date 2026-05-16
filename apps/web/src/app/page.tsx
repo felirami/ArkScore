@@ -1,6 +1,14 @@
-import { Building2, Landmark, ShieldCheck } from "lucide-react";
+import {
+  ArrowUpRight,
+  Building2,
+  Landmark,
+  LockKeyhole,
+  ShieldCheck,
+} from "lucide-react";
 import { ScoreDashboard } from "@/components/score-dashboard";
+import { Badge } from "@/components/ui/badge";
 import { WalletConnector } from "@/components/wallet-connector";
+import { eerc20DemoAddress } from "@/lib/contracts";
 
 export default function Home() {
   return (
@@ -20,7 +28,7 @@ export default function Home() {
           <WalletConnector />
         </header>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
             <div className="flex items-center gap-2 text-[var(--accent)]">
               <Building2 size={18} aria-hidden="true" />
@@ -54,10 +62,43 @@ export default function Home() {
               Traceability and AI risk score
             </p>
           </div>
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
+            <div className="flex items-center gap-2 text-[#be123c]">
+              <LockKeyhole size={18} aria-hidden="true" />
+              <p className="font-mono text-sm text-[var(--muted-foreground)]">
+                eERC20
+              </p>
+            </div>
+            <div className="mt-2 flex items-start justify-between gap-3">
+              <p className="text-lg font-medium">Private credit token demo</p>
+              <Badge tone={eerc20DemoAddress ? "success" : "info"}>
+                {eerc20DemoAddress ? "Configured" : "Optional"}
+              </Badge>
+            </div>
+            {eerc20DemoAddress ? (
+              <a
+                href={`https://testnet.snowtrace.io/address/${eerc20DemoAddress}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 font-mono text-xs font-medium text-[var(--accent)]"
+              >
+                {shortAddress(eerc20DemoAddress)}
+                <ArrowUpRight size={12} aria-hidden="true" />
+              </a>
+            ) : (
+              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                EncryptedERC deployment slot
+              </p>
+            )}
+          </div>
         </div>
 
         <ScoreDashboard />
       </section>
     </main>
   );
+}
+
+function shortAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

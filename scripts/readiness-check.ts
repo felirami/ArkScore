@@ -94,6 +94,24 @@ async function main() {
       ],
       "required to enable Store on Fuji and set Vercel public env",
     ),
+    checkOptionalAddressPresence(
+      "Optional eERC20 demo address",
+      [
+        {
+          key: "ARKSCORE_EERC20_DEMO_ADDRESS",
+          value: combinedEnv.ARKSCORE_EERC20_DEMO_ADDRESS,
+        },
+        {
+          key: "EERC20_DEMO_ADDRESS",
+          value: combinedEnv.EERC20_DEMO_ADDRESS,
+        },
+        {
+          key: "NEXT_PUBLIC_EERC20_DEMO_ADDRESS",
+          value: combinedEnv.NEXT_PUBLIC_EERC20_DEMO_ADDRESS,
+        },
+      ],
+      "optional EncryptedERC privacy token demo address",
+    ),
     checkAddressPresence(
       "Demo scorer address",
       [
@@ -189,6 +207,41 @@ function checkAddressPresence(
   detail: string,
 ): Check {
   return checkCandidatePresence(label, candidates, detail, isAddress);
+}
+
+function checkOptionalAddressPresence(
+  label: string,
+  candidates: Candidate[],
+  detail: string,
+): Check {
+  const usableCandidates = candidates.filter((candidate) =>
+    hasUsableValue(candidate.value),
+  );
+  const validCandidate = usableCandidates.find((candidate) =>
+    isAddress(candidate.value ?? ""),
+  );
+
+  if (validCandidate) {
+    return {
+      label,
+      status: "pass",
+      detail: `${detail}; source ${validCandidate.key}`,
+    };
+  }
+
+  if (usableCandidates.length === 0) {
+    return {
+      label,
+      status: "pass",
+      detail: `${detail}; not configured`,
+    };
+  }
+
+  return {
+    label,
+    status: "warn",
+    detail: `${detail}; invalid value in ${usableCandidates.map((candidate) => candidate.key).join(", ")}`,
+  };
 }
 
 function checkCandidatePresence(

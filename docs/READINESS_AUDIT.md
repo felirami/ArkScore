@@ -6,6 +6,7 @@ Status date: May 16, 2026
 
 - Monorepo scaffolded with pnpm workspaces, Node.js 22.19.0 pinning, shared TypeScript configs, and environment examples.
 - Next.js 15 App Router dashboard builds as a static Vercel export and includes Avalanche Fuji wallet connection, Wavy score intake, composite scoring, institutional decisioning, and on-chain write flow.
+- The dashboard includes an optional eERC20 privacy-layer card that links to an Ava Labs EncryptedERC demo address when configured.
 - Dashboard reads `isScorer(connectedWallet)` and `hasScore(subjectHash)` from the Fuji registry, disables score storage until the connected wallet is authorized, and labels the on-chain action as store or update based on subject status.
 - The Fuji registry stores score records by backend-derived `subjectHash`, so the raw scored wallet address is not included in contract calldata or `ScoreRecorded` events.
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
@@ -15,8 +16,8 @@ Status date: May 16, 2026
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
-- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_DSoQHpwUwY1sKWomoPy258hz6v8J`.
-- Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, traceability, AI risk scale, subject hash, subject status, and evidence hash while Railway credentials are pending.
+- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_5UkPDfbn7aj9NAyjgYmhPkEvjkN3`.
+- Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, traceability, AI risk scale, subject hash, subject status, evidence hash, and eERC20 privacy slot while Railway credentials are pending.
 
 ## Verified Locally
 
@@ -54,6 +55,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 - `FUJI_PRIVATE_KEY` for an Avalanche Fuji funded deployer account.
 - Deployed `CreditScoreRegistry` address for `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`.
 - `NEXT_PUBLIC_API_BASE_URL` on Vercel must be set to the Railway API URL before the live Wavy-backed flow replaces hosted demo fallback mode.
+- `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` can be set after optional EncryptedERC deployment; live verification checks bytecode when it is configured.
 - `ARKSCORE_SCORER_ADDRESS` should be set to the dashboard signing wallet and authorized before the final Store on Fuji demo.
 - `pnpm record:fuji` should be run after Railway, Wavy, Fuji, and scorer authorization are configured to produce the final non-secret storage proof.
 

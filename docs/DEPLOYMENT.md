@@ -21,6 +21,12 @@ The deploy script writes `packages/contracts/deployments/fuji/CreditScoreRegistr
 NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x...
 ```
 
+If the optional Ava Labs EncryptedERC demo is deployed, expose it to the dashboard with:
+
+```bash
+NEXT_PUBLIC_EERC20_DEMO_ADDRESS=0x...
+```
+
 The deploying wallet is the first authorized scorer. Use `setScorer(address,bool)` from the owner wallet if another institutional signer should write records.
 
 `pnpm probe:fuji` checks that `FUJI_PRIVATE_KEY` is present, formatted as a 32-byte hex key, connected to Avalanche Fuji chain id `43113`, and funded with Fuji AVAX before deployment. It prints the deployer address and balance, but never prints the private key.
@@ -166,6 +172,7 @@ Vercel variables:
 NEXT_PUBLIC_API_BASE_URL=https://your-railway-api.up.railway.app
 NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
 NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x...
+NEXT_PUBLIC_EERC20_DEMO_ADDRESS=0x...
 NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false
 ```
 
@@ -191,9 +198,9 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
 ```
 
-`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, checks Vercel CLI auth for `VERCEL_SCOPE`, links the local checkout to `VERCEL_PROJECT_NAME`, sets public Vercel env values, redeploys the frontend, and runs strict live verification. It also accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during strict verification.
+`finalize:live` reads `ARKSCORE_REGISTRY_ADDRESS`, `CREDIT_SCORE_REGISTRY_ADDRESS`, `REGISTRY_ADDRESS`, or the Fuji deployment artifact, checks Vercel CLI auth for `VERCEL_SCOPE`, links the local checkout to `VERCEL_PROJECT_NAME`, sets public Vercel env values, redeploys the frontend, and runs strict live verification. If `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is present, it also publishes `NEXT_PUBLIC_EERC20_DEMO_ADDRESS`. It accepts `SCORER_ADDRESS` as a fallback for `ARKSCORE_SCORER_ADDRESS` during strict verification.
 
-The strict verifier fetches the hosted Vercel page plus its Next.js chunks and proves the production bundle contains the configured Railway API URL and Fuji registry address. If either value is missing from the static bundle, redeploy Vercel after setting the public env vars.
+The strict verifier fetches the hosted Vercel page plus its Next.js chunks and proves the production bundle contains the configured Railway API URL, Fuji registry address, and optional eERC20 demo address when provided. If either required value is missing from the static bundle, redeploy Vercel after setting the public env vars.
 
 ## Final Smoke Test
 
@@ -204,6 +211,7 @@ curl "https://your-railway-api.up.railway.app/api/score/0xd8dA6BF26964aF9D7eEd9e
 pnpm readiness
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
   ARKSCORE_REGISTRY_ADDRESS=0x... \
+  ARKSCORE_EERC20_DEMO_ADDRESS=0x... \
   ARKSCORE_SCORER_ADDRESS=0x... \
   pnpm verify:live
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app \

@@ -71,6 +71,10 @@ const registryAddress =
   env.REGISTRY_ADDRESS ??
   env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
   readRegistryDeployment()?.address;
+const eerc20DemoAddress =
+  env.ARKSCORE_EERC20_DEMO_ADDRESS ??
+  env.EERC20_DEMO_ADDRESS ??
+  env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS;
 const fujiRpcUrl =
   env.FUJI_RPC_URL ?? "https://api.avax-test.network/ext/bc/C/rpc";
 const testWallet =
@@ -88,6 +92,7 @@ async function main() {
   checks.push(...(await verifyWeb(webUrl)));
   checks.push(...(await verifyApi(apiUrl)));
   checks.push(...(await verifyContract(registryAddress)));
+  checks.push(...(await verifyOptionalEerc20(eerc20DemoAddress)));
 
   const failed = checks.filter((check) => check.status === "fail");
   const warnings = checks.filter((check) => check.status === "warn");
@@ -228,6 +233,13 @@ function expectedPublicWebConfig(): Array<{ label: string; value: string }> {
     expected.push({
       label: "Vercel web registry config",
       value: registryAddress,
+    });
+  }
+
+  if (eerc20DemoAddress && isAddress(eerc20DemoAddress)) {
+    expected.push({
+      label: "Vercel web eERC20 config",
+      value: eerc20DemoAddress,
     });
   }
 
@@ -511,6 +523,51 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
   checks.push(...(await verifyScorer(address, scorerAddress)));
 
   return checks;
+}
+
+async function verifyOptionalEerc20(
+  address: string | undefined,
+): Promise<Check[]> {
+  if (!address) return [];
+
+  if (!isAddress(address)) {
+    return [
+      {
+        label: "Optional eERC20 demo contract",
+        status: "fail",
+        detail: "configured eERC20 demo address is not a valid EVM address",
+      },
+    ];
+  }
+
+  try {
+    const code = await rpc<string>("eth_getCode", [address, "latest"]);
+
+    return [
+      code && code !== "0x"
+        ? {
+            label: "Optional eERC20 demo contract",
+            status: "pass",
+            detail: `${address} has deployed bytecode`,
+          }
+        : {
+            label: "Optional eERC20 demo contract",
+            status: "fail",
+            detail: `${address} has no bytecode on Fuji`,
+          },
+    ];
+  } catch (error) {
+    return [
+      {
+        label: "Optional eERC20 demo contract",
+        status: "fail",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "eERC20 bytecode check failed",
+      },
+    ];
+  }
 }
 
 async function verifyRegistryAbi(registry: string): Promise<Check> {
