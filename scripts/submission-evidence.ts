@@ -84,6 +84,8 @@ type ReportInput = {
 
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const scoreRecordSnapshotMaxAgeMs = 15 * 60 * 1000;
+const scoreRecordSnapshotFutureSkewMs = 60 * 1000;
 const args = new Set(process.argv.slice(2));
 const shouldWrite = args.has("--write");
 const skipChecks = args.has("--skip-checks");
@@ -493,6 +495,7 @@ function renderScoreRecordProof(evidence: ScoreRecordEvidence) {
     `  - Subject hash: \`${proof.subjectHash ?? "unknown"}\``,
     `  - Evidence hash: \`${proof.wavy?.evidenceHash ?? "unknown"}\``,
     `  - Score generatedAt: \`${proof.score?.generatedAt ?? "unknown"}\``,
+    `  - Record artifact generatedAt: \`${proof.generatedAt ?? "unknown"}\``,
     `  - Wavy analysis id: \`${proof.wavy?.analysisId ?? "unknown"}\``,
     `  - Scores: Wavy \`${proof.wavy?.riskScore ?? "unknown"}/100\`, composite \`${proof.composite?.creditScore ?? "unknown"}/100\``,
     `  - Decision: \`${proof.composite?.decision ?? "unknown"}\` for \`${proof.institution ?? "unknown"}\``,
@@ -616,6 +619,10 @@ function validateScoreRecordSnapshot(
   if (!score.generatedAt || !isValidDateTime(score.generatedAt)) {
     return "score snapshot is missing a valid generatedAt";
   }
+  const timestampError = validateScoreRecordSnapshotTime(proof, score);
+  if (timestampError) {
+    return timestampError;
+  }
   if (!score.evidenceHash || !isBytes32(score.evidenceHash)) {
     return "score snapshot is missing a valid evidenceHash";
   }
@@ -641,6 +648,34 @@ function validateScoreRecordSnapshot(
 
   if (score.evidenceHash.toLowerCase() !== expected) {
     return "score snapshot evidenceHash does not match its generatedAt-bound payload";
+  }
+
+  return undefined;
+}
+
+function validateScoreRecordSnapshotTime(
+  proof: ScoreRecordProof,
+  score: ScoreSnapshot,
+): string | undefined {
+  if (!proof.generatedAt || !isValidDateTime(proof.generatedAt)) {
+    return "missing a valid record artifact generatedAt";
+  }
+
+  const artifactGeneratedAtMs = Date.parse(proof.generatedAt);
+  const scoreGeneratedAtMs = Date.parse(score.generatedAt ?? "");
+
+  if (
+    scoreGeneratedAtMs >
+    artifactGeneratedAtMs + scoreRecordSnapshotFutureSkewMs
+  ) {
+    return "score snapshot generatedAt is after the record artifact timestamp";
+  }
+
+  if (
+    artifactGeneratedAtMs - scoreGeneratedAtMs >
+    scoreRecordSnapshotMaxAgeMs
+  ) {
+    return "score snapshot was too old when the record artifact was written";
   }
 
   return undefined;

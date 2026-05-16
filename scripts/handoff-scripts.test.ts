@@ -325,6 +325,38 @@ test("submission evidence refuses an invalid latest Fuji score record proof", ()
   }
 });
 
+test("submission evidence refuses a stale latest Fuji score record snapshot", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-evidence-stale-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify(
+      validScoreRecordProof({
+        artifactGeneratedAt: "2026-05-16T00:20:01.000Z",
+      }),
+    ),
+  );
+
+  try {
+    const result = runScript(
+      "scripts/submission-evidence.ts",
+      ["--skip-checks"],
+      {
+        ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      },
+    );
+
+    assert.equal(result.status, 1, result.output);
+    assert.match(
+      result.output,
+      /invalid at .*score snapshot was too old when the record artifact was written/,
+    );
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("readiness reports a configured latest Fuji score record proof", () => {
   const tempDir = mkdtempSync(join(tmpdir(), "arkscore-readiness-record-"));
   const artifactPath = join(tempDir, "LatestScoreRecord.json");
@@ -554,7 +586,7 @@ test("requirements audit maps repo readiness without leaking secrets", () => {
   );
   assert.match(
     result.output,
-    /generatedAt-bound score hash checks, offline score snapshot proof, finalizer/,
+    /generatedAt-bound score hash checks, offline score snapshot freshness proof, finalizer/,
   );
   assert.match(result.output, /\[warn\] Railway live deployment proof:/);
   assert.doesNotMatch(result.output, /should-not-print/);
@@ -1451,6 +1483,18 @@ test("live verifier rejects score record artifacts with tampered score snapshots
   );
 });
 
+test("live verifier rejects score record artifacts with stale score snapshots", async () => {
+  const result = await runLiveVerifierWithMockScoreRecord({
+    artifactGeneratedAt: "2026-05-16T00:20:01.000Z",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Fuji score record proof: .*score snapshot was too old when the record artifact was written/,
+  );
+});
+
 test("live verifier preflight skips Vercel and proves API plus registry", async () => {
   const result = await runLivePreflightVerifierWithMocks();
 
@@ -1903,6 +1947,7 @@ async function runLiveVerifierWithMockRegistry(
 }
 
 type ScoreRecordRpcOptions = {
+  artifactGeneratedAt?: string;
   apiUrl?: string;
   source?: string;
   storedEvidenceHash?: string;
@@ -1931,7 +1976,7 @@ async function runLiveVerifierWithMockScoreRecord(
     score.generatedAt = "2026-05-16T00:01:00.000Z";
   }
   const artifact = {
-    generatedAt: "2026-05-16T00:00:00.000Z",
+    generatedAt: options.artifactGeneratedAt ?? "2026-05-16T00:00:00.000Z",
     apiUrl: options.apiUrl ?? "https://arkscore-api.up.railway.app",
     registryAddress,
     scorerAddress,
@@ -2383,6 +2428,7 @@ function stableStringify(value: unknown): string {
 
 function validScoreRecordProof(
   input: {
+    artifactGeneratedAt?: string;
     apiUrl?: string;
     registryAddress?: string;
     scorerAddress?: string;
@@ -2404,7 +2450,7 @@ function validScoreRecordProof(
   });
 
   return {
-    generatedAt: "2026-05-16T00:00:00.000Z",
+    generatedAt: input.artifactGeneratedAt ?? "2026-05-16T00:00:00.000Z",
     apiUrl: input.apiUrl ?? "https://arkscore-api.up.railway.app",
     registryAddress,
     scorerAddress,

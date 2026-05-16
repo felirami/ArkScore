@@ -21,6 +21,7 @@ type ScoreRecordProof = {
     decision?: string;
     decisionEnum?: number;
   };
+  generatedAt?: string;
   institution?: string;
   registryAddress?: string;
   requestedWallet?: string;
@@ -50,6 +51,8 @@ type ScoreRecordEvidence = {
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const scoreRecordSnapshotMaxAgeMs = 15 * 60 * 1000;
+const scoreRecordSnapshotFutureSkewMs = 60 * 1000;
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("packages/contracts/.env"),
@@ -415,6 +418,10 @@ function validateScoreRecordSnapshot(
   if (!score.generatedAt || !isValidDateTime(score.generatedAt)) {
     return "score snapshot is missing a valid generatedAt";
   }
+  const timestampError = validateScoreRecordSnapshotTime(proof, score);
+  if (timestampError) {
+    return timestampError;
+  }
   if (!score.evidenceHash || !isBytes32(score.evidenceHash)) {
     return "score snapshot is missing a valid evidenceHash";
   }
@@ -440,6 +447,34 @@ function validateScoreRecordSnapshot(
 
   if (score.evidenceHash.toLowerCase() !== expected) {
     return "score snapshot evidenceHash does not match its generatedAt-bound payload";
+  }
+
+  return undefined;
+}
+
+function validateScoreRecordSnapshotTime(
+  proof: ScoreRecordProof,
+  score: ScoreSnapshot,
+): string | undefined {
+  if (!proof.generatedAt || !isValidDateTime(proof.generatedAt)) {
+    return "missing a valid record artifact generatedAt";
+  }
+
+  const artifactGeneratedAtMs = Date.parse(proof.generatedAt);
+  const scoreGeneratedAtMs = Date.parse(score.generatedAt ?? "");
+
+  if (
+    scoreGeneratedAtMs >
+    artifactGeneratedAtMs + scoreRecordSnapshotFutureSkewMs
+  ) {
+    return "score snapshot generatedAt is after the record artifact timestamp";
+  }
+
+  if (
+    artifactGeneratedAtMs - scoreGeneratedAtMs >
+    scoreRecordSnapshotMaxAgeMs
+  ) {
+    return "score snapshot was too old when the record artifact was written";
   }
 
   return undefined;

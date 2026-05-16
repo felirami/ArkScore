@@ -81,5 +81,5 @@ pnpm verify:live:strict:eerc20:record
 - ArkScore does not store the raw scored wallet address on-chain.
 - Wavy Node remains explicit evidence: analysis id, traceability, risk score, and evidence hash.
 - The composite score turns that evidence into Arkangeles and Bankaool institution-specific decisions.
-- The Fuji registry gives institutions an auditable oracle record keyed by `subjectHash`, and `LatestScoreRecord.json` carries the exact score snapshot needed to recompute the stored evidence hash.
+- The Fuji registry gives institutions an auditable oracle record keyed by `subjectHash`, and `LatestScoreRecord.json` carries the exact score snapshot needed to recompute the stored evidence hash and prove it was fresh when recorded.
 - The optional eERC20 path keeps private credit token balances separate from the public scoring oracle.

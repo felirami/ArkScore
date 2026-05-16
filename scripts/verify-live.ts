@@ -172,6 +172,7 @@ const scoreRecordArtifactPath =
   defaultScoreRecordArtifactPath;
 const scoreMaxAgeMs = 10 * 60 * 1000;
 const scoreFutureSkewMs = 60 * 1000;
+const scoreRecordSnapshotMaxAgeMs = 15 * 60 * 1000;
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -1205,6 +1206,11 @@ function validateScoreRecordSnapshot(
     return `${scoreRecordArtifactPath} score snapshot is missing a valid generatedAt`;
   }
 
+  const timestampError = validateScoreRecordSnapshotTime(proof, score);
+  if (timestampError) {
+    return timestampError;
+  }
+
   if (!score.evidenceHash || !isBytes32(score.evidenceHash)) {
     return `${scoreRecordArtifactPath} score snapshot is missing a valid evidenceHash`;
   }
@@ -1232,6 +1238,31 @@ function validateScoreRecordSnapshot(
 
   if (score.evidenceHash.toLowerCase() !== expected) {
     return `${scoreRecordArtifactPath} score snapshot evidenceHash does not match its generatedAt-bound payload`;
+  }
+
+  return undefined;
+}
+
+function validateScoreRecordSnapshotTime(
+  proof: ScoreRecordProof,
+  score: ScoreResponse,
+): string | undefined {
+  if (!proof.generatedAt || !isValidDateTime(proof.generatedAt)) {
+    return `${scoreRecordArtifactPath} is missing a valid record artifact generatedAt`;
+  }
+
+  const artifactGeneratedAtMs = Date.parse(proof.generatedAt);
+  const scoreGeneratedAtMs = Date.parse(score.generatedAt ?? "");
+
+  if (scoreGeneratedAtMs > artifactGeneratedAtMs + scoreFutureSkewMs) {
+    return `${scoreRecordArtifactPath} score snapshot generatedAt is after the record artifact timestamp`;
+  }
+
+  if (
+    artifactGeneratedAtMs - scoreGeneratedAtMs >
+    scoreRecordSnapshotMaxAgeMs
+  ) {
+    return `${scoreRecordArtifactPath} score snapshot was too old when the record artifact was written`;
   }
 
   return undefined;

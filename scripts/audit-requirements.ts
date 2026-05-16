@@ -34,6 +34,7 @@ type ScoreRecordProof = {
     creditScore?: number;
     decisionEnum?: number;
   };
+  generatedAt?: string;
   institution?: string;
   registryAddress?: string;
   requestedWallet?: string;
@@ -72,6 +73,8 @@ const requireScoreRecord =
 const scoreRecordArtifactPath =
   firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
   defaultScoreRecordArtifactPath;
+const scoreRecordSnapshotMaxAgeMs = 15 * 60 * 1000;
+const scoreRecordSnapshotFutureSkewMs = 60 * 1000;
 
 main();
 
@@ -646,6 +649,7 @@ function checkFinalVerificationPath(): Check {
     liveVerifier?.includes("generatedAt: score.generatedAt") &&
     liveVerifier?.includes("scoreGeneratedAtIsFresh") &&
     liveVerifier?.includes("validateScoreRecordSnapshot") &&
+    liveVerifier?.includes("validateScoreRecordSnapshotTime") &&
     scoreRecorder?.includes("assertScoreEvidenceHashMatches") &&
     scoreRecorder?.includes("generatedAt: score.generatedAt") &&
     scoreRecorder?.includes("score: input.score") &&
@@ -655,7 +659,7 @@ function checkFinalVerificationPath(): Check {
       label: "Final live verification and evidence path",
       status: "pass",
       detail:
-        "strict record verifier, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot proof, finalizer, readiness, and evidence scripts are registered",
+        "strict record verifier, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot freshness proof, finalizer, readiness, and evidence scripts are registered",
     };
   }
 
@@ -663,7 +667,7 @@ function checkFinalVerificationPath(): Check {
     label: "Final live verification and evidence path",
     status: "fail",
     detail:
-      "missing finalizer, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot proof, strict live verifier, readiness, or evidence script",
+      "missing finalizer, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot freshness proof, strict live verifier, readiness, or evidence script",
   };
 }
 
@@ -785,6 +789,10 @@ function validateScoreRecordSnapshot(
   if (!score.generatedAt || !isValidDateTime(score.generatedAt)) {
     return "score snapshot is missing a valid generatedAt";
   }
+  const timestampError = validateScoreRecordSnapshotTime(proof, score);
+  if (timestampError) {
+    return timestampError;
+  }
   if (!score.evidenceHash || !isBytes32(score.evidenceHash)) {
     return "score snapshot is missing a valid evidenceHash";
   }
@@ -810,6 +818,34 @@ function validateScoreRecordSnapshot(
 
   if (score.evidenceHash.toLowerCase() !== expected) {
     return "score snapshot evidenceHash does not match its generatedAt-bound payload";
+  }
+
+  return undefined;
+}
+
+function validateScoreRecordSnapshotTime(
+  proof: ScoreRecordProof,
+  score: ScoreSnapshot,
+): string | undefined {
+  if (!proof.generatedAt || !isValidDateTime(proof.generatedAt)) {
+    return "missing a valid record artifact generatedAt";
+  }
+
+  const artifactGeneratedAtMs = Date.parse(proof.generatedAt);
+  const scoreGeneratedAtMs = Date.parse(score.generatedAt ?? "");
+
+  if (
+    scoreGeneratedAtMs >
+    artifactGeneratedAtMs + scoreRecordSnapshotFutureSkewMs
+  ) {
+    return "score snapshot generatedAt is after the record artifact timestamp";
+  }
+
+  if (
+    artifactGeneratedAtMs - scoreGeneratedAtMs >
+    scoreRecordSnapshotMaxAgeMs
+  ) {
+    return "score snapshot was too old when the record artifact was written";
   }
 
   return undefined;
