@@ -142,7 +142,7 @@ ARKSCORE_SUBJECT_HASH_SALT="$(openssl rand -hex 32)" \
 pnpm deploy:railway:apply -- --create-domain
 ```
 
-In live mode, `deploy:railway:apply` runs `pnpm verify:railway` and `pnpm probe:wavy` before it touches Railway variables or uploads the service, so a broken deploy archive, invalid Wavy credentials, non-Fuji `WAVY_NODE_CHAIN_ID`, inactive Fuji support, or a weak subject-hash salt fail locally first. It also forces the deployed Railway variable `WAVY_NODE_MOCK_MODE=false` unless `RAILWAY_ALLOW_MOCK=true` is explicitly set for a temporary mock deployment.
+In live mode, `deploy:railway:apply` runs `pnpm verify:railway` and `pnpm probe:wavy` before it touches Railway variables or uploads the service, so a broken deploy archive, invalid Wavy credentials, non-Fuji `WAVY_NODE_CHAIN_ID`, inactive Fuji support, or a weak subject-hash salt fail locally first. It also forces the deployed Railway variable `WAVY_NODE_MOCK_MODE=false` unless `RAILWAY_ALLOW_MOCK=true` is explicitly set for a temporary mock deployment. When `ARKSCORE_API_URL`, `NEXT_PUBLIC_API_BASE_URL`, or `--create-domain` provides a public HTTPS Railway URL, apply mode then retries `pnpm verify:railway:live` with that URL until the uploaded API passes or `RAILWAY_LIVE_VERIFY_TIMEOUT_MS` expires.
 
 Before deploying Railway, you can prove the Wavy credentials locally without printing the API key:
 
@@ -178,11 +178,12 @@ echo "..." | pnpm dlx @railway/cli variable set WAVY_NODE_PROJECT_ID --environme
 echo "..." | pnpm dlx @railway/cli variable set ARKSCORE_SUBJECT_HASH_SALT --environment production --service arkscore-api --stdin --skip-deploys --json
 pnpm dlx @railway/cli up --detach --json --environment production --service arkscore-api --message "Deploy ArkScore API"
 pnpm dlx @railway/cli domain --environment production --service arkscore-api --json
+ARKSCORE_API_URL=https://generated-domain.up.railway.app pnpm verify:railway:live
 ```
 
 If the project already exists, set `RAILWAY_PROJECT_ID` so the helper uses `pnpm dlx @railway/cli link --project <project-id> --environment production --service arkscore-api --json` instead of `init` plus `add`.
 
-After Railway prints the service URL or generated domain, prove the deployed API before continuing to Fuji/Vercel finalization:
+After Railway prints the service URL or generated domain, prove the deployed API before continuing to Fuji/Vercel finalization. `deploy:railway:apply -- --create-domain` does this automatically when it can extract the generated public URL; run it manually if you used an existing custom domain or skipped domain creation:
 
 ```bash
 export ARKSCORE_API_URL=https://your-railway-api.up.railway.app

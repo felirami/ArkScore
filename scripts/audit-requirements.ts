@@ -244,6 +244,7 @@ function checkExpressBackend(): Check {
 function checkRailwayConfig(): Check {
   const railwayConfig = safeRead("railway.toml");
   const railwayVerifier = safeRead("scripts/verify-railway-archive.ts");
+  const railwayDeploy = safeRead("scripts/deploy-railway.ts");
   const rootPackage = readPackageJson("package.json");
   const scripts = rootPackage.scripts ?? {};
   const requirements: Array<[string, boolean]> = [
@@ -264,6 +265,14 @@ function checkRailwayConfig(): Check {
         scripts["verify:railway"]?.includes("verify-railway-archive.ts"),
       ),
     ],
+    [
+      "post-deploy live verifier",
+      Boolean(
+        railwayDeploy?.includes("waitForRailwayLiveVerification") &&
+        railwayDeploy.includes("verify:railway:live") &&
+        scripts["verify:railway:live"]?.includes("verify-live.ts"),
+      ),
+    ],
   ];
   const missing = requirements
     .filter(([, present]) => !present)
@@ -274,7 +283,7 @@ function checkRailwayConfig(): Check {
       label: "Railway backend deployment config",
       status: "pass",
       detail:
-        "railway.toml builds, starts, healthchecks, watches shared config, and registers the archive verifier",
+        "railway.toml builds, starts, healthchecks, watches shared config, registers the archive verifier, and retries the live Railway verifier after deploy",
     };
   }
 

@@ -172,6 +172,9 @@ function main() {
     console.log("pnpm verify:railway");
     console.log("pnpm deploy:railway:apply -- --create-domain");
     console.log(
+      "# The Railway deploy helper verifies the generated API URL when it can extract it.",
+    );
+    console.log(
       "export ARKSCORE_API_URL=https://your-railway-api.up.railway.app",
     );
     console.log("pnpm verify:railway:live");

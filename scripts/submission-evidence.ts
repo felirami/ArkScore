@@ -265,6 +265,7 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     "pnpm railway:whoami",
     "pnpm verify:railway",
     "pnpm deploy:railway:apply -- --create-domain",
+    "# If deploy:railway:apply did not print and verify a generated API URL, export it manually.",
     "export ARKSCORE_API_URL=https://your-railway-api.up.railway.app",
     "pnpm verify:railway:live",
     "pnpm --filter @arkscore/contracts deploy:fuji",

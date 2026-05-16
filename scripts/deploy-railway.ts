@@ -6,6 +6,7 @@ type CommandPlan = {
   env?: Record<string, string>;
   input?: string;
   redacted?: boolean;
+  capturesRailwayApiUrl?: boolean;
 };
 
 const apply = process.argv.includes("--apply");
@@ -30,6 +31,17 @@ const allowMock = env.RAILWAY_ALLOW_MOCK === "true";
 const wavyMockMode = allowMock ? "true" : "false";
 const fujiChainId = 43113;
 const wavyChainId = parseWavyChainId(env.WAVY_NODE_CHAIN_ID);
+const configuredApiUrl = normalizeBaseUrl(
+  firstConfiguredValue([env.ARKSCORE_API_URL, env.NEXT_PUBLIC_API_BASE_URL]),
+);
+const liveVerifyTimeoutMs = parseDurationMs(
+  env.RAILWAY_LIVE_VERIFY_TIMEOUT_MS,
+  5 * 60 * 1000,
+);
+const liveVerifyIntervalMs = parseDurationMs(
+  env.RAILWAY_LIVE_VERIFY_INTERVAL_MS,
+  10 * 1000,
+);
 
 main();
 
@@ -83,13 +95,46 @@ function main() {
       "\nAfter Railway prints the service URL, run:\n" +
         "export ARKSCORE_API_URL=https://your-railway-api.up.railway.app\n" +
         "pnpm verify:railway:live\n\n" +
+        "Apply mode also uses ARKSCORE_API_URL, NEXT_PUBLIC_API_BASE_URL, or the generated --create-domain output to retry `pnpm verify:railway:live` until the API is live.\n\n" +
         "Then deploy Fuji, authorize the scorer, record a live score, and run `pnpm finalize:live:apply`.",
     );
     return;
   }
 
   for (const plan of preflightCommands) run(plan);
-  for (const plan of commands) run(plan);
+  let generatedApiUrl: string | undefined;
+  for (const plan of commands) {
+    if (plan.capturesRailwayApiUrl) {
+      const result = runCaptured(plan);
+      if (result.status !== 0) {
+        process.exit(result.status);
+      }
+      generatedApiUrl = extractRailwayApiUrl(result.output) ?? generatedApiUrl;
+      continue;
+    }
+
+    run(plan);
+  }
+
+  const apiUrl = publicRailwayApiUrl(configuredApiUrl) ?? generatedApiUrl;
+
+  if (!apiUrl) {
+    if (configuredApiUrl) {
+      console.log(
+        `[warn] Ignoring non-public ARKSCORE_API_URL/NEXT_PUBLIC_API_BASE_URL=${configuredApiUrl}.`,
+      );
+    }
+    console.log(
+      "\n[warn] Railway API URL was not available for automatic live verification.",
+    );
+    console.log(
+      "Set ARKSCORE_API_URL to the generated public Railway HTTPS URL, then run `pnpm verify:railway:live` before continuing to Fuji/Vercel finalization.",
+    );
+    return;
+  }
+
+  console.log(`\n[info] Railway API URL for live verification: ${apiUrl}`);
+  waitForRailwayLiveVerification(apiUrl);
 }
 
 function buildPreflightCommands(missingCredentials: string[]): CommandPlan[] {
@@ -199,6 +244,7 @@ function buildCommands(): CommandPlan[] {
   if (createDomain) {
     commands.push({
       command: railwayCommand("domain", ...railwayTargetOptions(), "--json"),
+      capturesRailwayApiUrl: true,
     });
   } else {
     console.log(
@@ -272,6 +318,66 @@ function run(plan: CommandPlan) {
   }
 }
 
+function runCaptured(plan: CommandPlan) {
+  printCommand(plan);
+  const [binary, ...args] = plan.command;
+  const result = spawnSync(binary, args, {
+    env: plan.env ? { ...process.env, ...plan.env } : process.env,
+    input: plan.input,
+    encoding: "utf8",
+  });
+  const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
+
+  if (output.trim()) {
+    console.log(output.trim());
+  }
+
+  return {
+    status:
+      typeof result.status === "number" ? result.status : result.error ? 1 : 0,
+    output,
+  };
+}
+
+function waitForRailwayLiveVerification(apiUrl: string) {
+  const deadline = Date.now() + liveVerifyTimeoutMs;
+  let attempt = 0;
+  let lastOutput = "";
+
+  while (true) {
+    attempt += 1;
+    console.log(
+      `\n[info] Running pnpm verify:railway:live for ${apiUrl} (attempt ${attempt}).`,
+    );
+    const result = runCaptured({
+      command: ["pnpm", "verify:railway:live"],
+      env: { ARKSCORE_API_URL: apiUrl },
+    });
+
+    if (result.status === 0) {
+      console.log("[pass] Railway live verification passed.");
+      return;
+    }
+
+    lastOutput = result.output;
+
+    if (Date.now() >= deadline) {
+      if (lastOutput.trim()) {
+        console.error(lastOutput.trim());
+      }
+      fail(
+        `Timed out waiting for Railway live verification after ${liveVerifyTimeoutMs}ms.`,
+      );
+    }
+
+    const waitMs = Math.min(liveVerifyIntervalMs, deadline - Date.now());
+    console.log(
+      `[warn] Railway live verification is not ready yet; retrying in ${waitMs}ms.`,
+    );
+    sleep(waitMs);
+  }
+}
+
 function printCommand(plan: CommandPlan) {
   const rendered = plan.command.map(shellEscape).join(" ");
   const envPrefix = plan.env
@@ -322,6 +428,10 @@ function normalizeBaseUrl(value: string | undefined): string {
   return (value ?? "").trim().replace(/\/$/, "");
 }
 
+function firstConfiguredValue(values: Array<string | undefined>) {
+  return values.find((value) => value?.trim())?.trim();
+}
+
 function hasUsableValue(value: string | undefined): value is string {
   return Boolean(
     value &&
@@ -340,6 +450,123 @@ function parseWavyChainId(value: string | undefined): number {
   }
 
   return chainId;
+}
+
+function publicRailwayApiUrl(value: string | undefined) {
+  if (!value || !isPublicHttpsUrl(value)) return undefined;
+  return value;
+}
+
+function extractRailwayApiUrl(output: string): string | undefined {
+  const parsed = parseJson(output);
+  const jsonUrl = parsed ? extractUrlFromValue(parsed) : undefined;
+  if (jsonUrl) return jsonUrl;
+
+  return extractUrlFromText(output);
+}
+
+function parseJson(output: string): unknown | undefined {
+  const trimmed = output.trim();
+  if (!trimmed) return undefined;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return undefined;
+  }
+}
+
+function extractUrlFromValue(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    return normalizePublicUrlCandidate(value);
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const url = extractUrlFromValue(item);
+      if (url) return url;
+    }
+
+    return undefined;
+  }
+
+  if (value && typeof value === "object") {
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      const url = extractUrlFromValue(item);
+      if (url) return url;
+    }
+  }
+
+  return undefined;
+}
+
+function extractUrlFromText(value: string): string | undefined {
+  for (const match of value.matchAll(/https:\/\/[^\s"',)]+/g)) {
+    const url = normalizePublicUrlCandidate(match[0] ?? "");
+    if (url) return url;
+  }
+
+  for (const match of value.matchAll(
+    /\b[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+\b/g,
+  )) {
+    const url = normalizePublicUrlCandidate(match[0] ?? "");
+    if (url) return url;
+  }
+
+  return undefined;
+}
+
+function normalizePublicUrlCandidate(value: string): string | undefined {
+  const candidate = value.trim().replace(/\/$/, "");
+  if (!candidate) return undefined;
+  const url = candidate.startsWith("https://")
+    ? candidate
+    : `https://${candidate}`;
+
+  return isPublicHttpsUrl(url) ? url : undefined;
+}
+
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" && !isLocalHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  return (
+    value === "localhost" ||
+    value === "::1" ||
+    value.endsWith(".local") ||
+    value === "0.0.0.0" ||
+    /^127\./.test(value) ||
+    /^10\./.test(value) ||
+    /^192\.168\./.test(value) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
+    /^169\.254\./.test(value)
+  );
+}
+
+function parseDurationMs(value: string | undefined, fallback: number) {
+  if (!value) return fallback;
+
+  const duration = Number(value);
+  if (!Number.isFinite(duration) || duration < 0) {
+    fail("Railway live verification timeouts must be non-negative numbers.");
+  }
+
+  return duration;
+}
+
+function sleep(ms: number) {
+  if (ms <= 0) return;
+
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 function shellEscape(value: string) {

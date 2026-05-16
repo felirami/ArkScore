@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -14,7 +15,7 @@ import {
   type ServerResponse,
 } from "node:http";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { test } from "node:test";
 
 test("root package exposes Railway CLI handoff scripts", () => {
@@ -198,6 +199,98 @@ test("Railway apply refuses missing live credentials unless mock is explicit", (
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /Refusing to deploy Railway API/);
   assert.doesNotMatch(result.output, /railway up/);
+});
+
+test("Railway apply verifies the generated service domain before handoff", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-railway-apply-"));
+  const fakeBin = join(tempDir, "bin");
+  const logPath = join(tempDir, "pnpm-calls.jsonl");
+  const fakePnpmPath = join(fakeBin, "pnpm");
+
+  mkdirSync(fakeBin, { recursive: true });
+  writeFileSync(
+    fakePnpmPath,
+    `#!/usr/bin/env node
+const fs = require("node:fs");
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.ARKSCORE_FAKE_PNPM_LOG, JSON.stringify({
+  args,
+  env: { ARKSCORE_API_URL: process.env.ARKSCORE_API_URL || "" }
+}) + "\\n");
+
+if (args[0] === "dlx" && args[1] === "@railway/cli" && args[2] === "domain") {
+  console.log(JSON.stringify({ domain: "arkscore-api.up.railway.app" }));
+}
+
+if (args[0] === "verify:railway:live") {
+  console.log("verified " + process.env.ARKSCORE_API_URL);
+}
+`,
+  );
+  chmodSync(fakePnpmPath, 0o755);
+
+  try {
+    const result = spawnSync(
+      join(process.cwd(), "node_modules", ".bin", "tsx"),
+      ["scripts/deploy-railway.ts", "--apply", "--create-domain"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${fakeBin}${delimiter}${process.env.PATH ?? ""}`,
+          ARKSCORE_FAKE_PNPM_LOG: logPath,
+          WAVY_NODE_API_KEY: "ApiKey super-secret-key",
+          WAVY_NODE_PROJECT_ID: "project-secret-id",
+          ARKSCORE_SUBJECT_HASH_SALT: "salt-secret-value",
+          RAILWAY_PROJECT_ID: "project_123",
+          RAILWAY_SERVICE: "arkscore-api",
+          RAILWAY_LIVE_VERIFY_TIMEOUT_MS: "1000",
+          RAILWAY_LIVE_VERIFY_INTERVAL_MS: "1",
+        },
+      },
+    );
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
+
+    assert.equal(result.status, 0, output);
+    assert.match(
+      output,
+      /Railway API URL for live verification: https:\/\/arkscore-api\.up\.railway\.app/,
+    );
+    assert.match(output, /verified https:\/\/arkscore-api\.up\.railway\.app/);
+    assert.match(output, /Railway live verification passed/);
+
+    const calls = readFileSync(logPath, "utf8")
+      .trim()
+      .split(/\n/)
+      .map(
+        (line) =>
+          JSON.parse(line) as {
+            args: string[];
+            env: { ARKSCORE_API_URL: string };
+          },
+      );
+    const liveVerifierCall = calls.find(
+      (call) => call.args[0] === "verify:railway:live",
+    );
+
+    assert.ok(liveVerifierCall, "expected pnpm verify:railway:live call");
+    assert.equal(
+      liveVerifierCall.env.ARKSCORE_API_URL,
+      "https://arkscore-api.up.railway.app",
+    );
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.args[0] === "dlx" &&
+          call.args[1] === "@railway/cli" &&
+          call.args[2] === "up",
+      ),
+      "expected Railway deploy upload call",
+    );
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test("Wavy probe refuses non-Fuji chain IDs before live calls", () => {
