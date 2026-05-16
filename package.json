@@ -24,6 +24,7 @@
     "record:fuji": "pnpm --filter @arkscore/contracts record-live-score:fuji",
     "verify:live": "tsx scripts/verify-live.ts",
     "verify:live:strict": "tsx scripts/verify-live.ts --strict --require-wavy",
+    "verify:live:strict:eerc20": "tsx scripts/verify-live.ts --strict --require-wavy --require-eerc20",
     "smoke:web": "tsx scripts/smoke-hosted-demo.ts",
     "submission:evidence": "tsx scripts/submission-evidence.ts",
     "submission:evidence:write": "tsx scripts/submission-evidence.ts --write",

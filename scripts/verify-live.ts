@@ -65,10 +65,6 @@ class RpcError extends Error {
   }
 }
 
-const strict = process.argv.includes("--strict");
-const requireWavy =
-  process.argv.includes("--require-wavy") ||
-  process.env.ARKSCORE_REQUIRE_WAVY === "true";
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("packages/contracts/.env"),
@@ -76,6 +72,13 @@ const env = {
   ...readEnvFile("apps/web/.env.local"),
   ...process.env,
 };
+const strict = process.argv.includes("--strict");
+const requireWavy =
+  process.argv.includes("--require-wavy") ||
+  env.ARKSCORE_REQUIRE_WAVY === "true";
+const requireEerc20 =
+  process.argv.includes("--require-eerc20") ||
+  env.ARKSCORE_REQUIRE_EERC20 === "true";
 const webUrl = normalizeBaseUrl(
   env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app",
 );
@@ -562,7 +565,18 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
 async function verifyOptionalEerc20(
   address: string | undefined,
 ): Promise<Check[]> {
-  if (!address) return [];
+  if (!address) {
+    return requireEerc20
+      ? [
+          {
+            label: "Optional eERC20 demo contract",
+            status: "fail",
+            detail:
+              "ARKSCORE_REQUIRE_EERC20=true but no eERC20 demo address is configured",
+          },
+        ]
+      : [];
+  }
 
   if (!isAddress(address)) {
     return [

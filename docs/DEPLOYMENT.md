@@ -33,7 +33,7 @@ Before including that address in the pitch, prove it has deployed Fuji bytecode:
 ARKSCORE_EERC20_DEMO_ADDRESS=0x... pnpm probe:eerc20
 ```
 
-Use `pnpm probe:eerc20:strict` when the optional privacy-token demo is required for a final evidence packet.
+Use `pnpm probe:eerc20:strict` or `ARKSCORE_REQUIRE_EERC20=true` when the optional privacy-token demo is required for a final evidence packet.
 
 The deploying wallet is the first authorized scorer. Use `setScorer(address,bool)` from the owner wallet if another institutional signer should write records.
 
@@ -234,5 +234,5 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
 
-Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable and rebuilt with the live public env values, checks the Railway health, live Wavy credential mode, production subject-hash salt, OpenAPI, score response shape, and no-store score cache headers, and verifies that the Fuji registry address has bytecode plus callable `owner()`, `hasScore(bytes32)`, and `getScore(bytes32)` functions.
+Use `pnpm verify:live:strict` for final submission verification. It requires the API score source to be `wavy`, confirms the frontend is reachable and rebuilt with the live public env values, checks the Railway health, live Wavy credential mode, production subject-hash salt, OpenAPI, score response shape, and no-store score cache headers, and verifies that the Fuji registry address has bytecode plus callable `owner()`, `hasScore(bytes32)`, and `getScore(bytes32)` functions. Use `pnpm verify:live:strict:eerc20` or `ARKSCORE_REQUIRE_EERC20=true` when the optional EncryptedERC demo is part of the judged flow.
 Set `ARKSCORE_SCORER_ADDRESS` or `SCORER_ADDRESS` before the strict run to prove the dashboard signing wallet is authorized to store score records.

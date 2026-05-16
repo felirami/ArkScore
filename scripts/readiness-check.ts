@@ -27,6 +27,9 @@ const combinedEnv = {
   ...webEnv,
   ...process.env,
 };
+const requireEerc20 =
+  process.argv.includes("--require-eerc20") ||
+  combinedEnv.ARKSCORE_REQUIRE_EERC20 === "true";
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -111,6 +114,7 @@ async function main() {
         },
       ],
       "optional EncryptedERC privacy token demo address",
+      requireEerc20,
     ),
     checkAddressPresence(
       "Demo scorer address",
@@ -213,6 +217,7 @@ function checkOptionalAddressPresence(
   label: string,
   candidates: Candidate[],
   detail: string,
+  required = false,
 ): Check {
   const usableCandidates = candidates.filter((candidate) =>
     hasUsableValue(candidate.value),
@@ -232,8 +237,10 @@ function checkOptionalAddressPresence(
   if (usableCandidates.length === 0) {
     return {
       label,
-      status: "pass",
-      detail: `${detail}; not configured`,
+      status: required ? "warn" : "pass",
+      detail: required
+        ? `${detail}; required by ARKSCORE_REQUIRE_EERC20=true; missing ${candidates.map((candidate) => candidate.key).join(", ")}`
+        : `${detail}; not configured`,
     };
   }
 

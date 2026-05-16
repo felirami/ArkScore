@@ -164,6 +164,21 @@ test("Vercel finalizer refuses invalid registry address", () => {
   assert.doesNotMatch(result.output, /vercel env add/);
 });
 
+test("Vercel finalizer refuses a missing required eERC20 demo address", () => {
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: "https://arkscore-api.up.railway.app",
+    ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
+    ARKSCORE_EERC20_DEMO_ADDRESS: "",
+    EERC20_DEMO_ADDRESS: "",
+    NEXT_PUBLIC_EERC20_DEMO_ADDRESS: "",
+    ARKSCORE_REQUIRE_EERC20: "true",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Missing eERC20 demo address/);
+  assert.doesNotMatch(result.output, /vercel env add/);
+});
+
 test("eERC20 probe is optional by default when no address is configured", () => {
   const result = runScript("scripts/probe-eerc20.ts", [], {
     ARKSCORE_EERC20_DEMO_ADDRESS: "",
@@ -200,6 +215,41 @@ test("eERC20 probe fails when the configured address has no Fuji bytecode", asyn
 
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /has no deployed bytecode on Fuji/);
+});
+
+test("live verifier fails when eERC20 is required but missing", async () => {
+  const webServer = await listen((request, response) => {
+    if (request.url === "/bundle.js") {
+      response.writeHead(200, { "content-type": "application/javascript" });
+      response.end("window.arkscore=true");
+      return;
+    }
+
+    response.writeHead(200, { "content-type": "text/html" });
+    response.end(`<main>ArkScore</main><script src="/bundle.js"></script>`);
+  });
+
+  try {
+    const result = await runScriptAsync("scripts/verify-live.ts", [], {
+      ARKSCORE_WEB_URL: webServer.url,
+      ARKSCORE_REQUIRE_EERC20: "true",
+      ARKSCORE_API_URL: "",
+      NEXT_PUBLIC_API_BASE_URL: "",
+      ARKSCORE_REGISTRY_ADDRESS: "",
+      CREDIT_SCORE_REGISTRY_ADDRESS: "",
+      REGISTRY_ADDRESS: "",
+      NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS: "",
+      ARKSCORE_EERC20_DEMO_ADDRESS: "",
+      EERC20_DEMO_ADDRESS: "",
+      NEXT_PUBLIC_EERC20_DEMO_ADDRESS: "",
+    });
+
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /Optional eERC20 demo contract/);
+    assert.match(result.output, /ARKSCORE_REQUIRE_EERC20=true/);
+  } finally {
+    await webServer.close();
+  }
 });
 
 test("Fuji registry deployer refuses missing private key before deployment", () => {

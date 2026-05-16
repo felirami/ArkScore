@@ -9,13 +9,14 @@ class RpcError extends Error {
   }
 }
 
-const strict = process.argv.includes("--strict");
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("packages/contracts/.env"),
   ...readEnvFile("apps/web/.env.local"),
   ...process.env,
 };
+const strict =
+  process.argv.includes("--strict") || env.ARKSCORE_REQUIRE_EERC20 === "true";
 const fujiRpcUrl =
   env.FUJI_RPC_URL ??
   env.NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL ??

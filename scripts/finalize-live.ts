@@ -25,6 +25,7 @@ const eerc20DemoAddress =
   env.ARKSCORE_EERC20_DEMO_ADDRESS ??
   env.EERC20_DEMO_ADDRESS ??
   env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS;
+const requireEerc20 = env.ARKSCORE_REQUIRE_EERC20 === "true";
 const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
 const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
@@ -47,6 +48,10 @@ function main() {
 
   if (eerc20DemoAddress && !isAddress(eerc20DemoAddress)) {
     fail("Invalid optional eERC20 demo address.");
+  }
+
+  if (requireEerc20 && !eerc20DemoAddress) {
+    fail("Missing eERC20 demo address while ARKSCORE_REQUIRE_EERC20=true.");
   }
 
   const envCommands = [
@@ -87,6 +92,7 @@ function main() {
     ...(eerc20DemoAddress
       ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
       : {}),
+    ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
     ARKSCORE_WEB_URL: webUrl,
   };
@@ -164,6 +170,7 @@ function renderVerifyEnv() {
     ...(eerc20DemoAddress
       ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
       : {}),
+    ...(requireEerc20 ? { ARKSCORE_REQUIRE_EERC20: "true" } : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
   };
 

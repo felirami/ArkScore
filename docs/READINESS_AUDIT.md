@@ -33,7 +33,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm probe:fuji` is available for the Fuji deployer handoff. It refuses missing or malformed private keys, checks the live Fuji chain id, and prints only the deployer address plus AVAX balance before deployment.
 
-`pnpm probe:eerc20` is available for the optional EncryptedERC handoff. It is optional by default, but when an eERC20 address is configured it checks Avalanche Fuji chain id `43113` and verifies deployed bytecode without touching token state. `pnpm probe:eerc20:strict` fails if the address is missing.
+`pnpm probe:eerc20` is available for the optional EncryptedERC handoff. It is optional by default, but when an eERC20 address is configured it checks Avalanche Fuji chain id `43113` and verifies deployed bytecode without touching token state. `pnpm probe:eerc20:strict` and `ARKSCORE_REQUIRE_EERC20=true` fail if the address is missing.
 
 `.github/workflows/ci.yml` runs `pnpm verify` and `pnpm readiness` for push, pull request, and manual workflow dispatch events.
 
@@ -43,7 +43,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm submission:evidence:write` writes a non-secret `docs/SUBMISSION_EVIDENCE.md` packet with the current commit, public deployment targets from the configured environment or Fuji deployment artifact, hosted smoke, live verifier, readiness output, and final handoff commands.
 
-`pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict` to prove the hosted Vercel bundle contains the configured Railway API URL and Fuji registry address, plus Railway health, live Wavy credential mode, production subject-hash salt, OpenAPI, no-store and rate-limited score response, live Wavy source, Fuji registry bytecode, `hasScore(bytes32)`, `getScore(bytes32)`, and authorized scorer.
+`pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict` to prove the hosted Vercel bundle contains the configured Railway API URL and Fuji registry address, plus Railway health, live Wavy credential mode, production subject-hash salt, OpenAPI, no-store and rate-limited score response, live Wavy source, Fuji registry bytecode, `hasScore(bytes32)`, `getScore(bytes32)`, and authorized scorer. If the EncryptedERC demo is included, run `pnpm verify:live:strict:eerc20`.
 
 `pnpm deploy:railway` is a dry-run Railway deploy planner. `pnpm deploy:railway:apply -- --create-domain` checks Railway auth, creates or links the Railway project, targets the configured service and environment when setting variables, uploads the API, and can generate the service domain when Railway auth is available.
 
