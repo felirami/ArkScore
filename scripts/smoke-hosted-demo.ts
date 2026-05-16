@@ -7,7 +7,7 @@ type SmokeCheck = {
 };
 
 const webUrl = normalizeBaseUrl(
-  process.env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app"
+  process.env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app",
 );
 const requiredHtml = ["ArkScore", "Avalanche Fuji"];
 const forbiddenHtml = ["Authentication Required"];
@@ -15,9 +15,10 @@ const requiredBundleText = [
   "Fetch Wavy score",
   "Mock Wavy trace",
   "Wavy risk",
+  "Subject hash",
   "Evidence hash",
   "Scorer status",
-  "Store on Fuji"
+  "Store on Fuji",
 ];
 
 main().catch((error: unknown) => {
@@ -33,14 +34,14 @@ async function main() {
   checks.push({
     label: "Public page",
     passed: response.ok,
-    detail: `${webUrl} returned ${response.status}`
+    detail: `${webUrl} returned ${response.status}`,
   });
 
   for (const text of requiredHtml) {
     checks.push({
       label: `HTML contains ${text}`,
       passed: html.includes(text),
-      detail: text
+      detail: text,
     });
   }
 
@@ -48,7 +49,7 @@ async function main() {
     checks.push({
       label: `HTML excludes ${text}`,
       passed: !html.includes(text),
-      detail: text
+      detail: text,
     });
   }
 
@@ -56,7 +57,7 @@ async function main() {
   checks.push({
     label: "Next.js chunks",
     passed: scripts.length > 0,
-    detail: `${scripts.length} script chunks discovered`
+    detail: `${scripts.length} script chunks discovered`,
   });
 
   const bundleText = await fetchBundles(scripts);
@@ -64,7 +65,7 @@ async function main() {
     checks.push({
       label: `Bundle contains ${text}`,
       passed: bundleText.includes(text),
-      detail: text
+      detail: text,
     });
   }
 
@@ -73,7 +74,7 @@ async function main() {
   console.log("# ArkScore Hosted Demo Smoke\n");
   for (const check of checks) {
     console.log(
-      `${check.passed ? "[pass]" : "[fail]"} ${check.label}: ${check.detail}`
+      `${check.passed ? "[pass]" : "[fail]"} ${check.label}: ${check.detail}`,
     );
   }
   console.log("\n## Summary\n");
@@ -87,9 +88,9 @@ async function main() {
 }
 
 function getScriptSources(html: string): string[] {
-  return [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(
-    (match) => match[1] ?? ""
-  ).filter(Boolean);
+  return [...html.matchAll(/<script[^>]+src="([^"]+)"/g)]
+    .map((match) => match[1] ?? "")
+    .filter(Boolean);
 }
 
 async function fetchBundles(scripts: string[]) {
@@ -103,7 +104,7 @@ async function fetchBundles(scripts: string[]) {
       }
 
       return response.text();
-    })
+    }),
   );
 
   return chunks.join("\n");

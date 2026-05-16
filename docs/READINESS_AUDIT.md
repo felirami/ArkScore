@@ -15,8 +15,8 @@ Status date: May 16, 2026
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
-- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app`.
-- Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, and evidence hash while Railway credentials are pending.
+- Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_3rX6XXQ9pF6DTq7RnhUkrZULqY1C`.
+- Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, subject hash, and evidence hash while Railway credentials are pending.
 
 ## Verified Locally
 
@@ -30,7 +30,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm readiness` produces a non-secret live-gate report covering Vercel reachability, Railway auth, Wavy credentials, Fuji deployer configuration, and frontend deployment variables.
 
-`pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, evidence hash, scorer status, and Store on Fuji flow.
+`pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, subject hash, evidence hash, scorer status, and Store on Fuji flow.
 
 `pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict` to prove the Railway health, OpenAPI, score response, live Wavy source, Fuji registry, and authorized scorer.
 
