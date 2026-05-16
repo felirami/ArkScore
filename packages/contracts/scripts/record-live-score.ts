@@ -1,5 +1,6 @@
 import { network } from "hardhat";
 import { computeAddress } from "ethers";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -292,7 +293,9 @@ async function fetchScore(input: {
     fail(`Score API returned ${response.status}: ${truncate(text)}`);
   }
 
-  const score = parseScorePayload(parseJson(text));
+  const scorePayload = parseJson(text);
+  const score = parseScorePayload(scorePayload);
+  assertScoreEvidenceHashMatches(scorePayload, score);
 
   if (score.address.toLowerCase() !== input.wallet.toLowerCase()) {
     fail("Score API response address did not match the requested wallet.");
@@ -319,6 +322,29 @@ async function fetchScore(input: {
   }
 
   return score;
+}
+
+function assertScoreEvidenceHashMatches(
+  payload: unknown,
+  score: ScoreApiResponse,
+) {
+  if (!isRecord(payload)) {
+    fail("Score API response must be a JSON object.");
+  }
+
+  const expected = createEvidenceHash({
+    address: score.address,
+    subjectHash: score.subjectHash,
+    chainId: score.chainId,
+    institution: score.institution,
+    source: score.source,
+    wavy: payload.wavy,
+    composite: payload.composite,
+  });
+
+  if (score.evidenceHash.toLowerCase() !== expected) {
+    fail("Score API evidenceHash did not match the returned score payload.");
+  }
 }
 
 function parseScorePayload(value: unknown): ScoreApiResponse {
@@ -675,6 +701,27 @@ function requireBytes32(value: unknown, label: string): `0x${string}` {
   }
 
   fail(`Score API response ${label} must be a bytes32 hex string.`);
+}
+
+function createEvidenceHash(payload: unknown): string {
+  return `0x${createHash("sha256").update(stableStringify(payload)).digest("hex")}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableStringify(entry)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }
 
 function parseJson(text: string): unknown {

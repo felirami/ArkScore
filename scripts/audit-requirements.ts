@@ -615,6 +615,9 @@ function checkLatestScoreRecordProof(): Check {
 function checkFinalVerificationPath(): Check {
   const rootPackage = readPackageJson("package.json");
   const liveVerifier = safeRead("scripts/verify-live.ts");
+  const scoreRecorder = safeRead(
+    "packages/contracts/scripts/record-live-score.ts",
+  );
   const scripts = rootPackage.scripts ?? {};
 
   if (
@@ -623,13 +626,14 @@ function checkFinalVerificationPath(): Check {
     scripts["finalize:live:apply"] &&
     scripts["submission:evidence:write"] &&
     scripts["readiness:strict:record"] &&
-    liveVerifier?.includes("scoreEvidenceHashMatches")
+    liveVerifier?.includes("scoreEvidenceHashMatches") &&
+    scoreRecorder?.includes("assertScoreEvidenceHashMatches")
   ) {
     return {
       label: "Final live verification and evidence path",
       status: "pass",
       detail:
-        "strict record verifier, Railway API verifier, score evidence hash check, finalizer, readiness, and evidence scripts are registered",
+        "strict record verifier, Railway API verifier, score recorder evidence hash check, finalizer, readiness, and evidence scripts are registered",
     };
   }
 
@@ -637,7 +641,7 @@ function checkFinalVerificationPath(): Check {
     label: "Final live verification and evidence path",
     status: "fail",
     detail:
-      "missing finalizer, Railway API verifier, score evidence hash check, strict live verifier, readiness, or evidence script",
+      "missing finalizer, Railway API verifier, score evidence hash checks, strict live verifier, readiness, or evidence script",
   };
 }
 

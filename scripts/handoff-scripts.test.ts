@@ -582,6 +582,7 @@ test("requirements audit maps repo readiness without leaking secrets", () => {
     result.output,
     /\[pass\] Wavy Node traceability and AI risk score:/,
   );
+  assert.match(result.output, /score recorder evidence hash check, finalizer/);
   assert.match(result.output, /\[warn\] Railway live deployment proof:/);
   assert.doesNotMatch(result.output, /should-not-print/);
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);

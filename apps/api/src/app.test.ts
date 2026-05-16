@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
+import { createEvidenceHash } from "./lib/evidence.js";
 import type { ScoreApiResponse } from "@arkscore/shared";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
@@ -154,6 +155,18 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
         payload.composite.creditScore <= 100,
     );
     assert.match(payload.evidenceHash, /^0x[a-f0-9]{64}$/);
+    assert.equal(
+      payload.evidenceHash,
+      createEvidenceHash({
+        address: payload.address,
+        subjectHash: payload.subjectHash,
+        chainId: payload.chainId,
+        institution: payload.institution,
+        source: payload.source,
+        wavy: payload.wavy,
+        composite: payload.composite,
+      }),
+    );
   });
 });
 
