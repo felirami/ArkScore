@@ -84,7 +84,10 @@ function main() {
     vercelScope,
     "--non-interactive",
   ];
-  const verifyCommand = ["pnpm", "verify:live:strict"];
+  const verifyScript = requireEerc20
+    ? "verify:live:strict:eerc20"
+    : "verify:live:strict";
+  const verifyCommand = ["pnpm", verifyScript];
   const verifyEnv = {
     ...process.env,
     ARKSCORE_API_URL: apiUrl,
@@ -103,7 +106,7 @@ function main() {
     printCommand(linkCommand);
     for (const command of envCommands) printCommand(command);
     printCommand(deployCommand);
-    console.log(`${renderVerifyEnv()} pnpm verify:live:strict`);
+    console.log(`${renderVerifyEnv()} pnpm ${verifyScript}`);
     return;
   }
 

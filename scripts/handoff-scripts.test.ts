@@ -160,6 +160,35 @@ test("Vercel finalizer dry run prints public env and strict verification command
   assert.doesNotMatch(result.output, /should-not-print/);
 });
 
+test("Vercel finalizer dry run prints strict eERC20 verification when required", () => {
+  const apiUrl = "https://arkscore-api.up.railway.app";
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const eerc20DemoAddress = "0x3333333333333333333333333333333333333333";
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: `${apiUrl}/`,
+    ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress,
+    ARKSCORE_REQUIRE_EERC20: "true",
+    VERCEL_SCOPE: "arkscore-scope",
+    VERCEL_PROJECT_NAME: "arkscore-project",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(
+    result.output,
+    new RegExp(
+      `NEXT_PUBLIC_EERC20_DEMO_ADDRESS production --value ${eerc20DemoAddress}`,
+    ),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:strict:eerc20`,
+    ),
+  );
+  assert.doesNotMatch(result.output, /pnpm verify:live:strict$/m);
+});
+
 test("Vercel finalizer refuses missing API URL before printing deploy commands", () => {
   const result = runScript("scripts/finalize-live.ts", [], {
     ARKSCORE_API_URL: "",
