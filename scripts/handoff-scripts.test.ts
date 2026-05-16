@@ -53,6 +53,78 @@ test("submission evidence can render without executing live checks", () => {
   assert.match(result.output, /pnpm verify:live:strict/);
 });
 
+test("Vercel finalizer dry run prints public env and strict verification commands", () => {
+  const apiUrl = "https://arkscore-api.up.railway.app";
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const eerc20DemoAddress = "0x3333333333333333333333333333333333333333";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: `${apiUrl}/`,
+    ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress,
+    ARKSCORE_SCORER_ADDRESS: scorerAddress,
+    VERCEL_SCOPE: "arkscore-scope",
+    VERCEL_PROJECT_NAME: "arkscore-project",
+    WAVY_NODE_API_KEY: "ApiKey should-not-print",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /Dry run/);
+  assert.match(result.output, /vercel whoami/);
+  assert.match(result.output, /vercel link --yes --project arkscore-project/);
+  assert.match(
+    result.output,
+    new RegExp(`NEXT_PUBLIC_API_BASE_URL production --value ${apiUrl}`),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS production --value ${registryAddress}`,
+    ),
+  );
+  assert.match(
+    result.output,
+    new RegExp(
+      `NEXT_PUBLIC_EERC20_DEMO_ADDRESS production --value ${eerc20DemoAddress}`,
+    ),
+  );
+  assert.match(
+    result.output,
+    /NEXT_PUBLIC_ENABLE_DEMO_FALLBACK production --value false/,
+  );
+  assert.match(result.output, /vercel deploy \. --prod/);
+  assert.match(
+    result.output,
+    new RegExp(
+      `ARKSCORE_API_URL=${apiUrl} ARKSCORE_REGISTRY_ADDRESS=${registryAddress} ARKSCORE_EERC20_DEMO_ADDRESS=${eerc20DemoAddress} ARKSCORE_SCORER_ADDRESS=${scorerAddress} pnpm verify:live:strict`,
+    ),
+  );
+  assert.doesNotMatch(result.output, /should-not-print/);
+});
+
+test("Vercel finalizer refuses missing API URL before printing deploy commands", () => {
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: "",
+    NEXT_PUBLIC_API_BASE_URL: "",
+    ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Missing ARKSCORE_API_URL/);
+  assert.doesNotMatch(result.output, /vercel deploy/);
+});
+
+test("Vercel finalizer refuses invalid registry address", () => {
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: "https://arkscore-api.up.railway.app",
+    ARKSCORE_REGISTRY_ADDRESS: "not-a-contract-address",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Missing registry address/);
+  assert.doesNotMatch(result.output, /vercel env add/);
+});
+
 test("live verifier proves registry getScore readback ABI", async () => {
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const webServer = await listen((request, response) => {
