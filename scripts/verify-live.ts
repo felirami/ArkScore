@@ -372,10 +372,11 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     const traceabilitySchema = getOpenApiSchema(openApi, "WavyTraceability");
     const contractValid =
       openApiResponse.ok &&
+      Boolean(openApi) &&
       Boolean(openApi?.openapi?.match(/^3\./)) &&
-      openApi.info?.title === "ArkScore API" &&
-      Boolean(openApi.paths?.["/health"]) &&
-      Boolean(openApi.paths?.["/api/score/{address}"]) &&
+      openApi?.info?.title === "ArkScore API" &&
+      Boolean(openApi?.paths?.["/health"]) &&
+      Boolean(openApi?.paths?.["/api/score/{address}"]) &&
       schemaRequires(healthSchema, "wavyCredentialsConfigured") &&
       schemaHasProperty(healthSchema, "wavyCredentialsConfigured") &&
       schemaRequires(healthSchema, "subjectHashSaltConfigured") &&

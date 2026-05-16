@@ -1,0 +1,195 @@
+import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import process from "node:process";
+
+type CommandResult = {
+  label: string;
+  command: string;
+  exitCode: number;
+  output: string;
+};
+
+type ShellResult = {
+  exitCode: number;
+  output: string;
+};
+
+const args = new Set(process.argv.slice(2));
+const shouldWrite = args.has("--write");
+const skipChecks = args.has("--skip-checks");
+const includeVerify = args.has("--include-verify");
+const outputPath =
+  readArgValue("--output") ??
+  join(process.cwd(), "docs", "SUBMISSION_EVIDENCE.md");
+
+main();
+
+function main() {
+  const generatedAt = new Date().toISOString();
+  const gitCommit = commandText("git", ["rev-parse", "--short", "HEAD"]);
+  const gitBranch = commandText("git", ["branch", "--show-current"]);
+  const gitStatus = commandText("git", ["status", "--short"]);
+  const checkResults = skipChecks ? [] : runChecks();
+  const markdown = renderReport({
+    generatedAt,
+    gitCommit,
+    gitBranch,
+    gitStatus,
+    checkResults,
+  });
+
+  if (shouldWrite) {
+    mkdirSync(dirname(outputPath), { recursive: true });
+    writeFileSync(outputPath, markdown);
+    console.log(`Wrote ${outputPath}`);
+  } else {
+    process.stdout.write(markdown);
+  }
+
+  const failedChecks = checkResults.filter((result) => result.exitCode !== 0);
+  if (failedChecks.length > 0) {
+    process.exitCode = 1;
+  }
+}
+
+function runChecks(): CommandResult[] {
+  const checks = [
+    ...(includeVerify
+      ? [{ label: "Full repo verification", command: "pnpm --silent verify" }]
+      : []),
+    { label: "Hosted demo smoke", command: "pnpm --silent smoke:web" },
+    {
+      label: "Live deployment verifier",
+      command: "pnpm --silent verify:live",
+    },
+    { label: "Readiness gate", command: "pnpm --silent readiness" },
+  ];
+
+  return checks.map((check) => {
+    const [executable, ...commandArgs] = check.command.split(" ");
+    const result = runCommand(executable!, commandArgs);
+
+    return {
+      ...check,
+      exitCode: result.exitCode,
+      output: result.output,
+    };
+  });
+}
+
+function renderReport(input: {
+  generatedAt: string;
+  gitCommit: string;
+  gitBranch: string;
+  gitStatus: string;
+  checkResults: CommandResult[];
+}) {
+  const checkSummary =
+    input.checkResults.length === 0
+      ? "- Checks skipped with `--skip-checks`."
+      : input.checkResults
+          .map(
+            (result) =>
+              `- ${result.exitCode === 0 ? "PASS" : "FAIL"}: ${result.label} (\`${result.command}\`)`,
+          )
+          .join("\n");
+
+  const checkDetails =
+    input.checkResults.length === 0
+      ? ""
+      : `\n## Check Output\n\n${input.checkResults
+          .map(
+            (result) => `### ${result.label}
+
+- Command: \`${result.command}\`
+- Exit code: \`${result.exitCode}\`
+
+\`\`\`text
+${result.output.trim() || "(no output)"}
+\`\`\``,
+          )
+          .join("\n\n")}\n`;
+  const worktreeDetails = input.gitStatus
+    ? `\n\n\`\`\`text\n${input.gitStatus}\n\`\`\``
+    : "";
+
+  return `# ArkScore Submission Evidence
+
+Generated: ${input.generatedAt}
+
+## Repository Snapshot
+
+- Branch: \`${input.gitBranch || "unknown"}\`
+- Commit: \`${input.gitCommit || "unknown"}\`
+- Worktree: ${input.gitStatus ? "dirty when report was generated" : "clean when report was generated"}${worktreeDetails}
+
+## Deployment Targets
+
+- Vercel frontend: https://arkscore-seven.vercel.app
+- Railway backend: \`TBD until Railway auth and Wavy credentials are configured\`
+- Avalanche Fuji \`CreditScoreRegistry\`: \`TBD until FUJI_PRIVATE_KEY is funded and deployed\`
+- Optional eERC20 demo contract: \`TBD unless the EncryptedERC demo is deployed\`
+
+## Evidence Summary
+
+${checkSummary}
+
+## Current Scope Status
+
+- Frontend dashboard: production-hosted demo fallback is public and judge-usable.
+- Backend API: Railway-ready Express service is built and tested locally, but live deployment still needs Railway auth and Wavy credentials.
+- Wavy Node: live adapter and probe tooling are present; live proof needs \`WAVY_NODE_API_KEY\` and \`WAVY_NODE_PROJECT_ID\`.
+- Fuji registry: Solidity contract and scripts are ready; live proof needs funded \`FUJI_PRIVATE_KEY\`, deployed registry address, and authorized scorer wallet.
+- Privacy model: API returns a backend-derived \`subjectHash\`; the contract stores hashed subjects, evidence hashes, Wavy analysis ids, and institutional decisions instead of raw scored wallets.
+
+## Final Handoff Commands
+
+\`\`\`bash
+pnpm probe:wavy
+pnpm probe:fuji
+pnpm deploy:railway:apply -- --create-domain
+pnpm --filter @arkscore/contracts deploy:fuji
+pnpm --filter @arkscore/contracts scorer:fuji
+pnpm record:fuji
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
+pnpm verify:live:strict
+\`\`\`
+${checkDetails}`;
+}
+
+function commandText(command: string, commandArgs: string[]) {
+  return runCommand(command, commandArgs).output.trim();
+}
+
+function runCommand(command: string, commandArgs: string[]): ShellResult {
+  const result = spawnSync(command, commandArgs, {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    env: process.env,
+  });
+  const output = stripAnsi(
+    [result.stdout, result.stderr].filter(Boolean).join("\n"),
+  );
+
+  return {
+    exitCode:
+      typeof result.status === "number" ? result.status : result.error ? 1 : 0,
+    output:
+      output.trim() ||
+      (result.error instanceof Error ? result.error.message : ""),
+  };
+}
+
+function readArgValue(name: string) {
+  const exactPrefix = `${name}=`;
+  const value = process.argv
+    .slice(2)
+    .find((entry) => entry.startsWith(exactPrefix));
+
+  return value?.slice(exactPrefix.length);
+}
+
+function stripAnsi(value: string) {
+  return value.replace(/\u001B\[[0-9;]*m/g, "");
+}

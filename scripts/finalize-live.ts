@@ -158,14 +158,16 @@ function printCommand(command: string[]) {
 }
 
 function renderVerifyEnv() {
-  return Object.entries({
-    ARKSCORE_API_URL: apiUrl,
-    ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+  const verifyEnv: Record<string, string> = {
+    ARKSCORE_API_URL: apiUrl ?? "",
+    ARKSCORE_REGISTRY_ADDRESS: registryAddress ?? "",
     ...(eerc20DemoAddress
       ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
       : {}),
     ...(scorerAddress ? { ARKSCORE_SCORER_ADDRESS: scorerAddress } : {}),
-  })
+  };
+
+  return Object.entries(verifyEnv)
     .map(([key, value]) => `${key}=${shellEscape(value)}`)
     .join(" ");
 }
