@@ -416,6 +416,7 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       ok?: boolean;
       service?: string;
       wavyCredentialsConfigured?: boolean;
+      wavyChainId?: number;
       subjectHashSaltConfigured?: boolean;
       mockMode?: boolean;
     } | null;
@@ -439,6 +440,20 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     );
 
     if (healthValid) {
+      checks.push(
+        health.wavyChainId === 43113
+          ? {
+              label: "Railway Wavy chain",
+              status: "pass",
+              detail: "Wavy Node scoring is pinned to Avalanche Fuji 43113",
+            }
+          : {
+              label: "Railway Wavy chain",
+              status: "fail",
+              detail: `expected wavyChainId 43113, received ${health.wavyChainId ?? "missing"}`,
+            },
+      );
+
       checks.push(
         health.subjectHashSaltConfigured === true
           ? {
@@ -508,6 +523,8 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       responseDocumentsHeader(scoreOperation, "200", "Cache-Control") &&
       schemaRequires(healthSchema, "wavyCredentialsConfigured") &&
       schemaHasProperty(healthSchema, "wavyCredentialsConfigured") &&
+      schemaRequires(healthSchema, "wavyChainId") &&
+      schemaHasProperty(healthSchema, "wavyChainId") &&
       schemaRequires(healthSchema, "subjectHashSaltConfigured") &&
       schemaHasProperty(healthSchema, "subjectHashSaltConfigured") &&
       schemaRequires(healthSchema, "mockMode") &&

@@ -1472,6 +1472,10 @@ test("live verifier preflight skips Vercel and proves API plus registry", async 
   assert.match(result.output, /Railway API health: .*returned ok/);
   assert.match(
     result.output,
+    /Railway Wavy chain: Wavy Node scoring is pinned to Avalanche Fuji 43113/,
+  );
+  assert.match(
+    result.output,
     /Railway API score: live Wavy Node response; Bankaool score response is valid, no-store, and rate-limited/,
   );
   assert.match(
@@ -1489,6 +1493,10 @@ test("live verifier preflight ignores empty primary aliases", async () => {
   assert.match(result.output, /Railway API health: .*returned ok/);
   assert.match(
     result.output,
+    /Railway Wavy chain: Wavy Node scoring is pinned to Avalanche Fuji 43113/,
+  );
+  assert.match(
+    result.output,
     /Fuji registry bytecode: .*has deployed bytecode/,
   );
   assert.doesNotMatch(
@@ -1498,6 +1506,18 @@ test("live verifier preflight ignores empty primary aliases", async () => {
   assert.doesNotMatch(
     result.output,
     /missing ARKSCORE_REGISTRY_ADDRESS or NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS/,
+  );
+});
+
+test("live verifier fails when Railway health reports a non-Fuji Wavy chain", async () => {
+  const result = await runLivePreflightVerifierWithMocks({
+    healthWavyChainId: 1,
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Railway Wavy chain: expected wavyChainId 43113, received 1/,
   );
 });
 
@@ -2026,7 +2046,11 @@ async function runLiveVerifierWithMockScoreRecord(
 }
 
 async function runLivePreflightVerifierWithMocks(
-  options: { useFallbackAliases?: boolean; openApiServerUrl?: string } = {},
+  options: {
+    useFallbackAliases?: boolean;
+    openApiServerUrl?: string;
+    healthWavyChainId?: number;
+  } = {},
 ) {
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const scorerAddress = "0x4444444444444444444444444444444444444444";
@@ -2040,6 +2064,7 @@ async function runLivePreflightVerifierWithMocks(
           ok: true,
           service: "arkscore-api",
           wavyCredentialsConfigured: true,
+          wavyChainId: options.healthWavyChainId ?? 43113,
           subjectHashSaltConfigured: true,
           mockMode: false,
         }),
@@ -2229,11 +2254,13 @@ function createOpenApiFixture(serverUrl: string) {
         HealthResponse: {
           required: [
             "wavyCredentialsConfigured",
+            "wavyChainId",
             "subjectHashSaltConfigured",
             "mockMode",
           ],
           properties: {
             wavyCredentialsConfigured: {},
+            wavyChainId: {},
             subjectHashSaltConfigured: {},
             mockMode: {},
           },

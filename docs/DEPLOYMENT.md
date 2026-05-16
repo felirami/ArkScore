@@ -99,7 +99,7 @@ RAILWAY_TOKEN=
 
 Live scoring follows the Wavy Node quickstart sequence: register the wallet for project monitoring, then run the risk scan.
 
-`WAVY_NODE_CHAIN_ID` must stay `43113` for Avalanche Fuji so the Wavy score, Railway API response, and Fuji registry proof all describe the same network.
+`WAVY_NODE_CHAIN_ID` must stay `43113` for Avalanche Fuji so the Wavy score, Railway API response, and Fuji registry proof all describe the same network. The API runtime config refuses any other chain id before serving scores.
 
 Registration uses a deterministic non-PII `foreign_user_id` based on the wallet address:
 

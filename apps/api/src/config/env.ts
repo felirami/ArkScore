@@ -4,15 +4,23 @@ import { z } from "zod";
 loadEnv({ quiet: true });
 
 const demoSubjectHashSalt = "arkscore-demo-subject-hash-salt";
+export const avalancheFujiChainId = 43113;
 
-const envSchema = z.object({
+export const envSchema = z.object({
   NODE_ENV: z.string().default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
   WAVY_NODE_API_KEY: z.string().optional(),
   WAVY_NODE_PROJECT_ID: z.string().optional(),
   WAVY_NODE_BASE_URL: z.string().url().default("https://api.wavynode.com/v1"),
-  WAVY_NODE_CHAIN_ID: z.coerce.number().int().positive().default(43113),
+  WAVY_NODE_CHAIN_ID: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(avalancheFujiChainId)
+    .refine((chainId) => chainId === avalancheFujiChainId, {
+      message: `WAVY_NODE_CHAIN_ID must be Avalanche Fuji chain id ${avalancheFujiChainId}.`,
+    }),
   WAVY_NODE_TIMEOUT_MS: z.coerce.number().int().positive().default(15000),
   WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
   WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
@@ -26,7 +34,11 @@ const envSchema = z.object({
   ARKSCORE_SUBJECT_HASH_SALT: z.string().default(demoSubjectHashSalt),
 });
 
-export const env = envSchema.parse(process.env);
+export function parseEnv(input: Record<string, string | undefined>) {
+  return envSchema.parse(input);
+}
+
+export const env = parseEnv(process.env);
 
 export function getAllowedOrigins(): string[] {
   return env.ALLOWED_ORIGINS.split(",")

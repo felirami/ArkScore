@@ -263,30 +263,37 @@ function checkRailwayConfig(): Check {
 
 function checkWavyIntegration(): Check {
   const adapter = safeRead("apps/api/src/services/wavy-node.ts");
+  const apiEnv = safeRead("apps/api/src/config/env.ts");
+  const apiPackage = readPackageJson("apps/api/package.json");
   const shared = safeRead("packages/shared/src/index.ts");
   const hasWavyFlow =
     Boolean(adapter?.includes("/chains")) &&
     Boolean(adapter?.includes("/projects/")) &&
     Boolean(adapter?.includes("scan-risk")) &&
     Boolean(adapter?.includes("x-api-key"));
+  const hasFujiRuntimePin =
+    Boolean(apiEnv?.includes("avalancheFujiChainId = 43113")) &&
+    Boolean(apiEnv?.includes("WAVY_NODE_CHAIN_ID must be Avalanche Fuji")) &&
+    Boolean(apiPackage?.scripts?.test?.includes("src/config/env.test.ts"));
   const hasTraceability =
     Boolean(shared?.includes('riskScoreScale: "0-100"')) &&
     Boolean(shared?.includes('provider: "Wavy Node"')) &&
     Boolean(shared?.includes('scanType: "wallet-risk"'));
 
-  if (hasWavyFlow && hasTraceability) {
+  if (hasWavyFlow && hasFujiRuntimePin && hasTraceability) {
     return {
       label: "Wavy Node traceability and AI risk score",
       status: "pass",
       detail:
-        "adapter includes chains/register/scan-risk flow and 0-100 traceability fields",
+        "adapter includes chains/register/scan-risk flow, Fuji-only runtime config, and 0-100 traceability fields",
     };
   }
 
   return {
     label: "Wavy Node traceability and AI risk score",
     status: "fail",
-    detail: "missing Wavy API flow or explicit traceability fields",
+    detail:
+      "missing Wavy API flow, Fuji-only runtime config, or explicit traceability fields",
   };
 }
 

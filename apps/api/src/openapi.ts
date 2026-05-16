@@ -200,6 +200,7 @@ export const openApiDocument = {
           "ok",
           "service",
           "wavyCredentialsConfigured",
+          "wavyChainId",
           "subjectHashSaltConfigured",
           "mockMode",
         ],
@@ -216,6 +217,13 @@ export const openApiDocument = {
             type: "boolean",
             description:
               "True when WAVY_NODE_API_KEY and WAVY_NODE_PROJECT_ID are configured.",
+          },
+          wavyChainId: {
+            type: "integer",
+            enum: [43113],
+            description:
+              "Avalanche Fuji chain id used for Wavy Node scoring and Fuji registry evidence.",
+            example: 43113,
           },
           subjectHashSaltConfigured: {
             type: "boolean",

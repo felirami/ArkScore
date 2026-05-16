@@ -32,6 +32,7 @@ test("health reports mock scoring mode when credentials are absent", async () =>
       ok: boolean;
       service: string;
       mockMode: boolean;
+      wavyChainId: number;
       subjectHashSaltConfigured: boolean;
     };
 
@@ -39,6 +40,7 @@ test("health reports mock scoring mode when credentials are absent", async () =>
     assert.equal(payload.ok, true);
     assert.equal(payload.service, "arkscore-api");
     assert.equal(payload.mockMode, true);
+    assert.equal(payload.wavyChainId, 43113);
     assert.equal(payload.subjectHashSaltConfigured, false);
   });
 });
@@ -89,7 +91,9 @@ test("openapi document describes the public scoring contract", async () => {
     assert.ok(wavySchema);
     assert.ok(traceabilitySchema);
     assert.ok(healthSchema.required?.includes("subjectHashSaltConfigured"));
+    assert.ok(healthSchema.required?.includes("wavyChainId"));
     assert.ok(healthSchema.properties?.subjectHashSaltConfigured);
+    assert.ok(healthSchema.properties?.wavyChainId);
     assert.ok(scoreSchema.required?.includes("subjectHash"));
     assert.equal(subjectHashSchema?.pattern, "^0x[a-fA-F0-9]{64}$");
     assert.ok(wavySchema.required?.includes("traceability"));

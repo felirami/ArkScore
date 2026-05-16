@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit"
+    "test": "NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts src/config/env.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit"
   },
   "dependencies": {
     "@arkscore/shared": "workspace:*",
