@@ -27,6 +27,9 @@ const requiredBundleText = [
   "Scorer status",
   "Subject status",
   "Store on Fuji",
+  "Mock scores are read-only",
+  "Live Wavy required",
+  "Only live Wavy Node scores can be stored on Fuji",
   "On-chain readback",
   "Evidence match",
 ];
