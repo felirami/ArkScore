@@ -48,6 +48,14 @@ test("root package exposes Railway CLI handoff scripts", () => {
     packageJson.scripts["verify:railway:live"],
     "tsx scripts/verify-live.ts --skip-web --skip-contract --skip-eerc20 --strict --require-wavy",
   );
+  assert.equal(
+    packageJson.scripts["submission:evidence:full"],
+    "tsx scripts/submission-evidence.ts --include-verify",
+  );
+  assert.equal(
+    packageJson.scripts["submission:evidence:write:full"],
+    "tsx scripts/submission-evidence.ts --write --include-verify",
+  );
   assert.match(packageJson.scripts.verify, /pnpm verify:railway/);
   assert.match(railwayConfig, /"\/config\/\*\*"/);
   assert.match(railwayArchiveVerifier, /pnpm", \["install"/);
@@ -392,6 +400,78 @@ if (args === "--silent verify:railway") {
     );
     assert.match(output, /WARN: Readiness gate \(`pnpm --silent readiness`\)/);
     assert.match(output, /- Status: `WARN`/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("submission evidence full mode includes monorepo verification", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-evidence-full-"));
+  const fakeBin = join(tempDir, "bin");
+  const fakePnpmPath = join(fakeBin, "pnpm");
+
+  mkdirSync(fakeBin, { recursive: true });
+  writeFileSync(
+    fakePnpmPath,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2).join(" ");
+if (args === "--silent verify") {
+  console.log("[pass] Full monorepo verification completed");
+} else if (args === "--silent verify:railway") {
+  console.log("[pass] Railway payload install/build/test completed");
+} else if (args === "--silent smoke:web") {
+  console.log("[pass] Hosted demo smoke");
+} else if (args === "--silent verify:live") {
+  console.log("[warn] Railway API: missing ARKSCORE_API_URL");
+} else if (args === "--silent audit:requirements") {
+  console.log("## Summary");
+  console.log("- Warnings: 4");
+} else if (args === "--silent judge:demo") {
+  console.log("## Current Blockers");
+  console.log("- Railway API URL is missing.");
+} else if (args === "--silent readiness") {
+  console.log("[warn] Wavy Node credentials: missing WAVY_NODE_API_KEY");
+} else {
+  console.error("unexpected pnpm args: " + args);
+  process.exit(1);
+}
+`,
+  );
+  chmodSync(fakePnpmPath, 0o755);
+
+  try {
+    const result = spawnSync(
+      join(process.cwd(), "node_modules", ".bin", "tsx"),
+      ["scripts/submission-evidence.ts", "--include-verify"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${fakeBin}${delimiter}${process.env.PATH ?? ""}`,
+          ARKSCORE_SCORE_RECORD_ARTIFACT: join(
+            tempDir,
+            "missing-score-record.json",
+          ),
+        },
+      },
+    );
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
+
+    assert.equal(result.status, 0, output);
+    assert.match(
+      output,
+      /PASS: Full repo verification \(`pnpm --silent verify`\)/,
+    );
+    assert.match(output, /\[pass\] Full monorepo verification completed/);
+    assert.match(
+      output,
+      /PASS: Railway archive verifier \(`pnpm --silent verify:railway`\)/,
+    );
+    assert.match(
+      output,
+      /WARN: Live deployment verifier \(`pnpm --silent verify:live`\)/,
+    );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

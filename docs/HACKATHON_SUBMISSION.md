@@ -35,7 +35,7 @@ ArkScore turns Wavy Node wallet traceability and AI risk into an auditable Avala
 - Authorized scorer permissions keep the registry closer to an institutional oracle model.
 - `pnpm audit:requirements` gives judges a non-secret requirement-by-requirement map of ready components and remaining live proofs.
 - `pnpm judge:demo` prints a current environment-aware walkthrough for fallback demos and final live proof mode.
-- `pnpm submission:evidence:write` generates `docs/SUBMISSION_EVIDENCE.md`, a non-secret evidence packet with the current commit, hosted demo smoke, live verifier, requirements audit, readiness output, and final handoff commands.
+- `pnpm submission:evidence:write` generates `docs/SUBMISSION_EVIDENCE.md`, a non-secret evidence packet with the current commit, hosted demo smoke, live verifier, requirements audit, readiness output, and final handoff commands; `pnpm submission:evidence:write:full` also embeds the full `pnpm verify` output for the final all-gates packet.
 
 ## Links
 
