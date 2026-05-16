@@ -1,10 +1,13 @@
 import { strict as assert } from "node:assert";
 import { spawn, spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import {
   createServer,
   type IncomingMessage,
   type ServerResponse,
 } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
 test("Railway dry run prints redacted secret variable commands", () => {
@@ -107,6 +110,53 @@ test("submission evidence renders configured public deployment targets only", ()
   );
   assert.doesNotMatch(result.output, /should-not-print/);
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
+});
+
+test("submission evidence includes the latest Fuji score record proof", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-evidence-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify({
+      transactionHash:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      blockNumber: 12345,
+      subjectHash:
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      institution: "bankaool",
+      source: "wavy",
+      chainId: 43113,
+      wavy: {
+        analysisId: "wavy-live-123",
+        evidenceHash:
+          "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        riskScore: 18,
+      },
+      composite: {
+        creditScore: 82,
+        decision: "APPROVE_BANKAOOL_LOAN",
+      },
+    }),
+  );
+
+  try {
+    const result = runScript(
+      "scripts/submission-evidence.ts",
+      ["--skip-checks"],
+      {
+        ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      },
+    );
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /Latest Fuji score record/);
+    assert.match(result.output, /wavy-live-123/);
+    assert.match(result.output, /APPROVE_BANKAOOL_LOAN/);
+    assert.match(result.output, /Scores: Wavy `18\/100`, composite `82\/100`/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test("submission evidence renders strict eERC20 handoff when required", () => {

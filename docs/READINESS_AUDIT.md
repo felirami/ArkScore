@@ -41,7 +41,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, traceability, AI risk scale, subject hash, subject status, evidence hash, scorer status, Store on Fuji flow, and on-chain readback evidence match.
 
-`pnpm submission:evidence:write` writes a non-secret `docs/SUBMISSION_EVIDENCE.md` packet with the current commit, public deployment targets from the configured environment or Fuji deployment artifact, hosted smoke, live verifier, readiness output, and final handoff commands. When `ARKSCORE_REQUIRE_EERC20=true`, the generated handoff commands use `pnpm probe:eerc20:strict`, `ARKSCORE_REQUIRE_EERC20=true pnpm finalize:live:apply`, and `pnpm verify:live:strict:eerc20`.
+`pnpm submission:evidence:write` writes a non-secret `docs/SUBMISSION_EVIDENCE.md` packet with the current commit, public deployment targets from the configured environment or Fuji deployment artifact, the latest Fuji score-record proof when `LatestScoreRecord.json` exists, hosted smoke, live verifier, readiness output, and final handoff commands. When `ARKSCORE_REQUIRE_EERC20=true`, the generated handoff commands use `pnpm probe:eerc20:strict`, `ARKSCORE_REQUIRE_EERC20=true pnpm finalize:live:apply`, and `pnpm verify:live:strict:eerc20`.
 
 `pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; before final Vercel env/deploy mutation, run `pnpm verify:live:preflight` to prove Railway health, live Wavy source, production subject-hash salt, OpenAPI, no-store and rate-limited score response, Fuji registry bytecode, `hasScore(bytes32)`, `getScore(bytes32)`, authorized scorer, and optional eERC20 bytecode while skipping the static bundle check. After final deployment, run `pnpm verify:live:strict` to prove those live gates plus the hosted Vercel bundle contains the configured Railway API URL and Fuji registry address. If the EncryptedERC demo is included, run `pnpm verify:live:strict:eerc20`.
 
@@ -51,7 +51,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm --filter @arkscore/contracts scorer:fuji` authorizes or revokes the wallet that will submit score records from the dashboard. Strict live verification checks `ARKSCORE_SCORER_ADDRESS` with `isScorer(address)`.
 
-`pnpm record:fuji` is available for the final end-to-end oracle proof. It fetches a Railway score for `ARKSCORE_TEST_WALLET`, requires live Wavy mode unless `ARKSCORE_ALLOW_MOCK_RECORD=true` is set, writes the returned subject hash and evidence hash to `CreditScoreRegistry`, then reads the record back from Fuji and verifies it matches the API response.
+`pnpm record:fuji` is available for the final end-to-end oracle proof. It fetches a Railway score for `ARKSCORE_TEST_WALLET`, requires live Wavy mode unless `ARKSCORE_ALLOW_MOCK_RECORD=true` is set, writes the returned subject hash and evidence hash to `CreditScoreRegistry`, reads the record back from Fuji, verifies it matches the API response, and writes `packages/contracts/deployments/fuji/LatestScoreRecord.json` for the evidence packet.
 
 ## Pending Credentials
 

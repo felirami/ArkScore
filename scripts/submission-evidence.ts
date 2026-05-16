@@ -22,6 +22,27 @@ type DeploymentTargets = {
   webUrl: string;
 };
 
+type ScoreRecordProof = {
+  blockNumber?: number | null;
+  chainId?: number;
+  composite?: {
+    creditScore?: number;
+    decision?: string;
+  };
+  generatedAt?: string;
+  institution?: string;
+  registryAddress?: string;
+  scorerAddress?: string;
+  source?: string;
+  subjectHash?: string;
+  transactionHash?: string;
+  wavy?: {
+    analysisId?: string;
+    evidenceHash?: string;
+    riskScore?: number;
+  };
+};
+
 type ReportInput = {
   generatedAt: string;
   gitCommit: string;
@@ -29,6 +50,7 @@ type ReportInput = {
   gitStatus: string;
   checkResults: CommandResult[];
   deploymentTargets: DeploymentTargets;
+  scoreRecordProof?: ScoreRecordProof;
   requireEerc20: boolean;
 };
 
@@ -62,6 +84,7 @@ function main() {
     gitStatus,
     checkResults,
     deploymentTargets: getDeploymentTargets(),
+    scoreRecordProof: readScoreRecordProof(),
     requireEerc20: env.ARKSCORE_REQUIRE_EERC20 === "true",
   });
 
@@ -150,6 +173,7 @@ Generated: ${input.generatedAt}
 - Railway backend: ${renderUrlOrTbd(input.deploymentTargets.apiUrl, "TBD until Railway auth and Wavy credentials are configured")}
 - Avalanche Fuji \`CreditScoreRegistry\`: ${renderAddressOrTbd(input.deploymentTargets.registryAddress, "TBD until FUJI_PRIVATE_KEY is funded and deployed")}
 - Optional eERC20 demo contract: ${renderAddressOrTbd(input.deploymentTargets.eerc20DemoAddress, "TBD unless the EncryptedERC demo is deployed")}
+${renderScoreRecordProof(input.scoreRecordProof)}
 
 ## Evidence Summary
 
@@ -286,6 +310,20 @@ function readRegistryDeployment(): { address?: string } | undefined {
   }
 }
 
+function readScoreRecordProof(): ScoreRecordProof | undefined {
+  const path =
+    env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
+    "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+
+  if (!existsSync(path)) return undefined;
+
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as ScoreRecordProof;
+  } catch {
+    return undefined;
+  }
+}
+
 function firstValidAddress(values: Array<string | undefined>) {
   return values.find((value) => value && isAddress(value));
 }
@@ -305,6 +343,24 @@ function renderUrlOrTbd(value: string | undefined, fallback: string) {
 
 function renderAddressOrTbd(value: string | undefined, fallback: string) {
   return value ? `\`${value}\`` : `\`${fallback}\``;
+}
+
+function renderScoreRecordProof(proof: ScoreRecordProof | undefined) {
+  if (!proof) {
+    return "- Latest Fuji score record: `TBD until pnpm record:fuji writes LatestScoreRecord.json`";
+  }
+
+  return [
+    "- Latest Fuji score record:",
+    `  - Transaction: \`${proof.transactionHash ?? "unknown"}\``,
+    `  - Block: \`${proof.blockNumber ?? "unknown"}\``,
+    `  - Subject hash: \`${proof.subjectHash ?? "unknown"}\``,
+    `  - Evidence hash: \`${proof.wavy?.evidenceHash ?? "unknown"}\``,
+    `  - Wavy analysis id: \`${proof.wavy?.analysisId ?? "unknown"}\``,
+    `  - Scores: Wavy \`${proof.wavy?.riskScore ?? "unknown"}/100\`, composite \`${proof.composite?.creditScore ?? "unknown"}/100\``,
+    `  - Decision: \`${proof.composite?.decision ?? "unknown"}\` for \`${proof.institution ?? "unknown"}\``,
+    `  - Source: \`${proof.source ?? "unknown"}\` on chain \`${proof.chainId ?? "unknown"}\``,
+  ].join("\n");
 }
 
 function stripAnsi(value: string) {

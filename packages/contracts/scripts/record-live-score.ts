@@ -1,5 +1,5 @@
 import { network } from "hardhat";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,6 +13,45 @@ type ScoreSource = "wavy" | "mock";
 
 type DeploymentArtifact = {
   address?: string;
+};
+
+type ScoreRecordArtifact = {
+  generatedAt: string;
+  apiUrl: string;
+  registryAddress: string;
+  scorerAddress: string;
+  subjectHash: string;
+  requestedWallet: string;
+  institution: Institution;
+  source: ScoreSource;
+  chainId: number;
+  transactionHash: string;
+  blockNumber: number | null;
+  previousRecord: boolean;
+  wavy: {
+    analysisId: string;
+    riskScore: number;
+    riskLevel?: string | undefined;
+    evidenceHash: string;
+    traceability: {
+      provider: string;
+      network?: string | undefined;
+      scanType?: string | undefined;
+      riskScoreScale: string;
+      transactionsAnalyzed?: number | undefined;
+      patternsCount?: number | undefined;
+    };
+  };
+  composite: {
+    creditScore: number;
+    decision: InstitutionDecision;
+    decisionEnum: number;
+    decisionLabel?: string | undefined;
+  };
+  stored: {
+    submitter: string;
+    updatedAt: string;
+  };
 };
 
 type ScoreApiResponse = {
@@ -199,10 +238,23 @@ async function main() {
 
   const stored = await registry.getScore(score.subjectHash);
   verifyStoredScore({ stored, score, decision });
+  const artifactPath = writeScoreRecordArtifact({
+    apiUrl,
+    registryAddress,
+    scorerAddress,
+    wallet,
+    score,
+    decision,
+    hadRecord,
+    transactionHash: tx.hash,
+    blockNumber: receipt?.blockNumber ?? null,
+    stored,
+  });
 
   console.log("[pass] Stored Fuji record matches the live Wavy API response");
   console.log(`submitter=${stored.submitter}`);
   console.log(`updatedAt=${stored.updatedAt.toString()}`);
+  console.log(`[pass] Wrote non-secret score record artifact ${artifactPath}`);
 }
 
 async function fetchScore(input: {
@@ -367,6 +419,63 @@ function verifyStoredScore(input: {
       fail(`Stored ${key} mismatch after Fuji write.`);
     }
   }
+}
+
+function writeScoreRecordArtifact(input: {
+  apiUrl: string;
+  registryAddress: string;
+  scorerAddress: string;
+  wallet: string;
+  score: ScoreApiResponse;
+  decision: number;
+  hadRecord: boolean;
+  transactionHash: string;
+  blockNumber: number | null;
+  stored: ScoreRecord;
+}) {
+  const artifact: ScoreRecordArtifact = {
+    generatedAt: new Date().toISOString(),
+    apiUrl: input.apiUrl,
+    registryAddress: input.registryAddress,
+    scorerAddress: input.scorerAddress,
+    subjectHash: input.score.subjectHash,
+    requestedWallet: input.wallet,
+    institution: input.score.institution,
+    source: input.score.source,
+    chainId: input.score.chainId,
+    transactionHash: input.transactionHash,
+    blockNumber: input.blockNumber,
+    previousRecord: input.hadRecord,
+    wavy: {
+      analysisId: input.score.wavy.analysisId,
+      riskScore: input.score.wavy.riskScore,
+      riskLevel: input.score.wavy.riskLevel,
+      evidenceHash: input.score.evidenceHash,
+      traceability: input.score.wavy.traceability,
+    },
+    composite: {
+      creditScore: input.score.composite.creditScore,
+      decision: input.score.composite.decision,
+      decisionEnum: input.decision,
+      decisionLabel: input.score.composite.decisionLabel,
+    },
+    stored: {
+      submitter: input.stored.submitter,
+      updatedAt: input.stored.updatedAt.toString(),
+    },
+  };
+  const path = join(
+    packageDir,
+    "..",
+    "deployments",
+    "fuji",
+    "LatestScoreRecord.json",
+  );
+
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(artifact, null, 2)}\n`);
+
+  return path;
 }
 
 function envRegistryAddress(): string {
