@@ -355,9 +355,41 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
     });
   }
 
+  checks.push(await verifyRegistryAbi(address));
   checks.push(...(await verifyScorer(address, scorerAddress)));
 
   return checks;
+}
+
+async function verifyRegistryAbi(registry: string): Promise<Check> {
+  try {
+    const subjectHash = "0".repeat(64);
+    const call = await rpc<string>("eth_call", [
+      { to: registry, data: `0x92b8c652${subjectHash}` },
+      "latest",
+    ]);
+
+    return isEncodedBool(call)
+      ? {
+          label: "Fuji registry ABI",
+          status: "pass",
+          detail: `hasScore(bytes32) returned ${decodeBool(call)}`,
+        }
+      : {
+          label: "Fuji registry ABI",
+          status: "fail",
+          detail: "hasScore(bytes32) did not return an encoded bool",
+        };
+  } catch (error) {
+    return {
+      label: "Fuji registry ABI",
+      status: "fail",
+      detail:
+        error instanceof Error
+          ? error.message
+          : "hasScore(bytes32) call failed",
+    };
+  }
 }
 
 async function verifyScorer(
@@ -516,8 +548,16 @@ function isEncodedAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{64}$/.test(value);
 }
 
+function isEncodedBool(value: string): boolean {
+  return /^0x0{63}[01]$/.test(value);
+}
+
 function decodeAddress(value: string): string {
   return `0x${value.slice(-40)}`;
+}
+
+function decodeBool(value: string): boolean {
+  return BigInt(value) === 1n;
 }
 
 function icon(status: CheckStatus): string {
