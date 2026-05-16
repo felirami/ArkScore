@@ -92,6 +92,25 @@ test("submission evidence renders configured public deployment targets only", ()
   assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
 });
 
+test("submission evidence renders strict eERC20 handoff when required", () => {
+  const result = runScript(
+    "scripts/submission-evidence.ts",
+    ["--skip-checks"],
+    {
+      ARKSCORE_REQUIRE_EERC20: "true",
+      ARKSCORE_EERC20_DEMO_ADDRESS:
+        "0x3333333333333333333333333333333333333333",
+    },
+  );
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /pnpm probe:eerc20:strict/);
+  assert.match(result.output, /ARKSCORE_REQUIRE_EERC20=true pnpm finalize/);
+  assert.match(result.output, /pnpm verify:live:strict:eerc20/);
+  assert.doesNotMatch(result.output, /^pnpm probe:eerc20$/m);
+  assert.doesNotMatch(result.output, /^pnpm verify:live:strict$/m);
+});
+
 test("Vercel finalizer dry run prints public env and strict verification commands", () => {
   const apiUrl = "https://arkscore-api.up.railway.app";
   const registryAddress = "0x1111111111111111111111111111111111111111";

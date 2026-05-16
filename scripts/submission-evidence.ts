@@ -22,6 +22,16 @@ type DeploymentTargets = {
   webUrl: string;
 };
 
+type ReportInput = {
+  generatedAt: string;
+  gitCommit: string;
+  gitBranch: string;
+  gitStatus: string;
+  checkResults: CommandResult[];
+  deploymentTargets: DeploymentTargets;
+  requireEerc20: boolean;
+};
+
 const args = new Set(process.argv.slice(2));
 const shouldWrite = args.has("--write");
 const skipChecks = args.has("--skip-checks");
@@ -52,6 +62,7 @@ function main() {
     gitStatus,
     checkResults,
     deploymentTargets: getDeploymentTargets(),
+    requireEerc20: env.ARKSCORE_REQUIRE_EERC20 === "true",
   });
 
   if (shouldWrite) {
@@ -93,14 +104,7 @@ function runChecks(): CommandResult[] {
   });
 }
 
-function renderReport(input: {
-  generatedAt: string;
-  gitCommit: string;
-  gitBranch: string;
-  gitStatus: string;
-  checkResults: CommandResult[];
-  deploymentTargets: DeploymentTargets;
-}) {
+function renderReport(input: ReportInput) {
   const checkSummary =
     input.checkResults.length === 0
       ? "- Checks skipped with `--skip-checks`."
@@ -162,17 +166,33 @@ ${checkSummary}
 ## Final Handoff Commands
 
 \`\`\`bash
-pnpm probe:wavy
-pnpm probe:fuji
-pnpm probe:eerc20
-pnpm deploy:railway:apply -- --create-domain
-pnpm --filter @arkscore/contracts deploy:fuji
-pnpm --filter @arkscore/contracts scorer:fuji
-pnpm record:fuji
-ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply
-pnpm verify:live:strict
+${renderFinalHandoffCommands(input.requireEerc20)}
 \`\`\`
 ${checkDetails}`;
+}
+
+function renderFinalHandoffCommands(requireEerc20: boolean) {
+  const eerc20ProbeCommand = requireEerc20
+    ? "pnpm probe:eerc20:strict"
+    : "pnpm probe:eerc20";
+  const finalizeCommand = requireEerc20
+    ? "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REQUIRE_EERC20=true pnpm finalize:live:apply"
+    : "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live:apply";
+  const verifyCommand = requireEerc20
+    ? "pnpm verify:live:strict:eerc20"
+    : "pnpm verify:live:strict";
+
+  return [
+    "pnpm probe:wavy",
+    "pnpm probe:fuji",
+    eerc20ProbeCommand,
+    "pnpm deploy:railway:apply -- --create-domain",
+    "pnpm --filter @arkscore/contracts deploy:fuji",
+    "pnpm --filter @arkscore/contracts scorer:fuji",
+    "pnpm record:fuji",
+    finalizeCommand,
+    verifyCommand,
+  ].join("\n");
 }
 
 function commandText(command: string, commandArgs: string[]) {
