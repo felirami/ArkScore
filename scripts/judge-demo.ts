@@ -78,6 +78,7 @@ const eerc20Address = firstConfiguredValue([
   env.EERC20_DEMO_ADDRESS,
   env.NEXT_PUBLIC_EERC20_DEMO_ADDRESS,
 ]);
+const requireEerc20 = env.ARKSCORE_REQUIRE_EERC20 === "true";
 const scorerAddress = firstConfiguredValue([
   env.ARKSCORE_SCORER_ADDRESS,
   env.SCORER_ADDRESS,
@@ -100,17 +101,18 @@ function main() {
     scoreRecordEvidence.exists && !scoreRecordEvidence.error,
   );
   const eerc20Ready = Boolean(eerc20Address && isAddress(eerc20Address));
-  const liveModeReady =
-    liveApiReady && registryReady && scorerReady && scoreRecordReady;
   const blockers = currentBlockers({
+    eerc20Ready,
     liveApiReady,
     apiUrlConfigured: Boolean(configuredApiUrl),
     registryReady,
+    requireEerc20,
     scorerReady,
     scoreRecordError: scoreRecordEvidence.error,
     scoreRecordExists: scoreRecordEvidence.exists,
     scoreRecordReady,
   });
+  const liveModeReady = blockers.length === 0;
 
   console.log("# ArkScore Judge Demo Runbook\n");
   console.log("## Current Mode\n");
@@ -167,7 +169,11 @@ function main() {
     console.log("pnpm probe:wavy");
     console.log("pnpm probe:fuji");
     console.log("pnpm plan:eerc20");
-    console.log(eerc20Ready ? "pnpm probe:eerc20:strict" : "pnpm probe:eerc20");
+    console.log(
+      requireEerc20 || eerc20Ready
+        ? "pnpm probe:eerc20:strict"
+        : "pnpm probe:eerc20",
+    );
     console.log("pnpm railway:whoami");
     console.log("pnpm verify:railway");
     console.log("pnpm deploy:railway:apply -- --create-domain");
@@ -191,7 +197,7 @@ function main() {
     console.log("pnpm finalize:live:apply");
   }
   console.log(
-    eerc20Ready
+    requireEerc20 || eerc20Ready
       ? "ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:strict:eerc20:record"
       : "pnpm verify:live:strict:record",
   );
@@ -206,9 +212,11 @@ function main() {
 }
 
 function currentBlockers(input: {
+  eerc20Ready: boolean;
   liveApiReady: boolean;
   apiUrlConfigured: boolean;
   registryReady: boolean;
+  requireEerc20: boolean;
   scorerReady: boolean;
   scoreRecordError?: string;
   scoreRecordExists: boolean;
@@ -246,6 +254,12 @@ function currentBlockers(input: {
 
   if (!input.scorerReady) {
     blockers.push("Authorized scorer address is missing.");
+  }
+
+  if (input.requireEerc20 && !input.eerc20Ready) {
+    blockers.push(
+      "eERC20 demo address is missing while ARKSCORE_REQUIRE_EERC20=true.",
+    );
   }
 
   if (!input.scoreRecordReady && input.scoreRecordExists) {

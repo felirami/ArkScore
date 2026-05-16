@@ -842,6 +842,89 @@ test("judge demo runbook renders live proof mode when configured", () => {
   }
 });
 
+test("judge demo runbook keeps fallback posture while live credentials are missing", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-judge-demo-blocked-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify(validScoreRecordProof({ registryAddress, scorerAddress })),
+  );
+
+  try {
+    const result = runScript("scripts/judge-demo.ts", [], {
+      ARKSCORE_API_URL: "https://arkscore-api.up.railway.app/",
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ARKSCORE_SCORER_ADDRESS: scorerAddress,
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      WAVY_NODE_API_KEY: "",
+      WAVY_NODE_PROJECT_ID: "",
+      ARKSCORE_SUBJECT_HASH_SALT: "",
+      FUJI_PRIVATE_KEY: "",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /Railway API at https:\/\/arkscore-api/);
+    assert.match(result.output, /judge-usable fallback/);
+    assert.match(result.output, /WAVY_NODE_API_KEY is missing/);
+    assert.match(result.output, /WAVY_NODE_PROJECT_ID is missing/);
+    assert.match(result.output, /ARKSCORE_SUBJECT_HASH_SALT is missing/);
+    assert.match(result.output, /FUJI_PRIVATE_KEY is missing/);
+    assert.match(result.output, /pnpm deploy:railway:apply -- --create-domain/);
+    assert.doesNotMatch(result.output, /final live oracle proof path/);
+    assert.doesNotMatch(result.output, /None detected by local configuration/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("judge demo runbook treats required eERC20 as a final proof blocker", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-judge-demo-eerc20-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+
+  writeFileSync(
+    artifactPath,
+    JSON.stringify(validScoreRecordProof({ registryAddress, scorerAddress })),
+  );
+
+  try {
+    const result = runScript("scripts/judge-demo.ts", [], {
+      ARKSCORE_API_URL: "https://arkscore-api.up.railway.app/",
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ARKSCORE_SCORER_ADDRESS: scorerAddress,
+      ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      ARKSCORE_REQUIRE_EERC20: "true",
+      ARKSCORE_EERC20_DEMO_ADDRESS: "",
+      WAVY_NODE_API_KEY: "ApiKey live-key",
+      WAVY_NODE_PROJECT_ID: "project-live",
+      ARKSCORE_SUBJECT_HASH_SALT: "production-subject-hash-salt-for-judge-demo",
+      FUJI_PRIVATE_KEY:
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /judge-usable fallback/);
+    assert.match(
+      result.output,
+      /eERC20 demo address is missing while ARKSCORE_REQUIRE_EERC20=true/,
+    );
+    assert.match(result.output, /^pnpm probe:eerc20:strict$/m);
+    assert.match(
+      result.output,
+      /ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:strict:eerc20:record/,
+    );
+    assert.doesNotMatch(result.output, /final live oracle proof path/);
+    assert.doesNotMatch(result.output, /live-key/);
+    assert.doesNotMatch(result.output, /bbbbbbbbbbbbbbbb/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("judge demo runbook treats invalid score record proof as a live blocker", () => {
   const tempDir = mkdtempSync(join(tmpdir(), "arkscore-judge-demo-mock-"));
   const artifactPath = join(tempDir, "LatestScoreRecord.json");
