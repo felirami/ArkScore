@@ -11,7 +11,7 @@ ArkScore evaluates an EVM wallet with Wavy Node traceability and AI risk scoring
 - Next.js 15 App Router dashboard with Tailwind CSS, shadcn-style UI primitives, wagmi, viem, Avalanche Fuji wallet support, and a clean static export build for Vercel.
 - Railway-ready Express API with `GET /api/score/:address` and `GET /openapi.json`.
 - Wavy Node live integration using `GET /v1/projects/:projectId/addresses/scan-risk`, with a first-class traceability object plus AI risk score scale.
-- Deterministic mock mode for judging before real Wavy credentials are added.
+- Deterministic read-only mock mode for judging before real Wavy credentials are added.
 - Hardhat 3 Solidity `^0.8.24` contract, Solhint linting, and tests for storing Wavy-backed score records on Fuji.
 - Optional eERC20 demo slot for an Ava Labs EncryptedERC privacy-preserving credit token address.
 - Deployment notes for Vercel, Railway, Fuji, and optional Ava Labs EncryptedERC eERC20 demo work.

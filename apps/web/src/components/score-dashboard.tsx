@@ -127,11 +127,13 @@ export function ScoreDashboard() {
       ),
     [score, storedScoreRecord],
   );
+  const isLiveWavyScore = score?.source === "wavy";
 
   const canSubmitToRegistry = useMemo(
     () =>
       Boolean(
         score &&
+        score.source === "wavy" &&
         creditScoreRegistryAddress &&
         isConnected &&
         isAuthorizedScorer === true,
@@ -176,6 +178,11 @@ export function ScoreDashboard() {
 
   function handleStoreOnChain() {
     if (!score || !creditScoreRegistryAddress) return;
+
+    if (score.source !== "wavy") {
+      setError("Only live Wavy Node scores can be stored on Fuji.");
+      return;
+    }
 
     if (isAuthorizedScorer !== true) {
       setError("Connect an authorized scorer wallet before storing on Fuji.");
@@ -420,13 +427,29 @@ export function ScoreDashboard() {
                 )}
                 {chainId !== avalancheFuji.id && isConnected
                   ? "Switch to Fuji"
-                  : isCheckingScorer
-                    ? "Checking scorer"
-                    : hasStoredScore
-                      ? "Update Fuji record"
-                      : "Store on Fuji"}
+                  : !isLiveWavyScore
+                    ? "Live Wavy required"
+                    : isCheckingScorer
+                      ? "Checking scorer"
+                      : hasStoredScore
+                        ? "Update Fuji record"
+                        : "Store on Fuji"}
               </Button>
             </div>
+
+            {!isLiveWavyScore ? (
+              <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                <AlertTriangle
+                  size={16}
+                  aria-hidden="true"
+                  className="mt-0.5 shrink-0"
+                />
+                <p>
+                  Mock scores are read-only. Connect the live Railway Wavy API
+                  before storing evidence on Fuji.
+                </p>
+              </div>
+            ) : null}
 
             {transactionHash ? (
               <a

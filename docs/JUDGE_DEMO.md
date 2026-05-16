@@ -36,6 +36,7 @@ Expected current partial-live evidence:
 
 - Vercel frontend returns HTTP 200.
 - Demo score flow appears in the shipped Next.js bundle.
+- Mock scores remain read-only, so Store on Fuji is reserved for live Wavy evidence.
 - Requirements audit has no structural failures.
 - Readiness reports external credential/deployment warnings only.
 - Live verifier warns for missing Railway API and Fuji registry until those are configured.

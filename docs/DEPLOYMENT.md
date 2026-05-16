@@ -226,7 +226,7 @@ Set the Node.js version to `22.x` in Vercel and Railway. The repo includes `.nvm
 
 The web app uses `output: "export"` so Vercel serves it as a static Next.js build. Runtime scoring and chain writes happen client-side against the Railway API and Avalanche Fuji.
 
-If `NEXT_PUBLIC_API_BASE_URL` is not configured on a hosted Vercel deployment, ArkScore falls back to a clearly labeled mock Wavy trace so judges can exercise the dashboard before Railway credentials are available. Set `NEXT_PUBLIC_API_BASE_URL` to the Railway URL and keep `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false` for the live Wavy-backed flow.
+If `NEXT_PUBLIC_API_BASE_URL` is not configured on a hosted Vercel deployment, ArkScore falls back to a clearly labeled mock Wavy trace so judges can exercise the dashboard before Railway credentials are available. Mock fallback scores are read-only in the dashboard and cannot be stored on Fuji; set `NEXT_PUBLIC_API_BASE_URL` to the Railway URL and keep `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false` for the live Wavy-backed flow.
 
 Once Railway and Fuji are live, set the Vercel variables and redeploy:
 

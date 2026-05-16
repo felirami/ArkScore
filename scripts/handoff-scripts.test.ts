@@ -591,6 +591,7 @@ test("requirements audit maps repo readiness without leaking secrets", () => {
     result.output,
     /\[pass\] Wavy Node traceability and AI risk score:/,
   );
+  assert.match(result.output, /blocks mock score writes/);
   assert.match(result.output, /Solhint linting/);
   assert.match(
     result.output,

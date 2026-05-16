@@ -68,6 +68,7 @@ export async function createDemoScore(input: {
     chainId: wavy.chainId,
     institution: input.institution,
     source,
+    generatedAt,
     wavy,
     composite,
   });

@@ -423,20 +423,23 @@ function checkDashboardFlow(): Check {
     dashboard.includes("hasScore") &&
     dashboard.includes("getScore") &&
     dashboard.includes("isScorer") &&
+    dashboard.includes('score.source === "wavy"') &&
+    dashboard.includes("Mock scores are read-only") &&
     dashboard.includes("Evidence match")
   ) {
     return {
       label: "Wallet score to on-chain dashboard flow",
       status: "pass",
       detail:
-        "dashboard fetches scores, computes decisions, writes, and reads back Fuji evidence",
+        "dashboard fetches scores, computes decisions, blocks mock score writes, writes live Wavy scores, and reads back Fuji evidence",
     };
   }
 
   return {
     label: "Wallet score to on-chain dashboard flow",
     status: "fail",
-    detail: "missing score fetch, registry write, scorer, or readback flow",
+    detail:
+      "missing score fetch, mock-write guard, registry write, scorer, or readback flow",
   };
 }
 
