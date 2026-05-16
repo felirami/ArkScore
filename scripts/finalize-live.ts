@@ -37,9 +37,10 @@ const scorerAddress = firstConfiguredValue([
 ]);
 const vercelScope = env.VERCEL_SCOPE ?? "feliramis-projects";
 const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
-const webUrl =
-  normalizeBaseUrl(firstConfiguredValue([env.ARKSCORE_WEB_URL])) ??
-  "https://arkscore-seven.vercel.app";
+const configuredWebUrl = normalizeBaseUrl(
+  firstConfiguredValue([env.ARKSCORE_WEB_URL]),
+);
+const webUrl = configuredWebUrl ?? "https://arkscore-seven.vercel.app";
 const publicFujiRpcUrl =
   normalizeBaseUrl(
     firstConfiguredValue([env.NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL]),
@@ -53,6 +54,14 @@ const shouldVerifyScoreRecord =
   requireScoreRecord ||
   isCustomScoreRecordArtifactPath(configuredScoreRecordArtifactPath) ||
   existsSync(scoreRecordArtifactPath);
+const finalVerifyTimeoutMs = parseDurationMs(
+  env.VERCEL_FINAL_VERIFY_TIMEOUT_MS,
+  5 * 60 * 1000,
+);
+const finalVerifyIntervalMs = parseDurationMs(
+  env.VERCEL_FINAL_VERIFY_INTERVAL_MS,
+  10 * 1000,
+);
 
 main();
 
@@ -175,6 +184,9 @@ function main() {
     for (const command of envCommands) printCommand(command);
     printCommand(deployCommand);
     console.log(`${renderVerifyEnv()} pnpm ${verifyScript}`);
+    console.log(
+      "Apply mode retries the final live verifier until the production deployment is reachable.",
+    );
     return;
   }
 
@@ -184,7 +196,7 @@ function main() {
   run(preflightCommand, liveVerificationEnv);
   for (const command of envCommands) run(command);
   run(deployCommand);
-  run(verifyCommand, verifyEnv);
+  waitForFinalLiveVerification(verifyCommand, verifyEnv);
 }
 
 function vercelCommand(...args: string[]) {
@@ -232,6 +244,70 @@ function run(command: string[], commandEnv = process.env) {
   }
 }
 
+function runCaptured(command: string[], commandEnv = process.env) {
+  printCommand(command);
+  const [binary, ...args] = command;
+  const result = spawnSync(binary, args, {
+    env: commandEnv,
+    encoding: "utf8",
+  });
+  const output = [result.stdout, result.stderr, result.error?.message]
+    .filter(Boolean)
+    .join("\n");
+
+  if (output.trim()) {
+    console.log(output.trim());
+  }
+
+  return {
+    status:
+      typeof result.status === "number" ? result.status : result.error ? 1 : 0,
+    output,
+  };
+}
+
+function waitForFinalLiveVerification(
+  command: string[],
+  commandEnv: NodeJS.ProcessEnv,
+) {
+  const deadline = Date.now() + finalVerifyTimeoutMs;
+  let attempt = 0;
+  let lastOutput = "";
+
+  while (true) {
+    attempt += 1;
+    console.log(
+      `\n[info] Running pnpm ${finalVerifyScript()} after Vercel deploy (attempt ${attempt}).`,
+    );
+    const result = runCaptured(command, commandEnv);
+
+    if (result.status === 0) {
+      console.log("[pass] Final Vercel live verification passed.");
+      return;
+    }
+
+    lastOutput = result.output;
+
+    if (Date.now() >= deadline) {
+      if (lastOutput.trim()) {
+        console.error(lastOutput.trim());
+      }
+      fail(
+        `Timed out waiting for final Vercel live verification after ${finalVerifyTimeoutMs}ms.`,
+      );
+    }
+
+    const waitMs = Math.max(
+      0,
+      Math.min(finalVerifyIntervalMs, deadline - Date.now()),
+    );
+    console.log(
+      `[warn] Final Vercel live verification is not ready yet; retrying in ${waitMs}ms.`,
+    );
+    sleep(waitMs);
+  }
+}
+
 function printCommand(command: string[]) {
   console.log(`$ ${command.map(shellEscape).join(" ")}`);
 }
@@ -255,6 +331,7 @@ function renderVerifyEnv() {
     ARKSCORE_API_URL: apiUrl ?? "",
     ARKSCORE_REGISTRY_ADDRESS: registryAddress ?? "",
     NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: publicFujiRpcUrl,
+    ...(configuredWebUrl ? { ARKSCORE_WEB_URL: webUrl } : {}),
     ...(eerc20DemoAddress
       ? { ARKSCORE_EERC20_DEMO_ADDRESS: eerc20DemoAddress }
       : {}),
@@ -387,6 +464,23 @@ function isLocalHostname(hostname: string): boolean {
     /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) ||
     /^169\.254\./.test(value)
   );
+}
+
+function parseDurationMs(value: string | undefined, fallback: number) {
+  if (!value) return fallback;
+
+  const duration = Number(value);
+  if (!Number.isFinite(duration) || duration < 0) {
+    fail("Vercel final verification timeouts must be non-negative numbers.");
+  }
+
+  return duration;
+}
+
+function sleep(ms: number) {
+  if (ms <= 0) return;
+
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 function shellEscape(value: string) {

@@ -657,6 +657,7 @@ function checkLatestScoreRecordProof(): Check {
 function checkFinalVerificationPath(): Check {
   const rootPackage = readPackageJson("package.json");
   const liveVerifier = safeRead("scripts/verify-live.ts");
+  const finalizer = safeRead("scripts/finalize-live.ts");
   const apiScoring = safeRead("apps/api/src/services/score.ts");
   const scoreRecorder = safeRead(
     "packages/contracts/scripts/record-live-score.ts",
@@ -667,6 +668,7 @@ function checkFinalVerificationPath(): Check {
     scripts["verify:live:strict:record"] &&
     scripts["verify:railway:live"] &&
     scripts["finalize:live:apply"] &&
+    finalizer?.includes("waitForFinalLiveVerification") &&
     scripts["submission:evidence:write"] &&
     scripts["readiness:strict:record"] &&
     apiScoring?.includes("generatedAt,") &&
@@ -684,7 +686,7 @@ function checkFinalVerificationPath(): Check {
       label: "Final live verification and evidence path",
       status: "pass",
       detail:
-        "strict record verifier, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot freshness proof, finalizer, readiness, and evidence scripts are registered",
+        "strict record verifier, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot freshness proof, retrying Vercel finalizer, readiness, and evidence scripts are registered",
     };
   }
 
@@ -692,7 +694,7 @@ function checkFinalVerificationPath(): Check {
     label: "Final live verification and evidence path",
     status: "fail",
     detail:
-      "missing finalizer, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot freshness proof, strict live verifier, readiness, or evidence script",
+      "missing retrying finalizer, Railway API verifier, generatedAt-bound score hash checks, offline score snapshot freshness proof, strict live verifier, readiness, or evidence script",
   };
 }
 
