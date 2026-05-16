@@ -53,6 +53,8 @@ WAVY_NODE_API_KEY=ApiKey wavy_replace_with_wavy_node_api_key
 WAVY_NODE_PROJECT_ID=replace_with_wavy_node_project_id
 WAVY_NODE_BASE_URL=https://api.wavynode.com/v1
 WAVY_NODE_CHAIN_ID=43113
+WAVY_NODE_AUTO_REGISTER=true
+WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=auto
 
 FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc

@@ -10,7 +10,7 @@ Status date: May 16, 2026
 - Express API builds for Railway and exposes `GET /`, `GET /openapi.json`, `GET /health`, and `GET /api/score/:address`.
 - API tests cover `/health`, `/openapi.json`, a Bankaool score response, invalid institution rejection in mock mode, and the live Wavy Node adapter request shape.
 - Simulated Railway archive install/build/test passes with `.railwayignore` applied, confirming the pruned backend workspace can deploy from the repository root.
-- Wavy Node adapter is live-ready for `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113` with deterministic mock mode for judge demos before credentials are added.
+- Wavy Node adapter is live-ready for the official register-then-scan flow: `POST /v1/projects/:projectId/addresses`, then `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113`, with deterministic mock mode for judge demos before credentials are added.
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
@@ -23,7 +23,7 @@ Status date: May 16, 2026
 pnpm verify
 ```
 
-The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify the live `scan-risk` URL, `x-api-key` header, response normalization, and upstream error propagation. Both are included in `pnpm verify`.
+The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify address registration, the live `scan-risk` URL, `x-api-key` header, response normalization, duplicate registration handling, and upstream error propagation. Both are included in `pnpm verify`.
 
 `.github/workflows/ci.yml` runs `pnpm verify` and `pnpm readiness` for push, pull request, and manual workflow dispatch events.
 

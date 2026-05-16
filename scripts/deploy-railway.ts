@@ -12,7 +12,7 @@ const createDomain = process.argv.includes("--create-domain");
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("apps/api/.env"),
-  ...process.env
+  ...process.env,
 };
 const projectName = env.RAILWAY_PROJECT_NAME ?? "arkscore-api";
 const projectId = env.RAILWAY_PROJECT_ID;
@@ -20,7 +20,7 @@ const service = env.RAILWAY_SERVICE ?? "arkscore-api";
 const environment = env.RAILWAY_ENVIRONMENT ?? "production";
 const workspace = env.RAILWAY_WORKSPACE;
 const webUrl = normalizeBaseUrl(
-  env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app"
+  env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app",
 );
 const wavyApiKey = env.WAVY_NODE_API_KEY;
 const wavyProjectId = env.WAVY_NODE_PROJECT_ID;
@@ -34,17 +34,17 @@ function main() {
 
   const missingCredentials = [
     ["WAVY_NODE_API_KEY", wavyApiKey],
-    ["WAVY_NODE_PROJECT_ID", wavyProjectId]
+    ["WAVY_NODE_PROJECT_ID", wavyProjectId],
   ]
     .filter(([, value]) => !hasUsableValue(value))
     .map(([key]) => key);
 
   if (missingCredentials.length > 0 && !allowMock) {
     console.log(
-      `[warn] Missing ${missingCredentials.join(", ")}. Apply mode requires live Wavy credentials.`
+      `[warn] Missing ${missingCredentials.join(", ")}. Apply mode requires live Wavy credentials.`,
     );
     console.log(
-      "[warn] Set RAILWAY_ALLOW_MOCK=true only for temporary judge-demo mock deployments.\n"
+      "[warn] Set RAILWAY_ALLOW_MOCK=true only for temporary judge-demo mock deployments.\n",
     );
   }
 
@@ -59,7 +59,7 @@ function main() {
     for (const plan of commands) printCommand(plan);
     console.log(
       "\nAfter Railway prints the service URL, run:\n" +
-        "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live"
+        "ARKSCORE_API_URL=https://your-railway-api.up.railway.app pnpm finalize:live",
     );
     return;
   }
@@ -83,8 +83,8 @@ function buildCommands(): CommandPlan[] {
         environment,
         "--service",
         service,
-        "--json"
-      ]
+        "--json",
+      ],
     });
   } else {
     const initCommand = [
@@ -94,7 +94,7 @@ function buildCommands(): CommandPlan[] {
       "init",
       "--name",
       projectName,
-      "--json"
+      "--json",
     ];
 
     if (workspace) {
@@ -109,7 +109,10 @@ function buildCommands(): CommandPlan[] {
     ALLOWED_ORIGINS: webUrl,
     WAVY_NODE_BASE_URL: env.WAVY_NODE_BASE_URL ?? "https://api.wavynode.com/v1",
     WAVY_NODE_CHAIN_ID: env.WAVY_NODE_CHAIN_ID ?? "43113",
-    WAVY_NODE_MOCK_MODE: wavyMockMode
+    WAVY_NODE_AUTO_REGISTER: env.WAVY_NODE_AUTO_REGISTER ?? "true",
+    WAVY_NODE_FOREIGN_USER_PREFIX:
+      env.WAVY_NODE_FOREIGN_USER_PREFIX ?? "arkscore-wallet",
+    WAVY_NODE_MOCK_MODE: wavyMockMode,
   };
 
   for (const [key, value] of Object.entries(plainVariables)) {
@@ -121,7 +124,9 @@ function buildCommands(): CommandPlan[] {
   }
 
   if (hasUsableValue(wavyProjectId)) {
-    commands.push(variableSetCommand("WAVY_NODE_PROJECT_ID", wavyProjectId, true));
+    commands.push(
+      variableSetCommand("WAVY_NODE_PROJECT_ID", wavyProjectId, true),
+    );
   }
 
   commands.push({
@@ -133,8 +138,8 @@ function buildCommands(): CommandPlan[] {
       "--detach",
       "--json",
       "--message",
-      "Deploy ArkScore API"
-    ]
+      "Deploy ArkScore API",
+    ],
   });
 
   if (createDomain) {
@@ -146,12 +151,12 @@ function buildCommands(): CommandPlan[] {
         "domain",
         "--service",
         service,
-        "--json"
-      ]
+        "--json",
+      ],
     });
   } else {
     console.log(
-      "[info] Add --create-domain to generate a Railway-provided service domain."
+      "[info] Add --create-domain to generate a Railway-provided service domain.",
     );
   }
 
@@ -161,7 +166,7 @@ function buildCommands(): CommandPlan[] {
 function variableSetCommand(
   value: string,
   stdinValue?: string,
-  redacted = false
+  redacted = false,
 ): CommandPlan {
   if (stdinValue !== undefined) {
     return {
@@ -174,10 +179,10 @@ function variableSetCommand(
         value,
         "--stdin",
         "--skip-deploys",
-        "--json"
+        "--json",
       ],
       input: stdinValue,
-      redacted
+      redacted,
     };
   }
 
@@ -190,8 +195,8 @@ function variableSetCommand(
       "set",
       value,
       "--skip-deploys",
-      "--json"
-    ]
+      "--json",
+    ],
   };
 }
 
@@ -201,7 +206,8 @@ function run(plan: CommandPlan) {
   const result = spawnSync(binary, args, {
     input: plan.input,
     encoding: "utf8",
-    stdio: plan.input === undefined ? "inherit" : ["pipe", "inherit", "inherit"]
+    stdio:
+      plan.input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
   });
 
   if (result.status !== 0) {
@@ -231,10 +237,13 @@ function readEnvFile(path: string): Record<string, string> {
       .map((line) => {
         const index = line.indexOf("=");
         const key = line.slice(0, index).trim();
-        const value = line.slice(index + 1).trim().replace(/^['"]|['"]$/g, "");
+        const value = line
+          .slice(index + 1)
+          .trim()
+          .replace(/^['"]|['"]$/g, "");
 
         return [key, value];
-      })
+      }),
   );
 }
 
@@ -245,10 +254,10 @@ function normalizeBaseUrl(value: string | undefined): string {
 function hasUsableValue(value: string | undefined): value is string {
   return Boolean(
     value &&
-      value.trim() &&
-      !value.includes("replace_with") &&
-      !value.includes("wavy_replace") &&
-      !value.includes("your-")
+    value.trim() &&
+    !value.includes("replace_with") &&
+    !value.includes("wavy_replace") &&
+    !value.includes("your-"),
   );
 }
 

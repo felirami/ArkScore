@@ -49,10 +49,27 @@ WAVY_NODE_API_KEY=ApiKey wavy_replace_with_wavy_node_api_key
 WAVY_NODE_PROJECT_ID=replace_with_wavy_node_project_id
 WAVY_NODE_BASE_URL=https://api.wavynode.com/v1
 WAVY_NODE_CHAIN_ID=43113
+WAVY_NODE_AUTO_REGISTER=true
+WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=auto
 ```
 
-Live scoring calls Wavy Node with:
+Live scoring follows the Wavy Node quickstart sequence: register the wallet for project monitoring, then run the risk scan.
+
+Registration uses a deterministic non-PII `foreign_user_id` based on the wallet address:
+
+```text
+POST /v1/projects/:projectId/addresses
+x-api-key: ApiKey ...
+
+{
+  "address": "0x...",
+  "description": "ArkScore on-demand wallet risk score",
+  "foreign_user_id": "arkscore-wallet-0x..."
+}
+```
+
+The risk scan then calls:
 
 ```text
 GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113
@@ -83,6 +100,8 @@ railway variable set PORT=4000 --skip-deploys --json
 railway variable set ALLOWED_ORIGINS=https://arkscore-seven.vercel.app --skip-deploys --json
 railway variable set WAVY_NODE_BASE_URL=https://api.wavynode.com/v1 --skip-deploys --json
 railway variable set WAVY_NODE_CHAIN_ID=43113 --skip-deploys --json
+railway variable set WAVY_NODE_AUTO_REGISTER=true --skip-deploys --json
+railway variable set WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet --skip-deploys --json
 railway variable set WAVY_NODE_MOCK_MODE=auto --skip-deploys --json
 echo "ApiKey ..." | railway variable set WAVY_NODE_API_KEY --stdin --skip-deploys --json
 echo "..." | railway variable set WAVY_NODE_PROJECT_ID --stdin --skip-deploys --json

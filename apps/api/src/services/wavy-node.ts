@@ -1,6 +1,6 @@
 import type { PatternDetected, WavyRiskResult } from "@arkscore/shared";
 import { getRiskLevel } from "@arkscore/shared";
-import { env } from "../config/env.js";
+import { env, shouldAutoRegisterWavyAddresses } from "../config/env.js";
 import { getWavyAuthHeader, getWavyProjectId } from "../config/wavy-node.js";
 import { HttpError } from "../lib/http-error.js";
 
@@ -24,13 +24,28 @@ type WavyScanRiskResponse = {
   error?: string;
 };
 
+type WavyApiResponse = {
+  message?: string;
+  error?: string;
+};
+
 export async function fetchWavyRiskResult(input: {
   address: `0x${string}`;
   chainId: number;
 }): Promise<WavyRiskResult> {
   const projectId = getWavyProjectId();
+  const authHeader = getWavyAuthHeader();
+
+  if (shouldAutoRegisterWavyAddresses()) {
+    await registerWavyAddress({
+      address: input.address,
+      projectId,
+      authHeader,
+    });
+  }
+
   const url = new URL(
-    `${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/projects/${projectId}/addresses/scan-risk`
+    `${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/projects/${projectId}/addresses/scan-risk`,
   );
 
   url.searchParams.set("addresses", input.address);
@@ -38,21 +53,21 @@ export async function fetchWavyRiskResult(input: {
 
   const response = await fetch(url, {
     headers: {
-      "x-api-key": getWavyAuthHeader(),
-      accept: "application/json"
-    }
+      "x-api-key": authHeader,
+      accept: "application/json",
+    },
   });
 
-  const payload = (await response.json().catch(() => null)) as
-    | WavyScanRiskResponse
-    | null;
+  const payload = (await response
+    .json()
+    .catch(() => null)) as WavyScanRiskResponse | null;
 
   if (!response.ok) {
     throw new HttpError(
       response.status,
       payload?.message ??
         payload?.error ??
-        `Wavy Node request failed with status ${response.status}.`
+        `Wavy Node request failed with status ${response.status}.`,
     );
   }
 
@@ -61,7 +76,7 @@ export async function fetchWavyRiskResult(input: {
   if (!firstResult) {
     throw new HttpError(
       404,
-      "Wavy Node returned no risk result for this wallet. Register the address in the Wavy project, then rescan."
+      "Wavy Node returned no risk result for this wallet. Register the address in the Wavy project, then rescan.",
     );
   }
 
@@ -77,11 +92,54 @@ export async function fetchWavyRiskResult(input: {
     suspiciousActivity: Boolean(firstResult.suspiciousActivity),
     patternsDetected: firstResult.patternsDetected ?? [],
     transactionsAnalyzed: firstResult.transactionsAnalyzed ?? 0,
-    completedAt: firstResult.completedAt ?? new Date().toISOString()
+    completedAt: firstResult.completedAt ?? new Date().toISOString(),
   };
+}
+
+async function registerWavyAddress(input: {
+  address: `0x${string}`;
+  projectId: string;
+  authHeader: string;
+}): Promise<void> {
+  const url = new URL(
+    `${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/projects/${input.projectId}/addresses`,
+  );
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": input.authHeader,
+      accept: "application/json",
+    },
+    body: JSON.stringify({
+      address: input.address,
+      description: "ArkScore on-demand wallet risk score",
+      foreign_user_id: createForeignUserId(input.address),
+    }),
+  });
+
+  if (response.ok) return;
+
+  const payload = (await response
+    .json()
+    .catch(() => null)) as WavyApiResponse | null;
+  const message =
+    payload?.message ??
+    payload?.error ??
+    `Wavy Node address registration failed with status ${response.status}.`;
+
+  if (response.status === 409 || /already|duplicate|exist/i.test(message)) {
+    return;
+  }
+
+  throw new HttpError(response.status, message);
 }
 
 function clampWavyScore(score: number | undefined): number {
   if (typeof score !== "number" || !Number.isFinite(score)) return 0;
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function createForeignUserId(address: `0x${string}`): string {
+  return `${env.WAVY_NODE_FOREIGN_USER_PREFIX}-${address.toLowerCase()}`;
 }

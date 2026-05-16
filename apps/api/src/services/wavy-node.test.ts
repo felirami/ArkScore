@@ -10,17 +10,21 @@ test.afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-test("fetchWavyRiskResult calls the official scan-risk endpoint", async () => {
-  let request:
-    | {
-        url: URL;
-        init: RequestInit | undefined;
-      }
-    | undefined;
+type CapturedRequest = {
+  url: URL;
+  init: RequestInit | undefined;
+};
+
+test("fetchWavyRiskResult registers then scans the wallet", async () => {
+  const requests: CapturedRequest[] = [];
 
   globalThis.fetch = (async (input, init) => {
     const url = new URL(getFetchUrl(input));
-    request = { url, init };
+    requests.push({ url, init });
+
+    if (init?.method === "POST") {
+      return jsonResponse({ success: true });
+    }
 
     return jsonResponse({
       success: true,
@@ -50,15 +54,40 @@ test("fetchWavyRiskResult calls the official scan-risk endpoint", async () => {
     chainId: 43113,
   });
 
-  assert.ok(request);
+  const [registerRequest, scanRequest] = requests;
+
+  assert.ok(registerRequest);
   assert.equal(
-    `${request.url.origin}${request.url.pathname}`,
+    `${registerRequest.url.origin}${registerRequest.url.pathname}`,
+    "https://api.wavynode.com/v1/projects/project_test/addresses",
+  );
+  assert.equal(registerRequest.init?.method, "POST");
+  assert.equal(
+    getHeader(registerRequest.init, "content-type"),
+    "application/json",
+  );
+  assert.equal(
+    getHeader(registerRequest.init, "x-api-key"),
+    "ApiKey wavy_test_key",
+  );
+  assert.deepEqual(parseBody(registerRequest.init), {
+    address: demoWallet,
+    description: "ArkScore on-demand wallet risk score",
+    foreign_user_id: `arkscore-wallet-${demoWallet.toLowerCase()}`,
+  });
+
+  assert.ok(scanRequest);
+  assert.equal(
+    `${scanRequest.url.origin}${scanRequest.url.pathname}`,
     "https://api.wavynode.com/v1/projects/project_test/addresses/scan-risk",
   );
-  assert.equal(request.url.searchParams.get("addresses"), demoWallet);
-  assert.equal(request.url.searchParams.get("chainId"), "43113");
-  assert.equal(getHeader(request.init, "x-api-key"), "ApiKey wavy_test_key");
-  assert.equal(getHeader(request.init, "accept"), "application/json");
+  assert.equal(scanRequest.url.searchParams.get("addresses"), demoWallet);
+  assert.equal(scanRequest.url.searchParams.get("chainId"), "43113");
+  assert.equal(
+    getHeader(scanRequest.init, "x-api-key"),
+    "ApiKey wavy_test_key",
+  );
+  assert.equal(getHeader(scanRequest.init, "accept"), "application/json");
 
   assert.equal(result.analysisId, "analysis-001");
   assert.equal(result.address, demoWallet);
@@ -69,15 +98,65 @@ test("fetchWavyRiskResult calls the official scan-risk endpoint", async () => {
   assert.equal(result.transactionsAnalyzed, 150);
 });
 
+test("fetchWavyRiskResult treats duplicate address registration as reusable", async () => {
+  const requests: CapturedRequest[] = [];
+
+  globalThis.fetch = (async (input, init) => {
+    requests.push({
+      url: new URL(getFetchUrl(input)),
+      init,
+    });
+
+    if (init?.method === "POST") {
+      return jsonResponse(
+        {
+          success: false,
+          message: "Address already exists in project.",
+        },
+        409,
+      );
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        results: [
+          {
+            analysisId: "analysis-reused",
+            address: demoWallet,
+            chainId: "43113",
+            riskScore: 22,
+            suspiciousActivity: false,
+          },
+        ],
+      },
+    });
+  }) as typeof fetch;
+
+  const result = await fetchWavyRiskResult({
+    address: demoWallet,
+    chainId: 43113,
+  });
+
+  assert.equal(requests.length, 2);
+  assert.equal(result.analysisId, "analysis-reused");
+  assert.equal(result.riskScore, 22);
+});
+
 test("fetchWavyRiskResult preserves upstream Wavy Node errors", async () => {
-  globalThis.fetch = (async () =>
-    jsonResponse(
+  globalThis.fetch = (async (_input, init) => {
+    if (init?.method === "POST") {
+      return jsonResponse({ success: true });
+    }
+
+    return jsonResponse(
       {
         success: false,
         message: "Invalid API key",
       },
       401,
-    )) as typeof fetch;
+    );
+  }) as typeof fetch;
 
   await assert.rejects(
     fetchWavyRiskResult({
@@ -121,4 +200,12 @@ function getHeader(init: RequestInit | undefined, name: string): string | null {
   }
 
   return headers[name] ?? null;
+}
+
+function parseBody(init: RequestInit | undefined): unknown {
+  if (typeof init?.body !== "string") {
+    throw new Error("Expected JSON string body.");
+  }
+
+  return JSON.parse(init.body);
 }

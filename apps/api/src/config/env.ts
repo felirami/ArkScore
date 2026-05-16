@@ -9,12 +9,11 @@ const envSchema = z.object({
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
   WAVY_NODE_API_KEY: z.string().optional(),
   WAVY_NODE_PROJECT_ID: z.string().optional(),
-  WAVY_NODE_BASE_URL: z
-    .string()
-    .url()
-    .default("https://api.wavynode.com/v1"),
+  WAVY_NODE_BASE_URL: z.string().url().default("https://api.wavynode.com/v1"),
   WAVY_NODE_CHAIN_ID: z.coerce.number().int().positive().default(43113),
-  WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto")
+  WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
+  WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
+  WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto"),
 });
 
 export const env = envSchema.parse(process.env);
@@ -28,9 +27,9 @@ export function getAllowedOrigins(): string[] {
 export function hasWavyCredentials(): boolean {
   return Boolean(
     env.WAVY_NODE_API_KEY &&
-      env.WAVY_NODE_PROJECT_ID &&
-      !env.WAVY_NODE_API_KEY.includes("replace_with") &&
-      !env.WAVY_NODE_PROJECT_ID.includes("replace_with")
+    env.WAVY_NODE_PROJECT_ID &&
+    !env.WAVY_NODE_API_KEY.includes("replace_with") &&
+    !env.WAVY_NODE_PROJECT_ID.includes("replace_with"),
   );
 }
 
@@ -38,4 +37,8 @@ export function shouldUseMockScores(): boolean {
   if (env.WAVY_NODE_MOCK_MODE === "true") return true;
   if (env.WAVY_NODE_MOCK_MODE === "false") return false;
   return !hasWavyCredentials();
+}
+
+export function shouldAutoRegisterWavyAddresses(): boolean {
+  return env.WAVY_NODE_AUTO_REGISTER === "true";
 }
