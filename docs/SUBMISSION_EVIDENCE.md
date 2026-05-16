@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T23:27:09.306Z
+Generated: 2026-05-16T23:33:18.426Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `11066b7`
+- Commit: `faf5132`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -20,10 +20,10 @@ Generated: 2026-05-16T23:27:09.306Z
 
 - PASS: Railway archive verifier (`pnpm --silent verify:railway`)
 - PASS: Hosted demo smoke (`pnpm --silent smoke:web`)
-- PASS: Live deployment verifier (`pnpm --silent verify:live`)
-- PASS: Requirements audit (`pnpm --silent audit:requirements`)
-- PASS: Judge demo runbook (`pnpm --silent judge:demo`)
-- PASS: Readiness gate (`pnpm --silent readiness`)
+- WARN: Live deployment verifier (`pnpm --silent verify:live`)
+- WARN: Requirements audit (`pnpm --silent audit:requirements`)
+- WARN: Judge demo runbook (`pnpm --silent judge:demo`)
+- WARN: Readiness gate (`pnpm --silent readiness`)
 
 ## Current Scope Status
 
@@ -64,6 +64,7 @@ pnpm verify:live:strict:record
 
 - Command: `pnpm --silent verify:railway`
 - Exit code: `0`
+- Status: `PASS`
 
 ````text
 # ArkScore Railway Archive Verification
@@ -112,7 +113,7 @@ devDependencies:
 + tsx 4.22.0
 + typescript 6.0.3
 
-Done in 1s using pnpm v11.1.2
+Done in 984ms using pnpm v11.1.2
 
 $ pnpm --filter @arkscore/api build
 CLI Building entry: src/server.ts
@@ -122,7 +123,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 32.53 KB
-ESM ⚡️ Build success in 413ms
+ESM ⚡️ Build success in 411ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -131,49 +132,49 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 20.165042
+  duration_ms: 21.632208
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 4.370625
+  duration_ms: 4.493458
   type: 'test'
   ...
 # Subtest: openapi document honors Railway forwarded origin headers
 ok 3 - openapi document honors Railway forwarded origin headers
   ---
-  duration_ms: 2.205917
+  duration_ms: 2.288458
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 4 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.443709
+  duration_ms: 2.457667
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 5 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.066708
+  duration_ms: 2.05575
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 6 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 6.141625
+  duration_ms: 6.469167
   type: 'test'
   ...
 # Subtest: API config defaults Wavy Node scoring to Avalanche Fuji
 ok 7 - API config defaults Wavy Node scoring to Avalanche Fuji
   ---
-  duration_ms: 0.354917
+  duration_ms: 0.349208
   type: 'test'
   ...
 # Subtest: API config refuses non-Fuji Wavy Node chain IDs
 ok 8 - API config refuses non-Fuji Wavy Node chain IDs
   ---
-  duration_ms: 0.437916
+  duration_ms: 0.424875
   type: 'test'
   ...
 1..8
@@ -184,48 +185,48 @@ ok 8 - API config refuses non-Fuji Wavy Node chain IDs
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 662.198125
+# duration_ms 713.918958
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 8.248208
+  duration_ms: 8.559583
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.605292
+  duration_ms: 0.645084
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 0.937792
+  duration_ms: 0.997916
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult rejects upstream chain mismatches
 ok 4 - fetchWavyRiskResult rejects upstream chain mismatches
   ---
-  duration_ms: 0.427958
+  duration_ms: 0.51325
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult rejects upstream address mismatches
 ok 5 - fetchWavyRiskResult rejects upstream address mismatches
   ---
-  duration_ms: 0.98025
+  duration_ms: 1.013917
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 6 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.370375
+  duration_ms: 0.349292
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 7 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.136709
+  duration_ms: 0.132667
   type: 'test'
   ...
 1..7
@@ -236,7 +237,7 @@ ok 7 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 149.63325
+# duration_ms 152.61625
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts src/config/env.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
@@ -250,6 +251,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 
 - Command: `pnpm --silent smoke:web`
 - Exit code: `0`
+- Status: `PASS`
 
 ````text
 # ArkScore Hosted Demo Smoke
@@ -288,6 +290,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 
 - Command: `pnpm --silent verify:live`
 - Exit code: `0`
+- Status: `WARN`
 
 ````text
 # ArkScore Live Verification
@@ -308,6 +311,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 
 - Command: `pnpm --silent audit:requirements`
 - Exit code: `0`
+- Status: `WARN`
 
 ````text
 # ArkScore Requirements Audit
@@ -344,6 +348,7 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 
 - Command: `pnpm --silent judge:demo`
 - Exit code: `0`
+- Status: `WARN`
 
 ````text
 # ArkScore Judge Demo Runbook
@@ -413,6 +418,7 @@ pnpm verify:live:strict:record
 
 - Command: `pnpm --silent readiness`
 - Exit code: `0`
+- Status: `WARN`
 
 ````text
 # ArkScore Readiness Check
