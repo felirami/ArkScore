@@ -1,11 +1,11 @@
 # ArkScore Submission Evidence
 
-Generated: 2026-05-16T21:49:53.643Z
+Generated: 2026-05-16T21:56:58.476Z
 
 ## Repository Snapshot
 
 - Branch: `main`
-- Commit: `01dfeeb`
+- Commit: `72d52f1`
 - Worktree: clean when report was generated
 
 ## Deployment Targets
@@ -111,7 +111,7 @@ devDependencies:
 + tsx 4.22.0
 + typescript 6.0.3
 
-Done in 970ms using pnpm v11.1.2
+Done in 979ms using pnpm v11.1.2
 
 $ pnpm --filter @arkscore/api build
 CLI Building entry: src/server.ts
@@ -121,7 +121,7 @@ CLI Target: es2022
 CLI Cleaning output folder
 ESM Build start
 ESM dist/server.js 32.37 KB
-ESM ⚡️ Build success in 405ms
+ESM ⚡️ Build success in 452ms
 
 $ tsup src/server.ts --format esm --clean
 
@@ -130,49 +130,49 @@ TAP version 13
 # Subtest: health reports mock scoring mode when credentials are absent
 ok 1 - health reports mock scoring mode when credentials are absent
   ---
-  duration_ms: 19.637875
+  duration_ms: 19.477167
   type: 'test'
   ...
 # Subtest: openapi document describes the public scoring contract
 ok 2 - openapi document describes the public scoring contract
   ---
-  duration_ms: 4.192084
+  duration_ms: 4.202
   type: 'test'
   ...
 # Subtest: openapi document honors Railway forwarded origin headers
 ok 3 - openapi document honors Railway forwarded origin headers
   ---
-  duration_ms: 2.123667
+  duration_ms: 2.24275
   type: 'test'
   ...
 # Subtest: score endpoint returns a Bankaool-ready mock Wavy response
 ok 4 - score endpoint returns a Bankaool-ready mock Wavy response
   ---
-  duration_ms: 2.439
+  duration_ms: 2.492042
   type: 'test'
   ...
 # Subtest: score endpoint rejects unsupported institutions
 ok 5 - score endpoint rejects unsupported institutions
   ---
-  duration_ms: 2.011417
+  duration_ms: 2.061708
   type: 'test'
   ...
 # Subtest: score endpoint rate limits repeated clients
 ok 6 - score endpoint rate limits repeated clients
   ---
-  duration_ms: 5.65875
+  duration_ms: 5.799209
   type: 'test'
   ...
 # Subtest: API config defaults Wavy Node scoring to Avalanche Fuji
 ok 7 - API config defaults Wavy Node scoring to Avalanche Fuji
   ---
-  duration_ms: 0.348041
+  duration_ms: 0.340916
   type: 'test'
   ...
 # Subtest: API config refuses non-Fuji Wavy Node chain IDs
 ok 8 - API config refuses non-Fuji Wavy Node chain IDs
   ---
-  duration_ms: 0.437875
+  duration_ms: 0.417625
   type: 'test'
   ...
 1..8
@@ -183,48 +183,48 @@ ok 8 - API config refuses non-Fuji Wavy Node chain IDs
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 655.748125
+# duration_ms 672.484708
 TAP version 13
 # Subtest: fetchWavySupportedChains requests the Wavy chains endpoint
 ok 1 - fetchWavySupportedChains requests the Wavy chains endpoint
   ---
-  duration_ms: 9.004042
+  duration_ms: 8.108041
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult registers then scans the wallet
 ok 2 - fetchWavyRiskResult registers then scans the wallet
   ---
-  duration_ms: 0.623791
+  duration_ms: 0.610084
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult treats duplicate address registration as reusable
 ok 3 - fetchWavyRiskResult treats duplicate address registration as reusable
   ---
-  duration_ms: 1.265167
+  duration_ms: 0.908791
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult rejects upstream chain mismatches
 ok 4 - fetchWavyRiskResult rejects upstream chain mismatches
   ---
-  duration_ms: 0.44375
+  duration_ms: 0.489208
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult rejects upstream address mismatches
 ok 5 - fetchWavyRiskResult rejects upstream address mismatches
   ---
-  duration_ms: 0.963958
+  duration_ms: 0.941458
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult preserves upstream Wavy Node errors
 ok 6 - fetchWavyRiskResult preserves upstream Wavy Node errors
   ---
-  duration_ms: 0.350208
+  duration_ms: 0.3565
   type: 'test'
   ...
 # Subtest: fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 ok 7 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
   ---
-  duration_ms: 0.140875
+  duration_ms: 0.136125
   type: 'test'
   ...
 1..7
@@ -235,7 +235,7 @@ ok 7 - fetchWavyRiskResult converts Wavy timeouts into a gateway timeout
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 161.272042
+# duration_ms 146.918833
 
 $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --test src/app.test.ts src/config/env.test.ts && NODE_ENV=test WAVY_NODE_MOCK_MODE=false WAVY_NODE_API_KEY=wavy_test_key WAVY_NODE_PROJECT_ID=project_test tsx --test src/services/wavy-node.test.ts && tsc --noEmit
 
@@ -326,14 +326,14 @@ $ NODE_ENV=test WAVY_NODE_MOCK_MODE=true ARKSCORE_SCORE_RATE_LIMIT_MAX=4 tsx --t
 [warn] Fuji registry deployment proof: missing deployed registry address or Fuji deployment artifact
 [warn] Authorized scorer proof: missing ARKSCORE_SCORER_ADDRESS or SCORER_ADDRESS
 [pass] Latest on-chain score record proof: not configured yet; run pnpm record:fuji after live deployment
-[pass] Final live verification and evidence path: strict record verifier, Railway API verifier, score evidence hash check, finalizer, readiness, and evidence scripts are registered
+[pass] Final live verification and evidence path: strict record verifier, Railway API verifier, score recorder evidence hash check, finalizer, readiness, and evidence scripts are registered
 
 ## Summary
 
 - Passing: 15
 - Warnings: 4
 - Failing: 0
-- Report id: 590cb2c74aef
+- Report id: 15a1f6f16132
 ````
 
 ### Judge demo runbook
