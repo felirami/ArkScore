@@ -126,107 +126,45 @@ test("Vercel finalizer refuses invalid registry address", () => {
 });
 
 test("live verifier proves registry getScore readback ABI", async () => {
-  const registryAddress = "0x1111111111111111111111111111111111111111";
-  const webServer = await listen((request, response) => {
-    if (request.url === "/bundle.js") {
-      response.writeHead(200, { "content-type": "application/javascript" });
-      response.end(`window.registry="${registryAddress}"`);
-      return;
-    }
+  const result = await runLiveVerifierWithMockRegistry();
 
-    response.writeHead(200, { "content-type": "text/html" });
-    response.end(`<main>ArkScore</main><script src="/bundle.js"></script>`);
-  });
-  const rpcServer = await listen(async (request, response) => {
-    const body = (await readJson(request)) as {
-      id?: number;
-      method?: string;
-      params?: Array<{ data?: string } | string>;
-    };
-    const data =
-      body.params?.[0] && typeof body.params[0] === "object"
-        ? body.params[0].data
-        : undefined;
+  assert.equal(result.status, 0, result.output);
+  assert.match(
+    result.output,
+    /Fuji registry bytecode: .*has deployed bytecode/,
+  );
+  assert.match(
+    result.output,
+    /Fuji registry hasScore ABI: hasScore\(bytes32\) returned false/,
+  );
+  assert.match(
+    result.output,
+    /Fuji registry getScore ABI: getScore\(bytes32\) reverted with MissingScore\(\)/,
+  );
+});
 
-    response.writeHead(200, { "content-type": "application/json" });
-
-    if (body.method === "eth_getCode") {
-      response.end(
-        JSON.stringify({ jsonrpc: "2.0", id: body.id, result: "0x6000" }),
-      );
-      return;
-    }
-
-    if (body.method === "eth_call" && data === "0x8da5cb5b") {
-      response.end(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: body.id,
-          result: encodeAddress("0x2222222222222222222222222222222222222222"),
-        }),
-      );
-      return;
-    }
-
-    if (body.method === "eth_call" && data?.startsWith("0x92b8c652")) {
-      response.end(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: body.id,
-          result: encodeBool(false),
-        }),
-      );
-      return;
-    }
-
-    if (body.method === "eth_call" && data?.startsWith("0x7ba53285")) {
-      response.end(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: body.id,
-          error: {
-            code: 3,
-            message: "execution reverted",
-            data: "0xe5fa9471",
-          },
-        }),
-      );
-      return;
-    }
-
-    response.end(
-      JSON.stringify({
-        jsonrpc: "2.0",
-        id: body.id,
-        error: { code: -32601, message: "method not mocked" },
-      }),
-    );
+test("live verifier fails when registry hasScore ABI returns malformed data", async () => {
+  const result = await runLiveVerifierWithMockRegistry({
+    hasScoreResult: "0x1234",
   });
 
-  try {
-    const result = await runScriptAsync("scripts/verify-live.ts", [], {
-      ARKSCORE_WEB_URL: webServer.url,
-      FUJI_RPC_URL: rpcServer.url,
-      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
-    });
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Fuji registry hasScore ABI: hasScore\(bytes32\) did not return an encoded bool/,
+  );
+});
 
-    assert.equal(result.status, 0, result.output);
-    assert.match(
-      result.output,
-      /Fuji registry bytecode: .*has deployed bytecode/,
-    );
-    assert.match(
-      result.output,
-      /Fuji registry hasScore ABI: hasScore\(bytes32\) returned false/,
-    );
-    assert.match(
-      result.output,
-      /Fuji registry getScore ABI: getScore\(bytes32\) reverted with MissingScore\(\)/,
-    );
-  } finally {
-    await webServer.close();
-    await rpcServer.close();
-  }
+test("live verifier fails when registry getScore ABI returns a zero-hash record", async () => {
+  const result = await runLiveVerifierWithMockRegistry({
+    getScoreBehavior: "record",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Fuji registry getScore ABI: getScore\(bytes32\) unexpectedly returned a record for zero hash/,
+  );
 });
 
 function runScript(
@@ -318,6 +256,113 @@ async function readJson(request: IncomingMessage) {
   }
 
   return JSON.parse(body) as unknown;
+}
+
+type RegistryRpcOptions = {
+  getScoreBehavior?: "missing-score" | "record" | "wrong-error";
+  hasScoreResult?: string;
+};
+
+async function runLiveVerifierWithMockRegistry(
+  options: RegistryRpcOptions = {},
+) {
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const webServer = await listen((request, response) => {
+    if (request.url === "/bundle.js") {
+      response.writeHead(200, { "content-type": "application/javascript" });
+      response.end(`window.registry="${registryAddress}"`);
+      return;
+    }
+
+    response.writeHead(200, { "content-type": "text/html" });
+    response.end(`<main>ArkScore</main><script src="/bundle.js"></script>`);
+  });
+  const rpcServer = await listen(async (request, response) => {
+    const body = (await readJson(request)) as {
+      id?: number;
+      method?: string;
+      params?: Array<{ data?: string } | string>;
+    };
+    const data =
+      body.params?.[0] && typeof body.params[0] === "object"
+        ? body.params[0].data
+        : undefined;
+
+    response.writeHead(200, { "content-type": "application/json" });
+
+    if (body.method === "eth_getCode") {
+      response.end(
+        JSON.stringify({ jsonrpc: "2.0", id: body.id, result: "0x6000" }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data === "0x8da5cb5b") {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeAddress("0x2222222222222222222222222222222222222222"),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x92b8c652")) {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: options.hasScoreResult ?? encodeBool(false),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x7ba53285")) {
+      if (options.getScoreBehavior === "record") {
+        response.end(
+          JSON.stringify({ jsonrpc: "2.0", id: body.id, result: "0x00" }),
+        );
+        return;
+      }
+
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          error: {
+            code: 3,
+            message: "execution reverted",
+            data:
+              options.getScoreBehavior === "wrong-error"
+                ? "0xdeadbeef"
+                : "0xe5fa9471",
+          },
+        }),
+      );
+      return;
+    }
+
+    response.end(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: body.id,
+        error: { code: -32601, message: "method not mocked" },
+      }),
+    );
+  });
+
+  try {
+    return await runScriptAsync("scripts/verify-live.ts", [], {
+      ARKSCORE_WEB_URL: webServer.url,
+      FUJI_RPC_URL: rpcServer.url,
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    });
+  } finally {
+    await webServer.close();
+    await rpcServer.close();
+  }
 }
 
 function encodeAddress(address: string) {
