@@ -14,6 +14,7 @@ Status date: May 16, 2026
 - Simulated Railway archive install/build/test passes with `.railwayignore` applied, confirming the pruned backend workspace can deploy from the repository root.
 - Wavy Node adapter is live-ready for the official register-then-scan flow: `POST /v1/projects/:projectId/addresses`, then `GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113`, with an explicit traceability object, backend-derived subject hashing, and deterministic mock mode for judge demos before credentials are added.
 - Solidity `CreditScoreRegistry` compiles and passes tests for authorized Wavy-backed score storage, score readback, event emission, same-subject updates, scorer authorization and revocation, ownership transfer, rejected unauthorized writes, invalid addresses, missing records, empty subject hashes, and scores outside the 0-100 scale.
+- The Fuji deploy script refuses missing or malformed `FUJI_PRIVATE_KEY`, checks chain id `43113`, verifies the deployed registry owner, and confirms the deployer is authorized as the initial scorer before writing the deployment artifact.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, and emits the non-secret `pnpm readiness` report.
 - Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_6hfCRvJu4MEeDvqxfqcyEm3jCotg`.

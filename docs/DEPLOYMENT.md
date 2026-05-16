@@ -15,7 +15,7 @@ pnpm probe:fuji
 pnpm --filter @arkscore/contracts deploy:fuji
 ```
 
-The deploy script writes `packages/contracts/deployments/fuji/CreditScoreRegistry.json`. After deployment, add the registry address to Vercel:
+The deploy script refuses to run without a 32-byte `FUJI_PRIVATE_KEY`, checks the live chain id is Avalanche Fuji `43113`, deploys `CreditScoreRegistry`, verifies the deployer is both `owner()` and an authorized initial scorer, then writes `packages/contracts/deployments/fuji/CreditScoreRegistry.json`. After deployment, add the registry address to Vercel:
 
 ```bash
 NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x...
