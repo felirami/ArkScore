@@ -267,6 +267,18 @@ test("readiness strict record warns when the score record proof is missing", () 
   }
 });
 
+test("readiness treats the default score record artifact path as optional until strict record", () => {
+  const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
+    ARKSCORE_SCORE_RECORD_ARTIFACT:
+      "packages/contracts/deployments/fuji/LatestScoreRecord.json",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\[pass\] Latest Fuji score record:/);
+  assert.match(result.output, /not configured yet; run pnpm record:fuji/);
+  assert.doesNotMatch(result.output, /LatestScoreRecord\.json is missing/);
+});
+
 test("requirements audit maps repo readiness without leaking secrets", () => {
   const result = runScript("scripts/audit-requirements.ts", [], {
     WAVY_NODE_API_KEY: "ApiKey should-not-print",
@@ -545,6 +557,24 @@ test("Vercel finalizer dry run uses record verification when artifact is configu
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
+});
+
+test("Vercel finalizer does not require the missing default score record path", () => {
+  const apiUrl = "https://arkscore-api.up.railway.app";
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const result = runScript("scripts/finalize-live.ts", [], {
+    ARKSCORE_API_URL: apiUrl,
+    ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    ARKSCORE_SCORE_RECORD_ARTIFACT:
+      "packages/contracts/deployments/fuji/LatestScoreRecord.json",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /pnpm verify:live:preflight/);
+  assert.match(result.output, /pnpm verify:live:strict/);
+  assert.doesNotMatch(result.output, /preflight:record/);
+  assert.doesNotMatch(result.output, /strict:record/);
+  assert.doesNotMatch(result.output, /Missing latest score record artifact/);
 });
 
 test("Vercel finalizer dry run uses eERC20 record verification when both are required", () => {

@@ -110,6 +110,8 @@ const env = {
   ...readEnvFile("apps/web/.env.local"),
   ...process.env,
 };
+const defaultScoreRecordArtifactPath =
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const strict = process.argv.includes("--strict");
 const skipWeb = process.argv.includes("--skip-web");
 const skipApi = process.argv.includes("--skip-api");
@@ -153,8 +155,8 @@ const scorerAddress = firstConfiguredValue([
   env.SCORER_ADDRESS,
 ]);
 const scoreRecordArtifactPath =
-  env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
-  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+  firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
+  defaultScoreRecordArtifactPath;
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);

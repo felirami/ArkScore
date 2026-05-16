@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+const defaultScoreRecordArtifactPath =
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("packages/contracts/.env"),
@@ -31,8 +33,8 @@ const scorerAddress = firstConfiguredValue([
   env.SCORER_ADDRESS,
 ]);
 const scoreRecordArtifactPath =
-  env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
-  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+  firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
+  defaultScoreRecordArtifactPath;
 
 main();
 

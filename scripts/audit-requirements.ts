@@ -39,6 +39,8 @@ type ScoreRecordProof = {
 };
 
 const strict = process.argv.includes("--strict");
+const defaultScoreRecordArtifactPath =
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("packages/contracts/.env"),
@@ -53,8 +55,8 @@ const requireScoreRecord =
   process.argv.includes("--require-score-record") ||
   env.ARKSCORE_REQUIRE_SCORE_RECORD === "true";
 const scoreRecordArtifactPath =
-  env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
-  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+  firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
+  defaultScoreRecordArtifactPath;
 
 main();
 

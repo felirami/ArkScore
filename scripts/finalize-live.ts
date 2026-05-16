@@ -5,6 +5,8 @@ type DeploymentArtifact = {
   address?: string;
 };
 
+const defaultScoreRecordArtifactPath =
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const apply = process.argv.includes("--apply");
 const env = {
   ...readEnvFile(".env"),
@@ -38,12 +40,14 @@ const vercelProject = env.VERCEL_PROJECT_NAME ?? "arkscore";
 const webUrl =
   normalizeBaseUrl(firstConfiguredValue([env.ARKSCORE_WEB_URL])) ??
   "https://arkscore-seven.vercel.app";
+const configuredScoreRecordArtifactPath = firstConfiguredValue([
+  env.ARKSCORE_SCORE_RECORD_ARTIFACT,
+]);
 const scoreRecordArtifactPath =
-  env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
-  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+  configuredScoreRecordArtifactPath ?? defaultScoreRecordArtifactPath;
 const shouldVerifyScoreRecord =
   requireScoreRecord ||
-  Boolean(env.ARKSCORE_SCORE_RECORD_ARTIFACT) ||
+  isCustomScoreRecordArtifactPath(configuredScoreRecordArtifactPath) ||
   existsSync(scoreRecordArtifactPath);
 
 main();
@@ -324,6 +328,15 @@ function normalizeBaseUrl(value: string | undefined): string | undefined {
 
 function firstConfiguredValue(values: Array<string | undefined>) {
   return values.find((value) => value?.trim())?.trim();
+}
+
+function isCustomScoreRecordArtifactPath(value: string | undefined) {
+  if (!value) return false;
+  return normalizeRelativePath(value) !== defaultScoreRecordArtifactPath;
+}
+
+function normalizeRelativePath(value: string) {
+  return value.trim().replaceAll("\\", "/").replace(/^\.\//, "");
 }
 
 function isAddress(value: string): boolean {

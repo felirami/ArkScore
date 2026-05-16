@@ -1,6 +1,6 @@
 import { network } from "hardhat";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 type Institution = "arkangeles" | "bankaool";
@@ -112,7 +112,10 @@ type CreditScoreRegistryInstance = {
 };
 
 const packageDir = dirname(fileURLToPath(import.meta.url));
+const repoDir = join(packageDir, "..", "..", "..");
 const defaultWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+const defaultScoreRecordArtifactPath =
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const bytes32Regex = /^0x[a-fA-F0-9]{64}$/;
 const decisionContractEnum: Record<InstitutionDecision, number> = {
   REVIEW_REQUIRED: 0,
@@ -139,10 +142,11 @@ async function main() {
   console.log("# ArkScore Fuji Score Recording\n");
 
   const apiUrl = requireBaseUrl(
-    env.ARKSCORE_API_URL ?? env.NEXT_PUBLIC_API_BASE_URL,
+    firstConfiguredValue([env.ARKSCORE_API_URL, env.NEXT_PUBLIC_API_BASE_URL]),
   );
   const registryAddress = envRegistryAddress();
-  const wallet = env.ARKSCORE_TEST_WALLET ?? defaultWallet;
+  const wallet =
+    firstConfiguredValue([env.ARKSCORE_TEST_WALLET]) ?? defaultWallet;
   const institution = parseInstitution(env.ARKSCORE_INSTITUTION);
   const allowMockRecord = env.ARKSCORE_ALLOW_MOCK_RECORD === "true";
 
@@ -464,12 +468,9 @@ function writeScoreRecordArtifact(input: {
       updatedAt: input.stored.updatedAt.toString(),
     },
   };
-  const path = join(
-    packageDir,
-    "..",
-    "deployments",
-    "fuji",
-    "LatestScoreRecord.json",
+  const path = resolveScoreRecordArtifactPath(
+    firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
+      defaultScoreRecordArtifactPath,
   );
 
   mkdirSync(dirname(path), { recursive: true });
@@ -480,13 +481,19 @@ function writeScoreRecordArtifact(input: {
 
 function envRegistryAddress(): string {
   return (
-    env.ARKSCORE_REGISTRY_ADDRESS ??
-    env.CREDIT_SCORE_REGISTRY_ADDRESS ??
-    env.REGISTRY_ADDRESS ??
-    env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS ??
+    firstConfiguredValue([
+      env.ARKSCORE_REGISTRY_ADDRESS,
+      env.CREDIT_SCORE_REGISTRY_ADDRESS,
+      env.REGISTRY_ADDRESS,
+      env.NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS,
+    ]) ??
     readRegistryDeployment()?.address ??
     ""
   );
+}
+
+function resolveScoreRecordArtifactPath(path: string) {
+  return isAbsolute(path) ? path : join(repoDir, path);
 }
 
 function readRegistryDeployment(): DeploymentArtifact | undefined {
@@ -527,6 +534,10 @@ function readEnvFile(path: string): Record<string, string> {
         return [key, value];
       }),
   );
+}
+
+function firstConfiguredValue(values: Array<string | undefined>) {
+  return values.find((value) => value?.trim())?.trim();
 }
 
 function requireBaseUrl(value: string | undefined): string {

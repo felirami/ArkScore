@@ -42,6 +42,8 @@ type ScoreRecordProof = {
 };
 
 const strict = process.argv.includes("--strict");
+const defaultScoreRecordArtifactPath =
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const rootEnv = readEnvFile(".env");
 const contractEnv = readEnvFile("packages/contracts/.env");
 const webEnv = readEnvFile("apps/web/.env.local");
@@ -63,9 +65,11 @@ const skipExternal =
   process.argv.includes("--skip-external") ||
   combinedEnv.ARKSCORE_READINESS_SKIP_EXTERNAL === "true";
 const allowMockRecord = combinedEnv.ARKSCORE_ALLOW_MOCK_RECORD === "true";
+const configuredScoreRecordArtifactPath = firstConfiguredValue([
+  combinedEnv.ARKSCORE_SCORE_RECORD_ARTIFACT,
+]);
 const scoreRecordArtifactPath =
-  combinedEnv.ARKSCORE_SCORE_RECORD_ARTIFACT ??
-  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+  configuredScoreRecordArtifactPath ?? defaultScoreRecordArtifactPath;
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -305,9 +309,9 @@ function checkScoreRecordArtifact(
   configuredRegistryAddress?: string,
   configuredScorerAddress?: string,
 ): Check {
-  const artifactConfigured = hasUsableValue(
-    combinedEnv.ARKSCORE_SCORE_RECORD_ARTIFACT,
-  );
+  const artifactConfigured =
+    hasUsableValue(configuredScoreRecordArtifactPath) &&
+    isCustomScoreRecordArtifactPath(configuredScoreRecordArtifactPath);
 
   if (!existsSync(scoreRecordArtifactPath)) {
     if (!requireScoreRecord && !artifactConfigured) {
@@ -395,6 +399,19 @@ function findValidCandidate(
     (candidate) =>
       hasUsableValue(candidate.value) && isValid(candidate.value ?? ""),
   );
+}
+
+function firstConfiguredValue(values: Array<string | undefined>) {
+  return values.find((value) => value?.trim())?.trim();
+}
+
+function isCustomScoreRecordArtifactPath(value: string | undefined) {
+  if (!value) return false;
+  return normalizeRelativePath(value) !== defaultScoreRecordArtifactPath;
+}
+
+function normalizeRelativePath(value: string) {
+  return value.trim().replaceAll("\\", "/").replace(/^\.\//, "");
 }
 
 function checkRailwayAuth(): Check {

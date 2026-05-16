@@ -54,6 +54,8 @@ type ReportInput = {
   requireEerc20: boolean;
 };
 
+const defaultScoreRecordArtifactPath =
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const args = new Set(process.argv.slice(2));
 const shouldWrite = args.has("--write");
 const skipChecks = args.has("--skip-checks");
@@ -329,8 +331,8 @@ function readRegistryDeployment(): { address?: string } | undefined {
 
 function readScoreRecordProof(): ScoreRecordProof | undefined {
   const path =
-    env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
-    "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+    firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]) ??
+    defaultScoreRecordArtifactPath;
 
   if (!existsSync(path)) return undefined;
 
