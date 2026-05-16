@@ -1,5 +1,10 @@
 import { strict as assert } from "node:assert";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import { test } from "node:test";
 
 test("Railway dry run prints redacted secret variable commands", () => {
@@ -48,6 +53,110 @@ test("submission evidence can render without executing live checks", () => {
   assert.match(result.output, /pnpm verify:live:strict/);
 });
 
+test("live verifier proves registry getScore readback ABI", async () => {
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const webServer = await listen((request, response) => {
+    if (request.url === "/bundle.js") {
+      response.writeHead(200, { "content-type": "application/javascript" });
+      response.end(`window.registry="${registryAddress}"`);
+      return;
+    }
+
+    response.writeHead(200, { "content-type": "text/html" });
+    response.end(`<main>ArkScore</main><script src="/bundle.js"></script>`);
+  });
+  const rpcServer = await listen(async (request, response) => {
+    const body = (await readJson(request)) as {
+      id?: number;
+      method?: string;
+      params?: Array<{ data?: string } | string>;
+    };
+    const data =
+      body.params?.[0] && typeof body.params[0] === "object"
+        ? body.params[0].data
+        : undefined;
+
+    response.writeHead(200, { "content-type": "application/json" });
+
+    if (body.method === "eth_getCode") {
+      response.end(
+        JSON.stringify({ jsonrpc: "2.0", id: body.id, result: "0x6000" }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data === "0x8da5cb5b") {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeAddress("0x2222222222222222222222222222222222222222"),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x92b8c652")) {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeBool(false),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x7ba53285")) {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          error: {
+            code: 3,
+            message: "execution reverted",
+            data: "0xe5fa9471",
+          },
+        }),
+      );
+      return;
+    }
+
+    response.end(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: body.id,
+        error: { code: -32601, message: "method not mocked" },
+      }),
+    );
+  });
+
+  try {
+    const result = await runScriptAsync("scripts/verify-live.ts", [], {
+      ARKSCORE_WEB_URL: webServer.url,
+      FUJI_RPC_URL: rpcServer.url,
+      ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(
+      result.output,
+      /Fuji registry bytecode: .*has deployed bytecode/,
+    );
+    assert.match(
+      result.output,
+      /Fuji registry hasScore ABI: hasScore\(bytes32\) returned false/,
+    );
+    assert.match(
+      result.output,
+      /Fuji registry getScore ABI: getScore\(bytes32\) reverted with MissingScore\(\)/,
+    );
+  } finally {
+    await webServer.close();
+    await rpcServer.close();
+  }
+});
+
 function runScript(
   scriptPath: string,
   args: string[] = [],
@@ -67,4 +176,82 @@ function runScript(
       typeof result.status === "number" ? result.status : result.error ? 1 : 0,
     output: [result.stdout, result.stderr].filter(Boolean).join("\n"),
   };
+}
+
+function runScriptAsync(
+  scriptPath: string,
+  args: string[] = [],
+  env: Record<string, string> = {},
+) {
+  return new Promise<{ status: number; output: string }>((resolve) => {
+    const subprocess = spawn("pnpm", ["exec", "tsx", scriptPath, ...args], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ...env,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let output = "";
+
+    subprocess.stdout.on("data", (chunk: unknown) => {
+      output += String(chunk);
+    });
+    subprocess.stderr.on("data", (chunk: unknown) => {
+      output += String(chunk);
+    });
+    subprocess.on("close", (code) => {
+      resolve({
+        status: code ?? 1,
+        output,
+      });
+    });
+  });
+}
+
+async function listen(
+  handler: (
+    request: IncomingMessage,
+    response: ServerResponse,
+  ) => void | Promise<void>,
+) {
+  const server = createServer((request, response) => {
+    void handler(request, response);
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+
+  if (!address || typeof address === "string") {
+    throw new Error("Expected server to listen on a TCP port.");
+  }
+  assert.ok(address);
+
+  return {
+    url: `http://127.0.0.1:${address.port}`,
+    close: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  };
+}
+
+async function readJson(request: IncomingMessage) {
+  let body = "";
+
+  for await (const chunk of request) {
+    body += String(chunk);
+  }
+
+  return JSON.parse(body) as unknown;
+}
+
+function encodeAddress(address: string) {
+  return `0x${address.slice(2).padStart(64, "0")}`;
+}
+
+function encodeBool(value: boolean) {
+  return `0x${(value ? "1" : "0").padStart(64, "0")}`;
 }

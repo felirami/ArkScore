@@ -48,6 +48,15 @@ type OpenApiResponse = {
   };
 };
 
+class RpcError extends Error {
+  constructor(
+    message: string,
+    readonly data?: string,
+  ) {
+    super(message);
+  }
+}
+
 const strict = process.argv.includes("--strict");
 const requireWavy =
   process.argv.includes("--require-wavy") ||
@@ -520,7 +529,7 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
     });
   }
 
-  checks.push(await verifyRegistryAbi(address));
+  checks.push(...(await verifyRegistryAbi(address)));
   checks.push(...(await verifyScorer(address, scorerAddress)));
 
   return checks;
@@ -571,35 +580,71 @@ async function verifyOptionalEerc20(
   }
 }
 
-async function verifyRegistryAbi(registry: string): Promise<Check> {
+async function verifyRegistryAbi(registry: string): Promise<Check[]> {
+  const checks: Check[] = [];
+  const subjectHash = "0".repeat(64);
+
   try {
-    const subjectHash = "0".repeat(64);
     const call = await rpc<string>("eth_call", [
       { to: registry, data: `0x92b8c652${subjectHash}` },
       "latest",
     ]);
 
-    return isEncodedBool(call)
-      ? {
-          label: "Fuji registry ABI",
-          status: "pass",
-          detail: `hasScore(bytes32) returned ${decodeBool(call)}`,
-        }
-      : {
-          label: "Fuji registry ABI",
-          status: "fail",
-          detail: "hasScore(bytes32) did not return an encoded bool",
-        };
+    checks.push(
+      isEncodedBool(call)
+        ? {
+            label: "Fuji registry hasScore ABI",
+            status: "pass",
+            detail: `hasScore(bytes32) returned ${decodeBool(call)}`,
+          }
+        : {
+            label: "Fuji registry hasScore ABI",
+            status: "fail",
+            detail: "hasScore(bytes32) did not return an encoded bool",
+          },
+    );
   } catch (error) {
-    return {
-      label: "Fuji registry ABI",
+    checks.push({
+      label: "Fuji registry hasScore ABI",
       status: "fail",
       detail:
         error instanceof Error
           ? error.message
           : "hasScore(bytes32) call failed",
-    };
+    });
   }
+
+  try {
+    await rpc<string>("eth_call", [
+      { to: registry, data: `0x7ba53285${subjectHash}` },
+      "latest",
+    ]);
+
+    checks.push({
+      label: "Fuji registry getScore ABI",
+      status: "fail",
+      detail: "getScore(bytes32) unexpectedly returned a record for zero hash",
+    });
+  } catch (error) {
+    checks.push(
+      error instanceof RpcError && hasMissingScoreSelector(error)
+        ? {
+            label: "Fuji registry getScore ABI",
+            status: "pass",
+            detail: "getScore(bytes32) reverted with MissingScore()",
+          }
+        : {
+            label: "Fuji registry getScore ABI",
+            status: "fail",
+            detail:
+              error instanceof Error
+                ? error.message
+                : "getScore(bytes32) call failed",
+          },
+    );
+  }
+
+  return checks;
 }
 
 async function verifyScorer(
@@ -663,14 +708,37 @@ async function rpc<T>(method: string, params: unknown[]): Promise<T> {
   });
   const payload = (await response.json()) as {
     result?: T;
-    error?: { message?: string };
+    error?: { message?: string; data?: unknown };
   };
 
   if (!response.ok || payload.error || payload.result === undefined) {
-    throw new Error(payload.error?.message ?? `RPC ${method} failed`);
+    throw new RpcError(
+      payload.error?.message ?? `RPC ${method} failed`,
+      readRpcErrorData(payload.error?.data),
+    );
   }
 
   return payload.result;
+}
+
+function readRpcErrorData(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    const { data, originalError } = value as {
+      data?: unknown;
+      originalError?: unknown;
+    };
+
+    return readRpcErrorData(data) ?? readRpcErrorData(originalError);
+  }
+
+  return undefined;
+}
+
+function hasMissingScoreSelector(error: RpcError) {
+  return (
+    error.data?.startsWith("0xe5fa9471") || error.message.includes("0xe5fa9471")
+  );
 }
 
 function readEnvFile(path: string): Record<string, string> {
