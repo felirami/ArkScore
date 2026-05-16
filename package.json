@@ -17,6 +17,7 @@
     "readiness:strict": "tsx scripts/readiness-check.ts --strict",
     "verify:live": "tsx scripts/verify-live.ts",
     "verify:live:strict": "tsx scripts/verify-live.ts --strict --require-wavy",
+    "smoke:web": "tsx scripts/smoke-hosted-demo.ts",
     "finalize:live": "tsx scripts/finalize-live.ts",
     "finalize:live:apply": "tsx scripts/finalize-live.ts --apply",
     "deploy:railway": "tsx scripts/deploy-railway.ts",

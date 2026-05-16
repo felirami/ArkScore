@@ -26,6 +26,8 @@ The API endpoint test suite passes in mock mode and is included in `pnpm verify`
 
 `pnpm readiness` produces a non-secret live-gate report covering Vercel reachability, Railway auth, Wavy credentials, Fuji deployer configuration, and frontend deployment variables.
 
+`pnpm smoke:web` checks that the public Vercel deployment is not protected by an auth page and that the shipped Next.js chunks include the hosted score demo, mock Wavy trace, evidence hash, scorer status, and Store on Fuji flow.
+
 `pnpm verify:live` checks public deployment behavior. In the current partial-live state it should pass the Vercel frontend check and warn on missing Railway API and Fuji registry inputs; after final deployment, run `pnpm verify:live:strict`.
 
 `pnpm deploy:railway` is a dry-run Railway deploy planner. `pnpm deploy:railway:apply -- --create-domain` creates or links the Railway project, sets non-secret and Wavy variables, uploads the API, and can generate the service domain when Railway auth is available.
