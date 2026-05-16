@@ -27,7 +27,7 @@ ArkScore turns Wavy Node wallet traceability and AI risk into an auditable Avala
 - `pnpm probe:fuji` gives the team a pre-deployment proof that the Fuji deployer key is valid, funded, and pointed at chain id 43113 without exposing the private key.
 - `pnpm record:fuji` gives judges a CLI-verifiable proof that a live Wavy-backed Railway score was written to Fuji and read back through `CreditScoreRegistry`, then writes a non-secret `LatestScoreRecord.json` artifact for the submission evidence packet.
 - The dashboard also reads `getScore(subjectHash)` after storage and shows the stored score, submitter, update time, analysis id, institution, and evidence match status.
-- The dashboard has an optional eERC20 card for the EncryptedERC privacy-preserving credit token demo; `pnpm probe:eerc20:strict` and `pnpm verify:live:strict:eerc20` prove deployed Fuji bytecode when that address is part of the final pitch.
+- The dashboard has an optional eERC20 card for the EncryptedERC privacy-preserving credit token demo; `pnpm probe:eerc20:strict` and `pnpm verify:live:strict:eerc20:record` prove deployed Fuji bytecode when that address is part of the final pitch.
 - Authorized scorer permissions keep the registry closer to an institutional oracle model.
 - `pnpm submission:evidence:write` generates `docs/SUBMISSION_EVIDENCE.md`, a non-secret evidence packet with the current commit, hosted demo smoke, live verifier, readiness output, and final handoff commands.
 

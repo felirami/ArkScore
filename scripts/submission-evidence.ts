@@ -206,8 +206,8 @@ function renderFinalHandoffCommands(requireEerc20: boolean) {
     ? "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... ARKSCORE_REQUIRE_EERC20=true pnpm verify:live:preflight"
     : "ARKSCORE_API_URL=https://your-railway-api.up.railway.app ARKSCORE_REGISTRY_ADDRESS=0x... ARKSCORE_SCORER_ADDRESS=0x... pnpm verify:live:preflight";
   const verifyCommand = requireEerc20
-    ? "pnpm verify:live:strict:eerc20"
-    : "pnpm verify:live:strict";
+    ? "pnpm verify:live:strict:eerc20:record"
+    : "pnpm verify:live:strict:record";
 
   return [
     "pnpm probe:wavy",

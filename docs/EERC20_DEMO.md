@@ -36,7 +36,7 @@ ARKSCORE_EERC20_DEMO_ADDRESS=0x... pnpm probe:eerc20
 
 Use `pnpm probe:eerc20:strict` or set `ARKSCORE_REQUIRE_EERC20=true` when the eERC20 demo is part of the final judged submission and should fail if the address is missing.
 
-6. In the live demo, the dashboard's `eERC20` card links to the configured Fuji address. `pnpm verify:live` checks the optional address for deployed bytecode when `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is set. `pnpm verify:live:strict:eerc20` requires it during the final live gate.
+6. In the live demo, the dashboard's `eERC20` card links to the configured Fuji address. `pnpm verify:live` checks the optional address for deployed bytecode when `ARKSCORE_EERC20_DEMO_ADDRESS`, `EERC20_DEMO_ADDRESS`, or `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` is set. `pnpm verify:live:strict:eerc20:record` requires it during the final live gate.
 
 ## Submission Placeholder
 

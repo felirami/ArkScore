@@ -32,6 +32,44 @@ type ScoreResponse = {
   };
 };
 
+type ScoreRecordProof = {
+  blockNumber?: number | null;
+  chainId?: number;
+  composite?: {
+    creditScore?: number;
+    decision?: string;
+    decisionEnum?: number;
+  };
+  generatedAt?: string;
+  institution?: string;
+  registryAddress?: string;
+  scorerAddress?: string;
+  source?: "wavy" | "mock";
+  stored?: {
+    submitter?: string;
+    updatedAt?: string;
+  };
+  subjectHash?: string;
+  transactionHash?: string;
+  wavy?: {
+    analysisId?: string;
+    evidenceHash?: string;
+    riskScore?: number;
+  };
+};
+
+type DecodedScoreRecord = {
+  subjectHash: string;
+  wavyRiskScore: number;
+  compositeCreditScore: number;
+  decision: number;
+  wavyEvidenceHash: string;
+  wavyAnalysisId: string;
+  institution: string;
+  updatedAt: string;
+  submitter: string;
+};
+
 type OpenApiSchema = {
   required?: string[];
   properties?: Record<string, unknown>;
@@ -83,6 +121,9 @@ const requireWavy =
 const requireEerc20 =
   process.argv.includes("--require-eerc20") ||
   env.ARKSCORE_REQUIRE_EERC20 === "true";
+const requireScoreRecord =
+  process.argv.includes("--require-score-record") ||
+  env.ARKSCORE_REQUIRE_SCORE_RECORD === "true";
 const webUrl = normalizeBaseUrl(
   env.ARKSCORE_WEB_URL ?? "https://arkscore-seven.vercel.app",
 );
@@ -104,6 +145,9 @@ const fujiRpcUrl =
 const testWallet =
   env.ARKSCORE_TEST_WALLET ?? "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const scorerAddress = env.ARKSCORE_SCORER_ADDRESS ?? env.SCORER_ADDRESS;
+const scoreRecordArtifactPath =
+  env.ARKSCORE_SCORE_RECORD_ARTIFACT ??
+  "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -564,6 +608,7 @@ async function verifyContract(address: string | undefined): Promise<Check[]> {
 
   checks.push(...(await verifyRegistryAbi(address)));
   checks.push(...(await verifyScorer(address, scorerAddress)));
+  checks.push(...(await verifyScoreRecordProof(address)));
 
   return checks;
 }
@@ -739,6 +784,95 @@ async function verifyScorer(
   }
 }
 
+async function verifyScoreRecordProof(registry: string): Promise<Check[]> {
+  const proof = readScoreRecordProof();
+
+  if (!proof) {
+    return requireScoreRecord
+      ? [
+          {
+            label: "Fuji score record proof",
+            status: "fail",
+            detail: `missing ${scoreRecordArtifactPath}; run pnpm record:fuji first`,
+          },
+        ]
+      : [];
+  }
+
+  const validationError = validateScoreRecordProof(proof, registry);
+  if (validationError) {
+    return [
+      {
+        label: "Fuji score record proof",
+        status: "fail",
+        detail: validationError,
+      },
+    ];
+  }
+
+  const subjectHash = proof.subjectHash as `0x${string}`;
+
+  try {
+    const encodedSubjectHash = subjectHash.slice(2);
+    const hasScoreCall = await rpc<string>("eth_call", [
+      { to: registry, data: `0x92b8c652${encodedSubjectHash}` },
+      "latest",
+    ]);
+
+    if (!isEncodedBool(hasScoreCall)) {
+      return [
+        {
+          label: "Fuji score record proof",
+          status: "fail",
+          detail: "hasScore(subjectHash) did not return an encoded bool",
+        },
+      ];
+    }
+
+    if (!decodeBool(hasScoreCall)) {
+      return [
+        {
+          label: "Fuji score record proof",
+          status: "fail",
+          detail: `${subjectHash} is not stored in the registry`,
+        },
+      ];
+    }
+
+    const getScoreCall = await rpc<string>("eth_call", [
+      { to: registry, data: `0x7ba53285${encodedSubjectHash}` },
+      "latest",
+    ]);
+    const stored = decodeScoreRecord(getScoreCall);
+    const mismatch = compareScoreRecordProof(proof, stored);
+
+    return [
+      mismatch
+        ? {
+            label: "Fuji score record proof",
+            status: "fail",
+            detail: mismatch,
+          }
+        : {
+            label: "Fuji score record proof",
+            status: "pass",
+            detail: `${scoreRecordArtifactPath} matches on-chain getScore(${shortHash(subjectHash)}) from tx ${proof.transactionHash}`,
+          },
+    ];
+  } catch (error) {
+    return [
+      {
+        label: "Fuji score record proof",
+        status: "fail",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "latest score record check failed",
+      },
+    ];
+  }
+}
+
 async function rpc<T>(method: string, params: unknown[]): Promise<T> {
   const response = await fetch(fujiRpcUrl, {
     method: "POST",
@@ -815,6 +949,217 @@ function readRegistryDeployment(): { address?: string } | undefined {
   } catch {
     return undefined;
   }
+}
+
+function readScoreRecordProof(): ScoreRecordProof | undefined {
+  if (!existsSync(scoreRecordArtifactPath)) return undefined;
+
+  try {
+    return JSON.parse(readFileSync(scoreRecordArtifactPath, "utf8")) as
+      | ScoreRecordProof
+      | undefined;
+  } catch (error) {
+    throw new Error(
+      `${scoreRecordArtifactPath} is not valid JSON: ${error instanceof Error ? error.message : "parse failed"}`,
+    );
+  }
+}
+
+function validateScoreRecordProof(
+  proof: ScoreRecordProof,
+  registry: string,
+): string | undefined {
+  if (proof.registryAddress?.toLowerCase() !== registry.toLowerCase()) {
+    return `${scoreRecordArtifactPath} registry address does not match configured registry`;
+  }
+
+  if (!proof.subjectHash || !isBytes32(proof.subjectHash)) {
+    return `${scoreRecordArtifactPath} is missing a valid subjectHash`;
+  }
+
+  if (!proof.wavy?.evidenceHash || !isBytes32(proof.wavy.evidenceHash)) {
+    return `${scoreRecordArtifactPath} is missing a valid Wavy evidence hash`;
+  }
+
+  if (!proof.transactionHash || !isBytes32(proof.transactionHash)) {
+    return `${scoreRecordArtifactPath} is missing a valid transaction hash`;
+  }
+
+  if (!isScore(proof.wavy.riskScore)) {
+    return `${scoreRecordArtifactPath} is missing a valid Wavy risk score`;
+  }
+
+  if (!isScore(proof.composite?.creditScore)) {
+    return `${scoreRecordArtifactPath} is missing a valid composite score`;
+  }
+
+  if (
+    typeof proof.composite?.decisionEnum !== "number" ||
+    proof.composite.decisionEnum < 0 ||
+    proof.composite.decisionEnum > 3
+  ) {
+    return `${scoreRecordArtifactPath} is missing a valid decision enum`;
+  }
+
+  if (!proof.wavy.analysisId) {
+    return `${scoreRecordArtifactPath} is missing the Wavy analysis id`;
+  }
+
+  if (!proof.institution) {
+    return `${scoreRecordArtifactPath} is missing the institution`;
+  }
+
+  if (!proof.stored?.submitter || !isAddress(proof.stored.submitter)) {
+    return `${scoreRecordArtifactPath} is missing the stored submitter`;
+  }
+
+  if (!proof.stored.updatedAt || !/^\d+$/.test(proof.stored.updatedAt)) {
+    return `${scoreRecordArtifactPath} is missing the stored update timestamp`;
+  }
+
+  if (requireWavy && proof.source !== "wavy") {
+    return `${scoreRecordArtifactPath} source is ${proof.source ?? "unknown"}, expected wavy`;
+  }
+
+  if (proof.chainId !== undefined && proof.chainId !== 43113) {
+    return `${scoreRecordArtifactPath} chainId is ${proof.chainId}, expected 43113`;
+  }
+
+  return undefined;
+}
+
+function compareScoreRecordProof(
+  proof: ScoreRecordProof,
+  stored: DecodedScoreRecord,
+): string | undefined {
+  const comparisons: Array<[string, unknown, unknown]> = [
+    ["subjectHash", proof.subjectHash?.toLowerCase(), stored.subjectHash],
+    ["wavyRiskScore", proof.wavy?.riskScore, stored.wavyRiskScore],
+    [
+      "compositeCreditScore",
+      proof.composite?.creditScore,
+      stored.compositeCreditScore,
+    ],
+    ["decision", proof.composite?.decisionEnum, stored.decision],
+    [
+      "wavyEvidenceHash",
+      proof.wavy?.evidenceHash?.toLowerCase(),
+      stored.wavyEvidenceHash,
+    ],
+    ["wavyAnalysisId", proof.wavy?.analysisId, stored.wavyAnalysisId],
+    ["institution", proof.institution, stored.institution],
+    ["submitter", proof.stored?.submitter?.toLowerCase(), stored.submitter],
+    ["updatedAt", proof.stored?.updatedAt, stored.updatedAt],
+  ];
+
+  const mismatch = comparisons.find(
+    ([, expected, actual]) => expected !== actual,
+  );
+
+  return mismatch
+    ? `${scoreRecordArtifactPath} ${mismatch[0]} does not match on-chain getScore`
+    : undefined;
+}
+
+function decodeScoreRecord(value: string): DecodedScoreRecord {
+  const data = stripHexPrefix(value);
+  const starts = candidateTupleStarts(data);
+  let lastError: Error | undefined;
+
+  for (const start of starts) {
+    try {
+      return decodeScoreRecordAt(data, start);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("decode failed");
+    }
+  }
+
+  throw lastError ?? new Error("Could not decode getScore(bytes32) response.");
+}
+
+function decodeScoreRecordAt(
+  data: string,
+  tupleStart: number,
+): DecodedScoreRecord {
+  const subjectHash = `0x${readWord(data, tupleStart)}`.toLowerCase();
+  const evidenceHash = `0x${readWord(data, tupleStart + 4 * 32)}`.toLowerCase();
+  const analysisOffset = wordToNumber(readWord(data, tupleStart + 5 * 32));
+  const institutionOffset = wordToNumber(readWord(data, tupleStart + 6 * 32));
+
+  if (!isBytes32(subjectHash) || !isBytes32(evidenceHash)) {
+    throw new Error("getScore(bytes32) returned malformed bytes32 fields.");
+  }
+
+  return {
+    subjectHash,
+    wavyRiskScore: wordToNumber(readWord(data, tupleStart + 32)),
+    compositeCreditScore: wordToNumber(readWord(data, tupleStart + 2 * 32)),
+    decision: wordToNumber(readWord(data, tupleStart + 3 * 32)),
+    wavyEvidenceHash: evidenceHash,
+    wavyAnalysisId: decodeAbiString(data, tupleStart, analysisOffset),
+    institution: decodeAbiString(data, tupleStart, institutionOffset),
+    updatedAt: wordToBigInt(readWord(data, tupleStart + 7 * 32)).toString(),
+    submitter:
+      `0x${readWord(data, tupleStart + 8 * 32).slice(-40)}`.toLowerCase(),
+  };
+}
+
+function candidateTupleStarts(data: string): number[] {
+  const starts = [0];
+
+  try {
+    const firstWord = readWord(data, 0);
+    const offset = wordToNumber(firstWord);
+
+    if (offset > 0 && offset * 2 < data.length && offset % 32 === 0) {
+      starts.unshift(offset);
+    }
+  } catch {
+    return starts;
+  }
+
+  return starts;
+}
+
+function decodeAbiString(data: string, tupleStart: number, offset: number) {
+  if (offset < 9 * 32 || offset % 32 !== 0) {
+    throw new Error("getScore(bytes32) returned malformed string offsets.");
+  }
+
+  const length = wordToNumber(readWord(data, tupleStart + offset));
+  const valueStart = (tupleStart + offset + 32) * 2;
+  const valueEnd = valueStart + length * 2;
+
+  if (valueEnd > data.length) {
+    throw new Error("getScore(bytes32) returned truncated string data.");
+  }
+
+  return Buffer.from(data.slice(valueStart, valueEnd), "hex").toString("utf8");
+}
+
+function readWord(data: string, byteOffset: number) {
+  const start = byteOffset * 2;
+  const word = data.slice(start, start + 64);
+
+  if (word.length !== 64) {
+    throw new Error("getScore(bytes32) returned truncated ABI data.");
+  }
+
+  return word;
+}
+
+function wordToNumber(word: string) {
+  const value = wordToBigInt(word);
+
+  if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error("ABI integer exceeds JavaScript safe integer range.");
+  }
+
+  return Number(value);
+}
+
+function wordToBigInt(word: string) {
+  return BigInt(`0x${word}`);
 }
 
 function normalizeBaseUrl(value: string | undefined): string | undefined {
@@ -901,6 +1246,10 @@ function isAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
+function isBytes32(value: string): boolean {
+  return /^0x[a-fA-F0-9]{64}$/.test(value);
+}
+
 function isScore(value: unknown): boolean {
   return typeof value === "number" && value >= 0 && value <= 100;
 }
@@ -919,6 +1268,14 @@ function decodeAddress(value: string): string {
 
 function decodeBool(value: string): boolean {
   return BigInt(value) === 1n;
+}
+
+function stripHexPrefix(value: string): string {
+  return value.startsWith("0x") ? value.slice(2) : value;
+}
+
+function shortHash(value: string): string {
+  return `${value.slice(0, 10)}...${value.slice(-6)}`;
 }
 
 function icon(status: CheckStatus): string {

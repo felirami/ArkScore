@@ -173,7 +173,7 @@ test("submission evidence renders strict eERC20 handoff when required", () => {
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /pnpm probe:eerc20:strict/);
   assert.match(result.output, /ARKSCORE_REQUIRE_EERC20=true pnpm finalize/);
-  assert.match(result.output, /pnpm verify:live:strict:eerc20/);
+  assert.match(result.output, /pnpm verify:live:strict:eerc20:record/);
   assert.doesNotMatch(result.output, /^pnpm probe:eerc20$/m);
   assert.doesNotMatch(result.output, /^pnpm verify:live:strict$/m);
 });
@@ -446,6 +446,29 @@ test("live verifier proves registry getScore readback ABI", async () => {
   assert.match(
     result.output,
     /Fuji registry getScore ABI: getScore\(bytes32\) reverted with MissingScore\(\)/,
+  );
+});
+
+test("live verifier proves the latest Fuji score record artifact", async () => {
+  const result = await runLiveVerifierWithMockScoreRecord();
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(
+    result.output,
+    /Fuji score record proof: .*LatestScoreRecord\.json matches on-chain getScore/,
+  );
+});
+
+test("live verifier fails when the latest Fuji score record differs on-chain", async () => {
+  const result = await runLiveVerifierWithMockScoreRecord({
+    storedEvidenceHash:
+      "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(
+    result.output,
+    /Fuji score record proof: .*wavyEvidenceHash does not match on-chain getScore/,
   );
 });
 
@@ -749,6 +772,172 @@ async function runLiveVerifierWithMockRegistry(
   }
 }
 
+type ScoreRecordRpcOptions = {
+  storedEvidenceHash?: string;
+};
+
+async function runLiveVerifierWithMockScoreRecord(
+  options: ScoreRecordRpcOptions = {},
+) {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-score-record-"));
+  const artifactPath = join(tempDir, "LatestScoreRecord.json");
+  const registryAddress = "0x1111111111111111111111111111111111111111";
+  const scorerAddress = "0x4444444444444444444444444444444444444444";
+  const subjectHash =
+    "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  const evidenceHash =
+    "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+  const storedEvidenceHash = options.storedEvidenceHash ?? evidenceHash;
+  const artifact = {
+    generatedAt: "2026-05-16T00:00:00.000Z",
+    apiUrl: "https://arkscore-api.up.railway.app",
+    registryAddress,
+    scorerAddress,
+    subjectHash,
+    requestedWallet: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    institution: "bankaool",
+    source: "wavy",
+    chainId: 43113,
+    transactionHash:
+      "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    blockNumber: 12345,
+    previousRecord: false,
+    wavy: {
+      analysisId: "wavy-live-123",
+      riskScore: 18,
+      evidenceHash,
+    },
+    composite: {
+      creditScore: 82,
+      decision: "APPROVE_BANKAOOL_LOAN",
+      decisionEnum: 2,
+    },
+    stored: {
+      submitter: scorerAddress,
+      updatedAt: "1710000000",
+    },
+  };
+
+  writeFileSync(artifactPath, JSON.stringify(artifact));
+
+  const rpcServer = await listen(async (request, response) => {
+    const body = (await readJson(request)) as {
+      id?: number;
+      method?: string;
+      params?: Array<{ data?: string } | string>;
+    };
+    const data =
+      body.params?.[0] && typeof body.params[0] === "object"
+        ? body.params[0].data
+        : undefined;
+
+    response.writeHead(200, { "content-type": "application/json" });
+
+    if (body.method === "eth_getCode") {
+      response.end(
+        JSON.stringify({ jsonrpc: "2.0", id: body.id, result: "0x6000" }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data === "0x8da5cb5b") {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeAddress("0x2222222222222222222222222222222222222222"),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x73c4502c")) {
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeBool(true),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x92b8c652")) {
+      const encodedSubject = data.slice(10);
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: encodeBool(encodedSubject === subjectHash.slice(2)),
+        }),
+      );
+      return;
+    }
+
+    if (body.method === "eth_call" && data?.startsWith("0x7ba53285")) {
+      const encodedSubject = data.slice(10);
+
+      if (encodedSubject === subjectHash.slice(2)) {
+        response.end(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            id: body.id,
+            result: encodeScoreRecord({
+              subjectHash,
+              wavyRiskScore: 18,
+              compositeCreditScore: 82,
+              decision: 2,
+              evidenceHash: storedEvidenceHash,
+              analysisId: "wavy-live-123",
+              institution: "bankaool",
+              updatedAt: 1710000000n,
+              submitter: scorerAddress,
+            }),
+          }),
+        );
+        return;
+      }
+
+      response.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: body.id,
+          error: {
+            code: 3,
+            message: "execution reverted",
+            data: "0xe5fa9471",
+          },
+        }),
+      );
+      return;
+    }
+
+    response.end(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: body.id,
+        error: { code: -32601, message: "method not mocked" },
+      }),
+    );
+  });
+
+  try {
+    return await runScriptAsync(
+      "scripts/verify-live.ts",
+      ["--skip-web", "--skip-api", "--strict", "--require-score-record"],
+      {
+        ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+        ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+        ARKSCORE_SCORER_ADDRESS: scorerAddress,
+        FUJI_RPC_URL: rpcServer.url,
+      },
+    );
+  } finally {
+    await rpcServer.close();
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 async function runLivePreflightVerifierWithMocks() {
   const registryAddress = "0x1111111111111111111111111111111111111111";
   const scorerAddress = "0x4444444444444444444444444444444444444444";
@@ -969,4 +1158,48 @@ function encodeAddress(address: string) {
 
 function encodeBool(value: boolean) {
   return `0x${(value ? "1" : "0").padStart(64, "0")}`;
+}
+
+function encodeScoreRecord(input: {
+  subjectHash: string;
+  wavyRiskScore: number;
+  compositeCreditScore: number;
+  decision: number;
+  evidenceHash: string;
+  analysisId: string;
+  institution: string;
+  updatedAt: bigint;
+  submitter: string;
+}) {
+  const analysisTail = encodeAbiString(input.analysisId);
+  const institutionTail = encodeAbiString(input.institution);
+  const tupleHeadSize = 9 * 32;
+  const analysisOffset = tupleHeadSize;
+  const institutionOffset = tupleHeadSize + analysisTail.length / 2;
+  const tuple = [
+    input.subjectHash.slice(2),
+    encodeUint(input.wavyRiskScore),
+    encodeUint(input.compositeCreditScore),
+    encodeUint(input.decision),
+    input.evidenceHash.slice(2),
+    encodeUint(analysisOffset),
+    encodeUint(institutionOffset),
+    encodeUint(input.updatedAt),
+    input.submitter.slice(2).padStart(64, "0"),
+    analysisTail,
+    institutionTail,
+  ].join("");
+
+  return `0x${encodeUint(32)}${tuple}`;
+}
+
+function encodeAbiString(value: string) {
+  const valueHex = Buffer.from(value, "utf8").toString("hex");
+  const paddedLength = Math.ceil(valueHex.length / 64) * 64;
+
+  return `${encodeUint(Buffer.byteLength(value, "utf8"))}${valueHex.padEnd(paddedLength, "0")}`;
+}
+
+function encodeUint(value: number | bigint) {
+  return BigInt(value).toString(16).padStart(64, "0");
 }
