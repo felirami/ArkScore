@@ -47,5 +47,8 @@ jobs:
       - name: Verify monorepo
         run: pnpm verify
 
+      - name: Requirements audit
+        run: pnpm audit:requirements
+
       - name: Readiness audit
         run: pnpm readiness

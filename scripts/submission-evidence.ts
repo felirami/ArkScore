@@ -112,6 +112,10 @@ function runChecks(): CommandResult[] {
       label: "Live deployment verifier",
       command: "pnpm --silent verify:live",
     },
+    {
+      label: "Requirements audit",
+      command: "pnpm --silent audit:requirements",
+    },
     { label: "Readiness gate", command: "pnpm --silent readiness" },
   ];
 

@@ -241,6 +241,44 @@ test("readiness strict record warns when the score record proof is missing", () 
   }
 });
 
+test("requirements audit maps repo readiness without leaking secrets", () => {
+  const result = runScript("scripts/audit-requirements.ts", [], {
+    WAVY_NODE_API_KEY: "ApiKey should-not-print",
+    FUJI_PRIVATE_KEY:
+      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  });
+
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /ArkScore Requirements Audit/);
+  assert.match(result.output, /\[pass\] Next.js 15 App Router frontend:/);
+  assert.match(
+    result.output,
+    /\[pass\] Wavy Node traceability and AI risk score:/,
+  );
+  assert.match(result.output, /\[warn\] Railway live deployment proof:/);
+  assert.doesNotMatch(result.output, /should-not-print/);
+  assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
+});
+
+test("requirements audit strict mode fails while live proof is missing", () => {
+  const result = runScript("scripts/audit-requirements.ts", ["--strict"], {
+    ARKSCORE_API_URL: "",
+    NEXT_PUBLIC_API_BASE_URL: "",
+    WAVY_NODE_API_KEY: "",
+    WAVY_NODE_PROJECT_ID: "",
+    ARKSCORE_SUBJECT_HASH_SALT: "",
+    ARKSCORE_REGISTRY_ADDRESS: "",
+    CREDIT_SCORE_REGISTRY_ADDRESS: "",
+    REGISTRY_ADDRESS: "",
+    NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS: "",
+  });
+
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Railway live deployment proof/);
+  assert.match(result.output, /Live Wavy credential proof/);
+  assert.match(result.output, /Fuji registry deployment proof/);
+});
+
 test("submission evidence renders strict eERC20 handoff when required", () => {
   const result = runScript(
     "scripts/submission-evidence.ts",
