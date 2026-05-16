@@ -1,8 +1,19 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 import hardhatEthersChaiMatchers from "@nomicfoundation/hardhat-ethers-chai-matchers";
 import hardhatMocha from "@nomicfoundation/hardhat-mocha";
 import { defineConfig } from "hardhat/config";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const configDir = dirname(fileURLToPath(import.meta.url));
+
+loadEnv({ path: join(configDir, ".env"), override: false, quiet: true });
+loadEnv({
+  path: join(configDir, "..", "..", ".env"),
+  override: false,
+  quiet: true,
+});
 
 const fujiRpcUrl =
   process.env.FUJI_RPC_URL ?? "https://api.avax-test.network/ext/bc/C/rpc";
@@ -18,23 +29,23 @@ const config = defineConfig({
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
-      }
-    }
+        runs: 200,
+      },
+    },
   },
   networks: {
     hardhatMainnet: {
       type: "edr-simulated",
-      chainType: "l1"
+      chainType: "l1",
     },
     fuji: {
       type: "http",
       chainType: "l1",
       url: fujiRpcUrl,
       chainId: 43113,
-      accounts: fujiAccounts
-    }
-  }
+      accounts: fujiAccounts,
+    },
+  },
 });
 
 export default config;

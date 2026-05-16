@@ -24,6 +24,7 @@ ArkScore turns Wavy Node wallet traceability and AI risk into an auditable Avala
 - Mock mode keeps the demo reliable before the final Wavy project id and API key are available.
 - `pnpm probe:wavy` gives the team a pre-deployment proof that live Wavy credentials return an analysis id, risk score, traceability fields, subject hash, and evidence hash without exposing the API key.
 - `pnpm probe:fuji` gives the team a pre-deployment proof that the Fuji deployer key is valid, funded, and pointed at chain id 43113 without exposing the private key.
+- `pnpm record:fuji` gives judges a CLI-verifiable proof that a live Wavy-backed Railway score was written to Fuji and read back through `CreditScoreRegistry`.
 - Authorized scorer permissions keep the registry closer to an institutional oracle model.
 
 ## Links

@@ -44,6 +44,8 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 
 `pnpm --filter @arkscore/contracts scorer:fuji` authorizes or revokes the wallet that will submit score records from the dashboard. Strict live verification checks `ARKSCORE_SCORER_ADDRESS` with `isScorer(address)`.
 
+`pnpm record:fuji` is available for the final end-to-end oracle proof. It fetches a Railway score for `ARKSCORE_TEST_WALLET`, requires live Wavy mode unless `ARKSCORE_ALLOW_MOCK_RECORD=true` is set, writes the returned subject hash and evidence hash to `CreditScoreRegistry`, then reads the record back from Fuji and verifies it matches the API response.
+
 ## Pending Credentials
 
 - `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` for live Wavy Node traceability and AI risk scoring.
@@ -53,6 +55,7 @@ The API endpoint test suite passes in mock mode, and the isolated Wavy Node adap
 - Deployed `CreditScoreRegistry` address for `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS`.
 - `NEXT_PUBLIC_API_BASE_URL` on Vercel must be set to the Railway API URL before the live Wavy-backed flow replaces hosted demo fallback mode.
 - `ARKSCORE_SCORER_ADDRESS` should be set to the dashboard signing wallet and authorized before the final Store on Fuji demo.
+- `pnpm record:fuji` should be run after Railway, Wavy, Fuji, and scorer authorization are configured to produce the final non-secret storage proof.
 
 ## Deployment Targets
 

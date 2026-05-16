@@ -9,6 +9,7 @@
     "test": "hardhat test",
     "probe:fuji": "hardhat run scripts/probe-fuji-deployer.ts --network fuji",
     "deploy:fuji": "hardhat run scripts/deploy-credit-score-registry.ts --network fuji",
+    "record-live-score:fuji": "hardhat run scripts/record-live-score.ts --network fuji",
     "scorer:fuji": "hardhat run scripts/set-scorer.ts --network fuji",
     "lint": "echo \"Solidity linting not configured yet\"",
     "typecheck": "tsc --noEmit"

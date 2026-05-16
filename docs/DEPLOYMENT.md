@@ -33,6 +33,18 @@ ARKSCORE_SCORER_ADDRESS=0x... pnpm --filter @arkscore/contracts scorer:fuji
 
 Set `SCORER_AUTHORIZED=false` to revoke a scorer.
 
+After Railway is deployed with live Wavy credentials, prove the full oracle path from API response to Fuji storage:
+
+```bash
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
+ARKSCORE_REGISTRY_ADDRESS=0x... \
+ARKSCORE_TEST_WALLET=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 \
+ARKSCORE_INSTITUTION=bankaool \
+pnpm record:fuji
+```
+
+`pnpm record:fuji` uses the configured `FUJI_PRIVATE_KEY` signer, requires that signer to be authorized with `isScorer`, fetches `/api/score/:address`, refuses `source: "mock"` unless `ARKSCORE_ALLOW_MOCK_RECORD=true`, calls `recordScore`, then verifies `hasScore(subjectHash)` and `getScore(subjectHash)` match the live Wavy risk score, composite score, decision, evidence hash, analysis id, and institution.
+
 ## Railway API
 
 Use the repository root as the Railway service root so the `@arkscore/shared` workspace package is available during the build. The root `railway.toml` runs the API package through pnpm filters.
@@ -192,6 +204,10 @@ ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
   ARKSCORE_REGISTRY_ADDRESS=0x... \
   ARKSCORE_SCORER_ADDRESS=0x... \
   pnpm verify:live
+ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
+  ARKSCORE_REGISTRY_ADDRESS=0x... \
+  ARKSCORE_INSTITUTION=bankaool \
+  pnpm record:fuji
 ```
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
