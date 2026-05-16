@@ -11,7 +11,7 @@
     "deploy:fuji": "hardhat run scripts/deploy-credit-score-registry.ts --network fuji",
     "record-live-score:fuji": "hardhat run scripts/record-live-score.ts --network fuji",
     "scorer:fuji": "hardhat run scripts/set-scorer.ts --network fuji",
-    "lint": "echo \"Solidity linting not configured yet\"",
+    "lint": "solhint 'contracts/**/*.sol'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,11 +23,12 @@
     "@nomicfoundation/hardhat-ethers-chai-matchers": "3.0.8",
     "@nomicfoundation/hardhat-mocha": "3.0.19",
     "@types/chai": "5.2.3",
-    "@types/node": "25.8.0",
     "@types/mocha": "10.0.10",
+    "@types/node": "25.8.0",
     "chai": "6.2.2",
     "hardhat": "3.4.5",
     "mocha": "11.7.5",
+    "solhint": "^6.2.1",
     "typescript": "6.0.3"
   }
 }

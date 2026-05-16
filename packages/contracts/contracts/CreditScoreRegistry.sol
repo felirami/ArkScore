@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 /// @title CreditScoreRegistry
+/// @author ArkScore
 /// @notice Stores Wavy Node-backed institutional credit decisions by hashed wallet subject on Avalanche Fuji.
 contract CreditScoreRegistry {
     enum InstitutionalDecision {
@@ -23,14 +24,32 @@ contract CreditScoreRegistry {
         address submitter;
     }
 
+    /// @notice Address allowed to transfer ownership and manage authorized score submitters.
     address public owner;
 
+    /// @notice Returns whether an address is authorized to submit score records.
     mapping(address scorer => bool authorized) public isScorer;
     mapping(bytes32 subjectHash => ScoreRecord record) private records;
+    /// @notice Returns whether a hashed subject has a stored score record.
     mapping(bytes32 subjectHash => bool exists) public hasScore;
 
+    /// @notice Emitted when registry ownership changes.
+    /// @param previousOwner Previous owner address.
+    /// @param newOwner New owner address.
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event ScorerUpdated(address indexed scorer, bool authorized);
+    /// @notice Emitted when an owner authorizes or revokes a score submitter.
+    /// @param scorer Address whose score-submitter status changed.
+    /// @param authorized True when the scorer is authorized.
+    event ScorerUpdated(address indexed scorer, bool indexed authorized);
+    /// @notice Emitted when an authorized scorer stores a Wavy-backed score.
+    /// @param subjectHash Privacy-preserving hash of the scored wallet subject.
+    /// @param wavyRiskScore Raw Wavy Node risk score on a 0-100 scale.
+    /// @param compositeCreditScore ArkScore composite credit score on a 0-100 scale.
+    /// @param decision Institutional decision bucket derived from the score.
+    /// @param wavyEvidenceHash Hash of the off-chain score evidence.
+    /// @param wavyAnalysisId Wavy Node analysis identifier for traceability.
+    /// @param institution Institution or product context for the decision.
+    /// @param submitter Authorized scorer that stored the record.
     event ScoreRecorded(
         bytes32 indexed subjectHash,
         uint8 wavyRiskScore,
@@ -69,6 +88,8 @@ contract CreditScoreRegistry {
         emit ScorerUpdated(initialOwner, true);
     }
 
+    /// @notice Transfers owner privileges and authorizes the new owner as a scorer.
+    /// @param newOwner Address that will become the registry owner.
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert InvalidAddress();
 
@@ -80,6 +101,9 @@ contract CreditScoreRegistry {
         emit ScorerUpdated(newOwner, true);
     }
 
+    /// @notice Updates whether an address can submit score records.
+    /// @param scorer Address to authorize or revoke.
+    /// @param authorized True to authorize the scorer, false to revoke it.
     function setScorer(address scorer, bool authorized) external onlyOwner {
         if (scorer == address(0)) revert InvalidAddress();
 
@@ -88,6 +112,14 @@ contract CreditScoreRegistry {
         emit ScorerUpdated(scorer, authorized);
     }
 
+    /// @notice Stores or overwrites the latest Wavy-backed score for a hashed subject.
+    /// @param subjectHash Privacy-preserving hash of the scored wallet subject.
+    /// @param wavyRiskScore Raw Wavy Node risk score on a 0-100 scale.
+    /// @param compositeCreditScore ArkScore composite credit score on a 0-100 scale.
+    /// @param decision Institutional decision bucket derived from the score.
+    /// @param wavyEvidenceHash Hash of the off-chain score evidence.
+    /// @param wavyAnalysisId Wavy Node analysis identifier for traceability.
+    /// @param institution Institution or product context for the decision.
     function recordScore(
         bytes32 subjectHash,
         uint8 wavyRiskScore,
@@ -125,6 +157,9 @@ contract CreditScoreRegistry {
         );
     }
 
+    /// @notice Reads the latest stored score for a hashed subject.
+    /// @param subjectHash Privacy-preserving hash of the scored wallet subject.
+    /// @return record Stored score record.
     function getScore(bytes32 subjectHash) external view returns (ScoreRecord memory record) {
         if (!hasScore[subjectHash]) revert MissingScore();
         return records[subjectHash];

@@ -327,26 +327,32 @@ function checkCreditScoreRegistry(): Check {
     "packages/contracts/contracts/CreditScoreRegistry.sol",
   );
   const contractPackage = readPackageJson("packages/contracts/package.json");
+  const solhintConfig = safeRead("packages/contracts/.solhint.json");
+  const lintScript = contractPackage?.scripts?.lint ?? "";
 
   if (
     contract?.includes("recordScore") &&
     contract.includes("getScore") &&
     contract.includes("isScorer") &&
     contract.includes("bytes32 subjectHash") &&
-    packageVersion(contractPackage, "hardhat")
+    packageVersion(contractPackage, "hardhat") &&
+    packageVersion(contractPackage, "solhint") &&
+    lintScript.includes("solhint") &&
+    solhintConfig?.includes("solhint:recommended")
   ) {
     return {
       label: "Hardhat Solidity score registry",
       status: "pass",
       detail:
-        "CreditScoreRegistry stores hashed score records with scorer authorization",
+        "CreditScoreRegistry stores hashed score records with scorer authorization and Solhint linting",
     };
   }
 
   return {
     label: "Hardhat Solidity score registry",
     status: "fail",
-    detail: "missing registry contract behavior or Hardhat dependency",
+    detail:
+      "missing registry contract behavior, Hardhat dependency, or Solhint lint gate",
   };
 }
 
