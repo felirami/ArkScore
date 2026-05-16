@@ -20,6 +20,7 @@
     "readiness:strict:record": "tsx scripts/readiness-check.ts --strict --require-score-record",
     "probe:wavy": "tsx scripts/probe-wavy.ts",
     "probe:fuji": "pnpm --filter @arkscore/contracts probe:fuji",
+    "plan:eerc20": "tsx scripts/plan-eerc20.ts",
     "probe:eerc20": "tsx scripts/probe-eerc20.ts",
     "probe:eerc20:strict": "tsx scripts/probe-eerc20.ts --strict",
     "record:fuji": "pnpm --filter @arkscore/contracts record-live-score:fuji",

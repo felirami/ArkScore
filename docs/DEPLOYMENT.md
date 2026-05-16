@@ -224,6 +224,7 @@ curl https://your-railway-api.up.railway.app/health
 curl https://your-railway-api.up.railway.app/openapi.json
 curl "https://your-railway-api.up.railway.app/api/score/0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045?institution=bankaool"
 pnpm readiness
+pnpm plan:eerc20
 ARKSCORE_API_URL=https://your-railway-api.up.railway.app \
   ARKSCORE_REGISTRY_ADDRESS=0x... \
   ARKSCORE_EERC20_DEMO_ADDRESS=0x... \
@@ -237,6 +238,8 @@ pnpm readiness:strict:record
 ```
 
 Use `pnpm readiness:strict` when all live credentials and deployed addresses are expected to be configured; it exits non-zero while Railway, Wavy, Fuji, or frontend live-env gates are still missing. Use `pnpm readiness:strict:record` after `pnpm record:fuji` to additionally require the non-secret `LatestScoreRecord.json` proof. The readiness gate accepts `ARKSCORE_API_URL` or `NEXT_PUBLIC_API_BASE_URL` for the Railway API, and the same registry/scorer aliases accepted by `finalize:live`.
+
+Use `pnpm plan:eerc20` before the optional EncryptedERC handoff. It checks the local `../EncryptedERC` checkout, official standalone/converter deploy scripts, Circom availability, Fuji deployer key shape, and configured ArkScore eERC20 address, then prints the Fuji deploy/probe/final-verifier commands with secrets redacted.
 
 Use `pnpm verify:live:preflight` immediately before `pnpm finalize:live:apply` if you want a standalone proof that the live API and Fuji registry are ready before the frontend is republished.
 

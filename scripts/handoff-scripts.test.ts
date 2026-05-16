@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import {
   createServer,
   type IncomingMessage,
@@ -479,6 +479,61 @@ test("eERC20 probe is optional by default when no address is configured", () => 
 
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /Optional eERC20 demo address is not configured/);
+});
+
+test("eERC20 planner prints official Fuji handoff commands without secrets", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-eerc20-plan-"));
+  const missingRepoDir = join(tempDir, "EncryptedERC");
+  const result = runScript("scripts/plan-eerc20.ts", [], {
+    EERC20_REPO_DIR: missingRepoDir,
+    FUJI_PRIVATE_KEY:
+      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  });
+
+  try {
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /ArkScore eERC20 Handoff Planner/);
+    assert.match(result.output, /github\.com\/ava-labs\/EncryptedERC\.git/);
+    assert.match(
+      result.output,
+      /scripts\/deploy-standalone\.ts --network fuji/,
+    );
+    assert.match(result.output, /pnpm probe:eerc20:strict/);
+    assert.match(result.output, /Fuji deployer key: configured and redacted/);
+    assert.doesNotMatch(result.output, /aaaaaaaaaaaaaaaa/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("eERC20 planner recognizes a local EncryptedERC Fuji checkout", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "arkscore-eerc20-repo-"));
+
+  writeFileSync(join(tempDir, "package.json"), "{}");
+  mkdirSync(join(tempDir, "scripts"), { recursive: true });
+  writeFileSync(join(tempDir, "scripts", "deploy-standalone.ts"), "");
+  writeFileSync(join(tempDir, "scripts", "deploy-converter.ts"), "");
+  writeFileSync(
+    join(tempDir, "hardhat.config.ts"),
+    "export default { networks: { fuji: { chainId: 43113 } } };",
+  );
+
+  try {
+    const result = runScript("scripts/plan-eerc20.ts", [], {
+      EERC20_REPO_DIR: tempDir,
+      EERC20_MODE: "converter",
+      ARKSCORE_EERC20_DEMO_ADDRESS:
+        "0x3333333333333333333333333333333333333333",
+    });
+
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /\[pass\] Local EncryptedERC checkout:/);
+    assert.match(result.output, /Fuji chain id 43113/);
+    assert.match(result.output, /scripts\/deploy-converter\.ts --network fuji/);
+    assert.match(result.output, /0x3333333333333333333333333333333333333333/);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test("eERC20 strict probe refuses a missing optional demo address", () => {
