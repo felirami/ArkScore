@@ -25,7 +25,7 @@ Status date: May 16, 2026
 pnpm verify
 ```
 
-The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify supported-chain lookup, address registration, the live `scan-risk` URL, `x-api-key` header, traceability normalization, duplicate registration handling, upstream error propagation, and timeout conversion to a `504` gateway timeout. Both are included in `pnpm verify`.
+The API endpoint test suite passes in mock mode, and the isolated Wavy Node adapter tests verify supported-chain lookup, address registration, the live `scan-risk` URL, `x-api-key` header, traceability normalization, duplicate registration handling, upstream error propagation, and timeout conversion to a `504` gateway timeout. Script tests verify that Railway dry-run output redacts secret variables, apply mode refuses missing live credentials before deploy, and the submission evidence generator can render without live checks. These are included in `pnpm verify`.
 
 `pnpm probe:wavy` is available for the final credential handoff. It refuses placeholder Wavy credentials or demo subject-hash salts, forces live Wavy mode, checks Wavy Node `/chains` for the configured chain id, and prints only non-secret scoring evidence: active supported chain, Wavy analysis id, risk score, traceability provider, wallet-risk scan type, AI risk scale, address registration mode, composite score, subject hash, and evidence hash.
 
