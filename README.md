@@ -2,6 +2,28 @@
 
 ArkScore is a privacy-preserving on-chain credit and investor risk scoring oracle for the LatAm Institucional Hackathon with Avalanche, Arkangeles IFC, and Bankaool.
 
+## Live Submission Links
+
+- Live frontend: [`https://arkscore-seven.vercel.app`](https://arkscore-seven.vercel.app)
+- Live backend: [`https://arkscore-api-production.up.railway.app`](https://arkscore-api-production.up.railway.app)
+- Backend OpenAPI: [`https://arkscore-api-production.up.railway.app/openapi.json`](https://arkscore-api-production.up.railway.app/openapi.json)
+- Fuji `CreditScoreRegistry`: [`0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`](https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code)
+- Fuji demo proof transaction: [`0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2`](https://testnet.snowscan.xyz/tx/0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2)
+- Latest proof artifact: [`packages/contracts/deployments/fuji/LatestScoreRecord.json`](packages/contracts/deployments/fuji/LatestScoreRecord.json)
+- Pitch deck: [`PITCH-DECK.md`](PITCH-DECK.md)
+
+## 60-Second Demo Video Script
+
+0-10s: "ArkScore helps Arkangeles and Bankaool turn wallet risk into an auditable credit decision. The app is live on Vercel, the API is live on Railway, and the scoring proof is stored on Avalanche Fuji."
+
+10-25s: "I connect a Fuji wallet, enter a test wallet, and fetch a score. The dashboard shows Wavy-style risk traceability, the ArkScore composite score, the institution decision, the subject hash, and the evidence hash."
+
+25-40s: "For this submitted proof, Wavy Node's tracker-service was temporarily failing, so the backend is clearly labeled mock mode. The API-to-contract path still runs end-to-end against live infrastructure."
+
+40-55s: "I store the score on the deployed `CreditScoreRegistry`, then read it back from Fuji. The transaction is visible on Snowscan, and the stored evidence matches the API response."
+
+55-60s: "This becomes a per-query SaaS scoring rail for institutional underwriting, with eERC20 privacy as the next layer for confidential credit notes."
+
 ## Pitch
 
 ArkScore evaluates an EVM wallet with Wavy Node traceability and AI risk scoring, computes an explainable 0-100 institutional credit score, and stores the result on Avalanche Fuji through `CreditScoreRegistry`. Arkangeles can screen investors and borrowers for IFC equity issuance workflows, while Bankaool can use the same traceable risk record for credit underwriting.

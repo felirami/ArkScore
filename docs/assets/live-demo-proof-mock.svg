@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">ArkScore live demo proof card</title>
+  <desc id="desc">Mock-mode API to Fuji proof for ArkScore, including wallet, scores, registry, and transaction hash.</desc>
+  <rect width="1200" height="760" fill="#0f172a"/>
+  <rect x="54" y="46" width="1092" height="668" rx="20" fill="#ffffff"/>
+  <rect x="54" y="46" width="1092" height="96" rx="20" fill="#0b1220"/>
+  <text x="92" y="104" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700">ArkScore Live Demo Proof</text>
+  <text x="92" y="166" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">Mock Mode - Wavy upstream tracker issue</text>
+  <text x="92" y="205" fill="#64748b" font-family="Arial, Helvetica, sans-serif" font-size="20">API score generated on Railway, stored on Avalanche Fuji, then read back from CreditScoreRegistry.</text>
+
+  <rect x="92" y="246" width="480" height="122" rx="14" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+  <text x="122" y="291" fill="#155e75" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Test Wallet</text>
+  <text x="122" y="329" fill="#0f172a" font-family="Menlo, Consolas, monospace" font-size="19">0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045</text>
+
+  <rect x="628" y="246" width="224" height="122" rx="14" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+  <text x="658" y="291" fill="#166534" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Mock Wavy Risk</text>
+  <text x="658" y="335" fill="#0f172a" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700">2/100</text>
+
+  <rect x="884" y="246" width="224" height="122" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
+  <text x="914" y="291" fill="#3730a3" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Composite Score</text>
+  <text x="914" y="335" fill="#0f172a" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700">100/100</text>
+
+  <rect x="92" y="410" width="1016" height="84" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="122" y="447" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Decision</text>
+  <text x="122" y="477" fill="#0f172a" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700">APPROVE_BANKAOOL_LOAN</text>
+  <text x="520" y="447" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Evidence Hash</text>
+  <text x="520" y="477" fill="#0f172a" font-family="Menlo, Consolas, monospace" font-size="16">0xc590063bfede4e2fc12a02ce437d43bd1182e7e070c7c9091b1bd5ff54ead0e4</text>
+
+  <rect x="92" y="530" width="1016" height="126" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+  <text x="122" y="569" fill="#9a3412" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Fuji CreditScoreRegistry</text>
+  <text x="122" y="600" fill="#0f172a" font-family="Menlo, Consolas, monospace" font-size="17">0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46</text>
+  <text x="122" y="634" fill="#9a3412" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Fuji Transaction</text>
+  <text x="316" y="634" fill="#0f172a" font-family="Menlo, Consolas, monospace" font-size="17">0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2</text>
+  <text x="92" y="692" fill="#64748b" font-family="Arial, Helvetica, sans-serif" font-size="17">Block 55449102 - proof artifact: packages/contracts/deployments/fuji/LatestScoreRecord.json</text>
+</svg>
