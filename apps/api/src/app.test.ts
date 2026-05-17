@@ -5,6 +5,7 @@ import test from "node:test";
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { createEvidenceHash } from "./lib/evidence.js";
+import { createWavyIntegrationSignature } from "./services/wavy-integration.js";
 import type { ScoreApiResponse } from "@arkscore/shared";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
@@ -33,6 +34,7 @@ test("health reports mock scoring mode when credentials are absent", async () =>
       ok: boolean;
       service: string;
       mockMode: boolean;
+      wavyIntegrationConfigured: boolean;
       wavyChainId: number;
       subjectHashSaltConfigured: boolean;
     };
@@ -41,6 +43,7 @@ test("health reports mock scoring mode when credentials are absent", async () =>
     assert.equal(payload.ok, true);
     assert.equal(payload.service, "arkscore-api");
     assert.equal(payload.mockMode, true);
+    assert.equal(payload.wavyIntegrationConfigured, true);
     assert.equal(payload.wavyChainId, 43113);
     assert.equal(payload.subjectHashSaltConfigured, false);
   });
@@ -61,6 +64,9 @@ test("openapi document describes the public scoring contract", async () => {
     const scoreSchema = payload.components.schemas.ScoreApiResponse;
     const wavySchema = payload.components.schemas.WavyRiskResult;
     const traceabilitySchema = payload.components.schemas.WavyTraceability;
+    const integrationUserSchema =
+      payload.components.schemas.WavyIntegrationUserData;
+    const webhookSchema = payload.components.schemas.WavyWebhookPayload;
     const subjectHashSchema = scoreSchema?.properties?.subjectHash as
       | StringSchema
       | undefined;
@@ -74,6 +80,8 @@ test("openapi document describes the public scoring contract", async () => {
     assert.equal(payload.servers[0]?.description, "Current API origin");
     assert.ok(payload.paths["/health"]);
     assert.ok(payload.paths["/api/score/{address}"]);
+    assert.ok(payload.paths["/users/{foreignUserId}"]);
+    assert.ok(payload.paths["/webhook"]);
     assert.ok(scoreOperation?.get?.responses?.["400"]);
     assert.ok(scoreOperation?.get?.responses?.["404"]);
     assert.ok(scoreOperation?.get?.responses?.["429"]);
@@ -91,10 +99,16 @@ test("openapi document describes the public scoring contract", async () => {
     assert.ok(scoreSchema);
     assert.ok(wavySchema);
     assert.ok(traceabilitySchema);
+    assert.ok(integrationUserSchema);
+    assert.ok(webhookSchema);
     assert.ok(healthSchema.required?.includes("subjectHashSaltConfigured"));
     assert.ok(healthSchema.required?.includes("wavyChainId"));
+    assert.ok(healthSchema.required?.includes("wavyIntegrationConfigured"));
     assert.ok(healthSchema.properties?.subjectHashSaltConfigured);
     assert.ok(healthSchema.properties?.wavyChainId);
+    assert.ok(healthSchema.properties?.wavyIntegrationConfigured);
+    assert.ok(integrationUserSchema.required?.includes("foreign_user_id"));
+    assert.ok(webhookSchema.required?.includes("type"));
     assert.ok(scoreSchema.required?.includes("subjectHash"));
     assert.equal(subjectHashSchema?.pattern, "^0x[a-fA-F0-9]{64}$");
     assert.ok(wavySchema.required?.includes("traceability"));
@@ -123,6 +137,86 @@ test("openapi document honors Railway forwarded origin headers", async () => {
       payload.servers[0]?.url,
       "https://arkscore-api.up.railway.app",
     );
+  });
+});
+
+test("Wavy integration serves signed compliance user data", async () => {
+  await withTestServer(async (baseUrl) => {
+    const foreignUserId = createForeignUserId(demoWallet);
+    const path = `/users/${foreignUserId}`;
+    const response = await fetch(`${baseUrl}${path}`, {
+      headers: createSignedWavyHeaders({
+        method: "GET",
+        path,
+        body: undefined,
+      }),
+    });
+    const payload = (await response.json()) as {
+      foreign_user_id: string;
+      givenName: string;
+      email: string;
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.foreign_user_id, foreignUserId);
+    assert.equal(payload.givenName, "ArkScore");
+    assert.equal(payload.email, "compliance@example.com");
+  });
+});
+
+test("Wavy integration receives signed webhook alerts", async () => {
+  await withTestServer(async (baseUrl) => {
+    const body = {
+      type: "notification",
+      data: {
+        id: 1,
+        chainId: 43113,
+        txHash: "0xwavy-test-transaction",
+        address: {
+          userId: createForeignUserId(demoWallet),
+          address: demoWallet,
+        },
+      },
+    };
+    const path = "/webhook";
+    const response = await fetch(`${baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...createSignedWavyHeaders({
+          method: "POST",
+          path,
+          body,
+        }),
+      },
+      body: JSON.stringify(body),
+    });
+    const payload = (await response.json()) as {
+      received: boolean;
+      type: string;
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.received, true);
+    assert.equal(payload.type, "notification");
+  });
+});
+
+test("Wavy integration rejects invalid signatures", async () => {
+  await withTestServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/webhook`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-wavynode-hmac": "invalid-signature",
+        "x-wavynode-timestamp": String(Date.now()),
+      },
+      body: JSON.stringify({ type: "error", data: "test" }),
+    });
+    const payload = (await response.json()) as { error: string };
+
+    assert.equal(response.status, 401);
+    assert.match(payload.error, /Invalid Wavy Node HMAC signature/);
   });
 });
 
@@ -220,6 +314,31 @@ test("score endpoint rate limits repeated clients", async () => {
     assert.match(payload.error, /Too many score requests/);
   });
 });
+
+function createSignedWavyHeaders(input: {
+  method: string;
+  path: string;
+  body: unknown;
+}): Record<string, string> {
+  const secret = env.WAVY_NODE_INTEGRATION_SECRET;
+
+  assert(secret);
+
+  const timestamp = Date.now();
+
+  return {
+    "x-wavynode-hmac": createWavyIntegrationSignature({
+      ...input,
+      timestamp,
+      secret,
+    }),
+    "x-wavynode-timestamp": String(timestamp),
+  };
+}
+
+function createForeignUserId(address: string): string {
+  return `${env.WAVY_NODE_FOREIGN_USER_PREFIX}-${address.toLowerCase()}`;
+}
 
 async function withTestServer(
   run: (baseUrl: string) => Promise<void>,

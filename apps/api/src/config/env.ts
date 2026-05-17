@@ -4,6 +4,7 @@ import { z } from "zod";
 loadEnv({ quiet: true });
 
 const demoSubjectHashSalt = "arkscore-demo-subject-hash-salt";
+const integrationUserDataHealthSchema = z.record(z.string(), z.unknown());
 export const avalancheFujiChainId = 43113;
 
 export const envSchema = z.object({
@@ -25,6 +26,13 @@ export const envSchema = z.object({
   WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
   WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
   WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto"),
+  WAVY_NODE_INTEGRATION_SECRET: z.string().optional(),
+  WAVY_NODE_INTEGRATION_TIME_TOLERANCE_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(300_000),
+  WAVY_NODE_INTEGRATION_USER_DATA_JSON: z.string().optional(),
   ARKSCORE_SCORE_RATE_LIMIT_MAX: z.coerce.number().int().min(0).default(120),
   ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS: z.coerce
     .number()
@@ -53,6 +61,27 @@ export function hasWavyCredentials(): boolean {
     !env.WAVY_NODE_API_KEY.includes("replace_with") &&
     !env.WAVY_NODE_PROJECT_ID.includes("replace_with"),
   );
+}
+
+export function hasWavyIntegrationConfigured(): boolean {
+  const secret = env.WAVY_NODE_INTEGRATION_SECRET;
+  const userDataJson = env.WAVY_NODE_INTEGRATION_USER_DATA_JSON;
+
+  if (
+    !secret ||
+    !userDataJson ||
+    secret.includes("replace_with") ||
+    userDataJson.includes("replace_with")
+  ) {
+    return false;
+  }
+
+  try {
+    integrationUserDataHealthSchema.parse(JSON.parse(userDataJson));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function hasProductionSubjectHashSalt(): boolean {

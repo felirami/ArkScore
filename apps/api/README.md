@@ -9,6 +9,8 @@ GET /
 GET /openapi.json
 GET /health
 GET /api/score/:address
+GET /users/:foreignUserId
+POST /webhook
 ```
 
 Query params:
@@ -19,4 +21,6 @@ institution=arkangeles | bankaool
 
 The API calls Wavy Node when `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` are configured. Otherwise `WAVY_NODE_MOCK_MODE=auto` returns deterministic demo data with the same response shape. `WAVY_NODE_CHAIN_ID` is pinned to Avalanche Fuji `43113` at runtime, and the API config refuses any other chain id before serving scores. The Wavy adapter also exposes a supported-chain helper used by `pnpm probe:wavy` to verify that Fuji is active before the live score call, and it rejects upstream scan results whose returned chain id or wallet address does not match the ArkScore request. Live Wavy requests use `WAVY_NODE_TIMEOUT_MS` so Railway returns a clear gateway timeout if the upstream stalls. Score requests are rate-limited per client with `ARKSCORE_SCORE_RATE_LIMIT_MAX` and `ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS`.
 
-`/openapi.json` documents the health and scoring contract for Railway smoke tests, frontend integration, and hackathon judges. The document includes the current request origin first in `servers`, so the live Railway API advertises the exact URL that `pnpm verify:railway:live` is proving.
+The same API can be configured as the Wavy Node integration URL. `GET /users/:foreignUserId` returns the configured compliance user-data JSON for address registrations created by ArkScore, and `POST /webhook` acknowledges signed Wavy Node alert payloads. Both routes verify `x-wavynode-hmac` and `x-wavynode-timestamp` with `WAVY_NODE_INTEGRATION_SECRET`.
+
+`/openapi.json` documents the health, scoring, and Wavy integration contract for Railway smoke tests, frontend integration, and hackathon judges. The document includes the current request origin first in `servers`, so the live Railway API advertises the exact URL that `pnpm verify:railway:live` is proving.

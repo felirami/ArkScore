@@ -86,6 +86,9 @@ WAVY_NODE_TIMEOUT_MS=15000
 WAVY_NODE_AUTO_REGISTER=true
 WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=false
+WAVY_NODE_INTEGRATION_SECRET=replace_with_wavy_node_integration_secret
+WAVY_NODE_INTEGRATION_TIME_TOLERANCE_MS=300000
+WAVY_NODE_INTEGRATION_USER_DATA_JSON={"givenName":"replace_with_given_name","email":"replace_with_email@example.com"}
 ARKSCORE_SCORE_RATE_LIMIT_MAX=120
 ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000
 ARKSCORE_SUBJECT_HASH_SALT=replace_with_long_random_subject_hash_salt
@@ -120,6 +123,8 @@ The risk scan then calls:
 GET /v1/projects/:projectId/addresses/scan-risk?addresses=:address&chainId=43113
 x-api-key: ApiKey ...
 ```
+
+Configure the deployed Railway API as the Wavy Node integration URL. Wavy Node will call `GET /users/:foreignUserId` for compliance user data and `POST /webhook` for real-time alerts. Both routes require the Wavy signature headers, validated with `WAVY_NODE_INTEGRATION_SECRET` and the `WAVY_NODE_INTEGRATION_TIME_TOLERANCE_MS` replay window. Store the required legislation fields in `WAVY_NODE_INTEGRATION_USER_DATA_JSON`; the API adds the requested `foreign_user_id` before returning the object to Wavy Node.
 
 `ARKSCORE_SUBJECT_HASH_SALT` should be a long random backend-only value. ArkScore returns the derived `subjectHash` to the dashboard, and the Fuji registry stores that hash instead of the raw scored wallet address. `ARKSCORE_SCORE_RATE_LIMIT_MAX` and `ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS` protect live Wavy scoring calls per client; set `ARKSCORE_SCORE_RATE_LIMIT_MAX=0` only for a controlled local demo where rate limiting should be disabled.
 

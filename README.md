@@ -59,6 +59,9 @@ WAVY_NODE_CHAIN_ID=43113
 WAVY_NODE_AUTO_REGISTER=true
 WAVY_NODE_FOREIGN_USER_PREFIX=arkscore-wallet
 WAVY_NODE_MOCK_MODE=auto
+WAVY_NODE_INTEGRATION_SECRET=replace_with_wavy_node_integration_secret
+WAVY_NODE_INTEGRATION_TIME_TOLERANCE_MS=300000
+WAVY_NODE_INTEGRATION_USER_DATA_JSON={"givenName":"replace_with_given_name","email":"replace_with_email@example.com"}
 ARKSCORE_SCORE_RATE_LIMIT_MAX=120
 ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS=60000
 ARKSCORE_SUBJECT_HASH_SALT=replace_with_long_random_subject_hash_salt
@@ -71,7 +74,7 @@ ARKSCORE_SCORER_PRIVATE_KEY=
 FUJI_SCORER_PRIVATE_KEY=
 ```
 
-`WAVY_NODE_MOCK_MODE=auto` uses live Wavy Node only when both the API key and project id are configured. `ARKSCORE_SUBJECT_HASH_SALT` is used by the backend to derive the privacy-preserving `subjectHash` stored on Fuji instead of the raw wallet address. `ARKSCORE_SCORE_RATE_LIMIT_MAX` and `ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS` protect the live Wavy score endpoint from repeated client bursts. `FUJI_PRIVATE_KEY` deploys and owns the Fuji registry; set `ARKSCORE_SCORER_PRIVATE_KEY` or `FUJI_SCORER_PRIVATE_KEY` only when `pnpm record:fuji` should submit from an authorized scorer wallet that is different from the deployer.
+`WAVY_NODE_MOCK_MODE=auto` uses live Wavy Node only when both the API key and project id are configured. `WAVY_NODE_INTEGRATION_SECRET` verifies signed Wavy callbacks, and `WAVY_NODE_INTEGRATION_USER_DATA_JSON` is the compliance user-data object returned from `GET /users/:foreignUserId`; fill it with the fields required by the legislations enabled in your Wavy Node project. `ARKSCORE_SUBJECT_HASH_SALT` is used by the backend to derive the privacy-preserving `subjectHash` stored on Fuji instead of the raw wallet address. `ARKSCORE_SCORE_RATE_LIMIT_MAX` and `ARKSCORE_SCORE_RATE_LIMIT_WINDOW_MS` protect the live Wavy score endpoint from repeated client bursts. `FUJI_PRIVATE_KEY` deploys and owns the Fuji registry; set `ARKSCORE_SCORER_PRIVATE_KEY` or `FUJI_SCORER_PRIVATE_KEY` only when `pnpm record:fuji` should submit from an authorized scorer wallet that is different from the deployer.
 
 ## Local Setup
 

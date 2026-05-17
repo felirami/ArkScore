@@ -3,6 +3,7 @@ import {
   env,
   hasProductionSubjectHashSalt,
   hasWavyCredentials,
+  hasWavyIntegrationConfigured,
   shouldUseMockScores,
 } from "../config/env.js";
 
@@ -13,6 +14,7 @@ healthRouter.get("/health", (_request, response) => {
     ok: true,
     service: "arkscore-api",
     wavyCredentialsConfigured: hasWavyCredentials(),
+    wavyIntegrationConfigured: hasWavyIntegrationConfigured(),
     wavyChainId: env.WAVY_NODE_CHAIN_ID,
     subjectHashSaltConfigured: hasProductionSubjectHashSalt(),
     mockMode: shouldUseMockScores(),

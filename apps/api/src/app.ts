@@ -7,6 +7,7 @@ import { HttpError } from "./lib/http-error.js";
 import { healthRouter } from "./routes/health.js";
 import { openApiRouter } from "./routes/openapi.js";
 import { createScoreRouter } from "./routes/score.js";
+import { createWavyIntegrationRouter } from "./routes/wavy-integration.js";
 
 export function createApp() {
   const app = express();
@@ -37,6 +38,7 @@ export function createApp() {
 
   app.use(openApiRouter);
   app.use(healthRouter);
+  app.use(createWavyIntegrationRouter());
   app.use(createScoreRouter());
 
   app.use((_request, _response, next) => {

@@ -28,6 +28,11 @@ export const openApiDocument = {
       description:
         "Wavy Node traceability and AI risk scoring for wallet underwriting.",
     },
+    {
+      name: "Wavy Node Integration",
+      description:
+        "Signed Wavy Node callbacks for compliance user data and alerts.",
+    },
   ],
   paths: {
     "/health": {
@@ -191,6 +196,175 @@ export const openApiDocument = {
         },
       },
     },
+    "/users/{foreignUserId}": {
+      get: {
+        tags: ["Wavy Node Integration"],
+        operationId: "getWavyIntegrationUser",
+        summary: "Return compliance user data to Wavy Node.",
+        description:
+          "Wavy Node calls this signed route when it needs the user data linked to a monitored wallet foreign_user_id for compliance checks and report generation.",
+        parameters: [
+          {
+            name: "foreignUserId",
+            in: "path",
+            required: true,
+            description:
+              "ArkScore foreign user id registered with Wavy Node for the monitored wallet.",
+            schema: {
+              type: "string",
+              example:
+                "arkscore-wallet-0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+            },
+          },
+          {
+            name: "x-wavynode-hmac",
+            in: "header",
+            required: true,
+            description: "Base64 HMAC-SHA256 signature from Wavy Node.",
+            schema: {
+              type: "string",
+            },
+          },
+          {
+            name: "x-wavynode-timestamp",
+            in: "header",
+            required: true,
+            description:
+              "Request timestamp in milliseconds used for replay protection.",
+            schema: {
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          "200": {
+            description:
+              "Compliance user data JSON configured for the Wavy Node project.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/WavyIntegrationUserData",
+                },
+              },
+            },
+          },
+          "401": {
+            description: "Missing, expired, or invalid Wavy Node signature.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+          "404": {
+            description:
+              "The requested foreign_user_id does not match ArkScore wallet registration.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+          "503": {
+            description:
+              "Wavy Node integration secret or user data is not configured.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/webhook": {
+      post: {
+        tags: ["Wavy Node Integration"],
+        operationId: "receiveWavyWebhook",
+        summary: "Receive signed Wavy Node compliance alerts.",
+        description:
+          "Wavy Node calls this signed route with real-time suspicious activity notifications or integration errors.",
+        parameters: [
+          {
+            name: "x-wavynode-hmac",
+            in: "header",
+            required: true,
+            description: "Base64 HMAC-SHA256 signature from Wavy Node.",
+            schema: {
+              type: "string",
+            },
+          },
+          {
+            name: "x-wavynode-timestamp",
+            in: "header",
+            required: true,
+            description:
+              "Request timestamp in milliseconds used for replay protection.",
+            schema: {
+              type: "string",
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/WavyWebhookPayload",
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Webhook accepted.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/WavyWebhookAcknowledgement",
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Invalid Wavy Node webhook payload.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+          "401": {
+            description: "Missing, expired, or invalid Wavy Node signature.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+          "503": {
+            description: "Wavy Node integration secret is not configured.",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   components: {
     schemas: {
@@ -200,6 +374,7 @@ export const openApiDocument = {
           "ok",
           "service",
           "wavyCredentialsConfigured",
+          "wavyIntegrationConfigured",
           "wavyChainId",
           "subjectHashSaltConfigured",
           "mockMode",
@@ -218,6 +393,11 @@ export const openApiDocument = {
             description:
               "True when WAVY_NODE_API_KEY and WAVY_NODE_PROJECT_ID are configured.",
           },
+          wavyIntegrationConfigured: {
+            type: "boolean",
+            description:
+              "True when the signed Wavy Node callback secret and compliance user data JSON are configured.",
+          },
           wavyChainId: {
             type: "integer",
             enum: [43113],
@@ -234,6 +414,48 @@ export const openApiDocument = {
             type: "boolean",
             description:
               "True when the API is returning deterministic demo traces instead of live Wavy Node results.",
+          },
+        },
+      },
+      WavyIntegrationUserData: {
+        type: "object",
+        additionalProperties: true,
+        required: ["foreign_user_id"],
+        properties: {
+          foreign_user_id: {
+            type: "string",
+            description:
+              "The foreign user id originally registered with Wavy Node for the monitored address.",
+            example:
+              "arkscore-wallet-0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+          },
+        },
+      },
+      WavyWebhookPayload: {
+        type: "object",
+        required: ["type", "data"],
+        properties: {
+          type: {
+            type: "string",
+            enum: ["notification", "error"],
+          },
+          data: {
+            description:
+              "Wavy Node notification payload or error message for the integration.",
+          },
+        },
+      },
+      WavyWebhookAcknowledgement: {
+        type: "object",
+        required: ["received", "type"],
+        properties: {
+          received: {
+            type: "boolean",
+            enum: [true],
+          },
+          type: {
+            type: "string",
+            enum: ["notification", "error"],
           },
         },
       },
