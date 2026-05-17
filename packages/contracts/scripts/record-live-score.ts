@@ -12,6 +12,11 @@ type InstitutionDecision =
   | "REVIEW_REQUIRED"
   | "DECLINE";
 type ScoreSource = "wavy" | "mock";
+type PatternDetected = {
+  name: string;
+  severity: string;
+  confidence?: number | undefined;
+};
 
 type DeploymentArtifact = {
   address?: string;
@@ -68,21 +73,31 @@ type ScoreApiResponse = {
   evidenceHash: `0x${string}`;
   wavy: {
     analysisId: string;
+    address: string;
+    chainId: number;
     riskScore: number;
     riskLevel?: string | undefined;
+    riskReason: string;
+    suspiciousActivity: boolean;
+    patternsDetected: PatternDetected[];
+    transactionsAnalyzed: number;
+    completedAt: string;
     traceability: {
       provider: string;
       network?: string | undefined;
       scanType?: string | undefined;
       riskScoreScale: string;
+      addressRegistration?: string | undefined;
       transactionsAnalyzed?: number | undefined;
       patternsCount?: number | undefined;
+      completedAt?: string | undefined;
     };
   };
   composite: {
     creditScore: number;
     decision: InstitutionDecision;
     decisionLabel?: string | undefined;
+    recommendation?: string | undefined;
   };
 };
 
@@ -410,9 +425,25 @@ function parseScorePayload(value: unknown): ScoreApiResponse {
     evidenceHash: requireBytes32(value.evidenceHash, "evidenceHash"),
     wavy: {
       analysisId: requireString(wavy.analysisId, "wavy.analysisId"),
+      address: requireString(wavy.address, "wavy.address"),
+      chainId: requireNumber(wavy.chainId, "wavy.chainId"),
       riskScore: requireScore(wavy.riskScore, "wavy.riskScore"),
       riskLevel:
         typeof wavy.riskLevel === "string" ? wavy.riskLevel : undefined,
+      riskReason: requireString(wavy.riskReason, "wavy.riskReason"),
+      suspiciousActivity: requireBoolean(
+        wavy.suspiciousActivity,
+        "wavy.suspiciousActivity",
+      ),
+      patternsDetected: requirePatternsDetected(
+        wavy.patternsDetected,
+        "wavy.patternsDetected",
+      ),
+      transactionsAnalyzed: requireNumber(
+        wavy.transactionsAnalyzed,
+        "wavy.transactionsAnalyzed",
+      ),
+      completedAt: requireString(wavy.completedAt, "wavy.completedAt"),
       traceability: {
         provider: requireString(
           traceability.provider,
@@ -430,6 +461,10 @@ function parseScorePayload(value: unknown): ScoreApiResponse {
           traceability.riskScoreScale,
           "wavy.traceability.riskScoreScale",
         ),
+        addressRegistration:
+          typeof traceability.addressRegistration === "string"
+            ? traceability.addressRegistration
+            : undefined,
         transactionsAnalyzed:
           typeof traceability.transactionsAnalyzed === "number"
             ? traceability.transactionsAnalyzed
@@ -437,6 +472,10 @@ function parseScorePayload(value: unknown): ScoreApiResponse {
         patternsCount:
           typeof traceability.patternsCount === "number"
             ? traceability.patternsCount
+            : undefined,
+        completedAt:
+          typeof traceability.completedAt === "string"
+            ? traceability.completedAt
             : undefined,
       },
     },
@@ -447,11 +486,27 @@ function parseScorePayload(value: unknown): ScoreApiResponse {
         typeof composite.decisionLabel === "string"
           ? composite.decisionLabel
           : undefined,
+      recommendation:
+        typeof composite.recommendation === "string"
+          ? composite.recommendation
+          : undefined,
     },
   };
 
   if (!isAddress(score.address)) {
     fail("Score API response address is not a valid EVM address.");
+  }
+
+  if (!isAddress(score.wavy.address)) {
+    fail("Score API response wavy.address is not a valid EVM address.");
+  }
+
+  if (score.wavy.address.toLowerCase() !== score.address.toLowerCase()) {
+    fail("Score API response wavy.address did not match address.");
+  }
+
+  if (score.wavy.chainId !== score.chainId) {
+    fail("Score API response wavy.chainId did not match chainId.");
   }
 
   if (score.wavy.traceability.provider !== "Wavy Node") {
@@ -725,6 +780,41 @@ function requireScore(value: unknown, label: string): number {
   }
 
   return score;
+}
+
+function requireBoolean(value: unknown, label: string): boolean {
+  if (typeof value === "boolean") return value;
+
+  fail(`Score API response ${label} must be a boolean.`);
+}
+
+function requirePatternsDetected(
+  value: unknown,
+  label: string,
+): PatternDetected[] {
+  if (!Array.isArray(value)) {
+    fail(`Score API response ${label} must be an array.`);
+  }
+
+  return value.map((entry, index) => {
+    if (!isRecord(entry)) {
+      fail(`Score API response ${label}[${index}] must be an object.`);
+    }
+
+    const pattern: PatternDetected = {
+      name: requireString(entry.name, `${label}[${index}].name`),
+      severity: requireString(entry.severity, `${label}[${index}].severity`),
+    };
+
+    if (entry.confidence !== undefined) {
+      pattern.confidence = requireNumber(
+        entry.confidence,
+        `${label}[${index}].confidence`,
+      );
+    }
+
+    return pattern;
+  });
 }
 
 function requireBytes32(value: unknown, label: string): `0x${string}` {

@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-05-17T02:13:41.064Z",
+  "apiUrl": "https://arkscore-api-production.up.railway.app",
+  "registryAddress": "0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46",
+  "scorerAddress": "0x27E9c5505B59e1f785EC4B70664B6cB3AA3FF151",
+  "subjectHash": "0x32f3df1721bff1ad75a4ceb1be8a3df74f1ef10a68920cbcc861adf384135da6",
+  "requestedWallet": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+  "institution": "bankaool",
+  "source": "mock",
+  "chainId": 43114,
+  "registryChainId": 43113,
+  "score": {
+    "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "subjectHash": "0x32f3df1721bff1ad75a4ceb1be8a3df74f1ef10a68920cbcc861adf384135da6",
+    "chainId": 43114,
+    "institution": "bankaool",
+    "source": "mock",
+    "generatedAt": "2026-05-17T02:13:36.043Z",
+    "evidenceHash": "0xc590063bfede4e2fc12a02ce437d43bd1182e7e070c7c9091b1bd5ff54ead0e4",
+    "wavy": {
+      "analysisId": "mock-5c8dc58ade3d",
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chainId": 43114,
+      "riskScore": 2,
+      "riskLevel": "minimal",
+      "riskReason": "Demo trace shows routine wallet behavior with no critical risk patterns.",
+      "suspiciousActivity": false,
+      "patternsDetected": [],
+      "transactionsAnalyzed": 162,
+      "completedAt": "2026-05-17T02:13:36.043Z",
+      "traceability": {
+        "provider": "Wavy Node",
+        "network": "Avalanche",
+        "scanType": "wallet-risk",
+        "riskScoreScale": "0-100",
+        "addressRegistration": "demo",
+        "transactionsAnalyzed": 162,
+        "patternsCount": 0,
+        "completedAt": "2026-05-17T02:13:36.043Z"
+      }
+    },
+    "composite": {
+      "creditScore": 100,
+      "decision": "APPROVE_BANKAOOL_LOAN",
+      "decisionLabel": "Approve Bankaool loan",
+      "recommendation": "Bankaool can proceed to loan terms while retaining the on-chain score record for audit."
+    }
+  },
+  "transactionHash": "0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2",
+  "blockNumber": 55449102,
+  "previousRecord": true,
+  "wavy": {
+    "analysisId": "mock-5c8dc58ade3d",
+    "riskScore": 2,
+    "riskLevel": "minimal",
+    "evidenceHash": "0xc590063bfede4e2fc12a02ce437d43bd1182e7e070c7c9091b1bd5ff54ead0e4",
+    "traceability": {
+      "provider": "Wavy Node",
+      "network": "Avalanche",
+      "scanType": "wallet-risk",
+      "riskScoreScale": "0-100",
+      "addressRegistration": "demo",
+      "transactionsAnalyzed": 162,
+      "patternsCount": 0,
+      "completedAt": "2026-05-17T02:13:36.043Z"
+    }
+  },
+  "composite": {
+    "creditScore": 100,
+    "decision": "APPROVE_BANKAOOL_LOAN",
+    "decisionEnum": 2,
+    "decisionLabel": "Approve Bankaool loan"
+  },
+  "stored": {
+    "submitter": "0x27E9c5505B59e1f785EC4B70664B6cB3AA3FF151",
+    "updatedAt": "1778984018"
+  }
+}

@@ -138,6 +138,27 @@ The readiness, finalization, and live verification scripts accept the same Fuji 
 
 Strict live verification and `pnpm record:fuji` both require the Railway score `generatedAt` timestamp to be recent and included in the recomputed evidence hash before accepting or storing a response, so a replayed score cannot satisfy the final evidence path by editing its timestamp. The final score-record artifact also embeds the exact API score snapshot, and validators recompute that snapshot's generatedAt-bound hash and compare its timestamp with the artifact timestamp before accepting it as proof.
 
+## Live Demo Proof (Mock Mode – May 16 2026)
+
+Wavy Node's upstream tracker was temporarily failing with `tracker-service::analyze: fetch failed`, so this proof intentionally used ArkScore's mock Wavy mode on the live Railway backend. The full demo path still ran end-to-end through the deployed API, live Fuji `CreditScoreRegistry`, transaction receipt, and on-chain readback verification.
+
+- Proof time: May 16, 2026 at 10:13:38 PM America/Santiago (`2026-05-17T02:13:38Z`)
+- Railway API: [`https://arkscore-api-production.up.railway.app`](https://arkscore-api-production.up.railway.app)
+- Score endpoint: [`/api/score/0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045?institution=bankaool`](https://arkscore-api-production.up.railway.app/api/score/0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045?institution=bankaool)
+- Test wallet: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`
+- Source: `mock` Wavy trace while upstream Wavy analysis is down
+- Mock Wavy risk score: `2/100` (`minimal`)
+- Composite score: `100/100`
+- Decision: `APPROVE_BANKAOOL_LOAN`
+- Subject hash: `0x32f3df1721bff1ad75a4ceb1be8a3df74f1ef10a68920cbcc861adf384135da6`
+- Evidence hash: `0xc590063bfede4e2fc12a02ce437d43bd1182e7e070c7c9091b1bd5ff54ead0e4`
+- Fuji `CreditScoreRegistry`: [`0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`](https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code)
+- Fuji transaction: [`0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2`](https://testnet.snowscan.xyz/tx/0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2)
+- Fuji block: `55449102`
+- Recorder artifact: `packages/contracts/deployments/fuji/LatestScoreRecord.json`
+
+Recorder output confirmed `recordScore` was submitted, Fuji returned a receipt, and `getScore(subjectHash)` matched the API response.
+
 ## Submission Placeholders
 
 - Live demo: `https://arkscore-seven.vercel.app`
