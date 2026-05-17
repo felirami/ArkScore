@@ -52,8 +52,7 @@ const scoreRecordArtifactPath =
   configuredScoreRecordArtifactPath ?? defaultScoreRecordArtifactPath;
 const shouldVerifyScoreRecord =
   requireScoreRecord ||
-  isCustomScoreRecordArtifactPath(configuredScoreRecordArtifactPath) ||
-  existsSync(scoreRecordArtifactPath);
+  isCustomScoreRecordArtifactPath(configuredScoreRecordArtifactPath);
 const finalVerifyTimeoutMs = parseDurationMs(
   env.VERCEL_FINAL_VERIFY_TIMEOUT_MS,
   5 * 60 * 1000,

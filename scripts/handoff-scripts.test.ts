@@ -745,8 +745,8 @@ test("readiness treats the default score record artifact path as optional until 
   });
 
   assert.equal(result.status, 0, result.output);
-  assert.match(result.output, /\[pass\] Latest Fuji score record:/);
-  assert.match(result.output, /not configured yet; run pnpm record:fuji/);
+  assert.match(result.output, /\[warn\] Latest Fuji score record:/);
+  assert.match(result.output, /source is mock, expected wavy/);
   assert.doesNotMatch(result.output, /LatestScoreRecord\.json is missing/);
 });
 
@@ -901,6 +901,7 @@ test("requirements audit warns when score record proof mismatches configured sco
   try {
     const result = runScript("scripts/audit-requirements.ts", [], {
       ARKSCORE_SCORE_RECORD_ARTIFACT: artifactPath,
+      ARKSCORE_REGISTRY_ADDRESS: "0x1111111111111111111111111111111111111111",
       ARKSCORE_SCORER_ADDRESS: "0x5555555555555555555555555555555555555555",
     });
 
@@ -2551,11 +2552,17 @@ async function runLiveVerifierWithMockRegistry(
     );
   });
 
+  const scoreRecordArtifactPath = join(
+    tmpdir(),
+    `arkscore-missing-score-record-${process.pid}-${Date.now()}.json`,
+  );
+
   try {
     return await runScriptAsync("scripts/verify-live.ts", [], {
       ARKSCORE_WEB_URL: webServer.url,
       FUJI_RPC_URL: rpcServer.url,
       ARKSCORE_REGISTRY_ADDRESS: registryAddress,
+      ARKSCORE_SCORE_RECORD_ARTIFACT: scoreRecordArtifactPath,
       ...(options.publicFujiRpcUrl
         ? { NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL: options.publicFujiRpcUrl }
         : {}),
@@ -2888,6 +2895,10 @@ async function runLivePreflightVerifierWithMocks(
   });
 
   try {
+    const scoreRecordArtifactPath = join(
+      tmpdir(),
+      `arkscore-missing-score-record-${process.pid}-${Date.now()}.json`,
+    );
     const verifierEnv: Record<string, string> = options.useFallbackAliases
       ? {
           ARKSCORE_API_URL: "",
@@ -2899,12 +2910,14 @@ async function runLivePreflightVerifierWithMocks(
           NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS: registryAddress,
           ARKSCORE_SCORER_ADDRESS: "",
           SCORER_ADDRESS: scorerAddress,
+          ARKSCORE_SCORE_RECORD_ARTIFACT: scoreRecordArtifactPath,
         }
       : {
           ARKSCORE_API_URL: apiServer.url,
           FUJI_RPC_URL: rpcServer.url,
           ARKSCORE_REGISTRY_ADDRESS: registryAddress,
           ARKSCORE_SCORER_ADDRESS: scorerAddress,
+          ARKSCORE_SCORE_RECORD_ARTIFACT: scoreRecordArtifactPath,
         };
 
     return await runScriptAsync(

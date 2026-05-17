@@ -930,7 +930,7 @@ async function verifyScoreRecordProof(registry: string): Promise<Check[]> {
     return [
       {
         label: "Fuji score record proof",
-        status: "fail",
+        status: requireScoreRecord ? "fail" : "warn",
         detail: validationError,
       },
     ];

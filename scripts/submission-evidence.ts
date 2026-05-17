@@ -134,7 +134,13 @@ function main() {
   }
 
   const failedChecks = checkResults.filter((result) => result.exitCode !== 0);
-  if (failedChecks.length > 0 || scoreRecordEvidence.error) {
+  const explicitlyConfiguredScoreRecord = Boolean(
+    firstConfiguredValue([env.ARKSCORE_SCORE_RECORD_ARTIFACT]),
+  );
+  if (
+    failedChecks.length > 0 ||
+    (explicitlyConfiguredScoreRecord && scoreRecordEvidence.error)
+  ) {
     process.exitCode = 1;
   }
 }

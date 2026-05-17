@@ -40,10 +40,14 @@ ArkScore turns Wavy Node wallet traceability and AI risk into an auditable Avala
 ## Links
 
 - Live demo: `https://arkscore-seven.vercel.app`
+- Railway API: `https://arkscore-api-production.up.railway.app`
+- GitHub repo: `https://github.com/felirami/ArkScore`
 - Submission evidence: `docs/SUBMISSION_EVIDENCE.md`
+- Hackathon readiness checklist: `docs/HACKATHON_READINESS_CHECKLIST.md`
 - Judge demo runbook: `docs/JUDGE_DEMO.md`
 - Frontend repository path: `apps/web`
 - Backend repository path: `apps/api`
 - Contracts repository path: `packages/contracts`
-- Fuji contract address: `TBD`
+- Fuji contract address: `0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`
+- Fuji explorer: `https://testnet.snowtrace.io/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`
 - Optional eERC20 address: `TBD`
