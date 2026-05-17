@@ -1,0 +1,10 @@
+{
+  "contract": "CreditScoreRegistry",
+  "address": "0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46",
+  "deployer": "0x27E9c5505B59e1f785EC4B70664B6cB3AA3FF151",
+  "chainId": 43113,
+  "network": "fuji",
+  "owner": "0x27E9c5505B59e1f785EC4B70664B6cB3AA3FF151",
+  "initialScorer": "0x27E9c5505B59e1f785EC4B70664B6cB3AA3FF151",
+  "deployedAt": "2026-05-17T01:35:51.554Z"
+}

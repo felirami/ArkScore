@@ -143,7 +143,7 @@ Strict live verification and `pnpm record:fuji` both require the Railway score `
 - Live demo: `https://arkscore-seven.vercel.app`
 - Vercel frontend: `https://arkscore-seven.vercel.app`
 - Railway backend: `TBD`
-- Fuji `CreditScoreRegistry`: `TBD`
+- Fuji `CreditScoreRegistry`: [`0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`](https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code) (Snowtrace API verified)
 - Optional eERC20 demo contract: `TBD`
 
 ## References
