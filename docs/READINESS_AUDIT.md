@@ -19,6 +19,7 @@ Status date: May 17, 2026
 - `CreditScoreRegistry` is deployed on Avalanche Fuji at [`0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`](https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code), owned by `0x27E9c5505B59e1f785EC4B70664B6cB3AA3FF151`, and verified through the Snowtrace Fuji API.
 - Deployment docs cover Vercel, Railway, Avalanche Fuji, and optional Ava Labs EncryptedERC demo follow-up.
 - GitHub Actions CI installs Node 22/pnpm 11, runs `pnpm verify`, emits the non-secret `pnpm audit:requirements` report, and emits the non-secret `pnpm readiness` report.
+- Railway API is deployed at `https://arkscore-api-production.up.railway.app`, returns `/health` in live Wavy mode with credentials configured, and is configured with the Fuji `CreditScoreRegistry` address.
 - Vercel production is deployed and publicly reachable at `https://arkscore-seven.vercel.app` via deployment `dpl_3jYymBrLGF7EYXmpx5yzR25286wh`.
 - Production dashboard smoke test passes in hosted demo fallback mode: `Fetch Wavy score` renders a mock Wavy trace, risk score, composite score, traceability, AI risk scale, subject hash, subject status, evidence hash, and eERC20 privacy slot while Railway credentials are pending.
 
@@ -68,9 +69,7 @@ The API endpoint test suite passes in mock mode, the API config tests prove `WAV
 
 - `WAVY_NODE_API_KEY` and `WAVY_NODE_PROJECT_ID` for live Wavy Node traceability and AI risk scoring.
 - `ARKSCORE_SUBJECT_HASH_SALT` for environment-specific on-chain subject hashes.
-- Railway login through `pnpm railway:login`, browserless login through `pnpm railway:login:browserless`, or `RAILWAY_TOKEN` for backend deployment.
-- Publish the deployed Fuji `CreditScoreRegistry` address to `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS` before the final Vercel rebuild.
-- `NEXT_PUBLIC_API_BASE_URL` on Vercel must be set to the Railway API URL before the live Wavy-backed flow replaces hosted demo fallback mode.
+- Rebuild the Vercel frontend after setting `NEXT_PUBLIC_API_BASE_URL=https://arkscore-api-production.up.railway.app`, `NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`, and `NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false` in Production.
 - `NEXT_PUBLIC_EERC20_DEMO_ADDRESS` can be set after optional EncryptedERC deployment; live verification checks bytecode when it is configured.
 - `ARKSCORE_SCORER_ADDRESS` should be set to the dashboard signing wallet and authorized before the final Store on Fuji demo. If that wallet is different from the deployer, set `ARKSCORE_SCORER_PRIVATE_KEY` or `FUJI_SCORER_PRIVATE_KEY` before `pnpm record:fuji` so the non-secret score-record proof uses the same authorized scorer.
 - `pnpm record:fuji` should be run after Railway, Wavy, Fuji, and scorer authorization are configured to produce the final non-secret storage proof.
@@ -78,6 +77,6 @@ The API endpoint test suite passes in mock mode, the API config tests prove `WAV
 ## Deployment Targets
 
 - Vercel frontend: `https://arkscore-seven.vercel.app`
-- Railway backend: `TBD`
+- Railway backend: `https://arkscore-api-production.up.railway.app`
 - Fuji `CreditScoreRegistry`: [`0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`](https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code) (Snowtrace API verified)
 - Optional eERC20 demo contract: `TBD`

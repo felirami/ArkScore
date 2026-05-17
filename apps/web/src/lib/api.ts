@@ -5,12 +5,13 @@ import {
 } from "@arkscore/shared";
 import { createDemoScore } from "@/lib/demo-score";
 
+const defaultApiBaseUrl = "https://arkscore-api-production.up.railway.app";
 const apiBaseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultApiBaseUrl;
 const demoFallbackSetting = process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACK;
 const explicitDemoFallback = demoFallbackSetting === "true";
 const disabledDemoFallback = demoFallbackSetting === "false";
-const hasConfiguredApiBaseUrl = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
+const hasApiBaseUrl = Boolean(apiBaseUrl);
 
 export async function fetchWalletScore(input: {
   address: string;
@@ -57,7 +58,7 @@ export async function fetchWalletScore(input: {
 function shouldUseHostedDemoFallback() {
   if (disabledDemoFallback) return false;
   if (explicitDemoFallback) return true;
-  if (hasConfiguredApiBaseUrl || typeof window === "undefined") return false;
+  if (hasApiBaseUrl || typeof window === "undefined") return false;
 
   return !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 }

@@ -46,9 +46,9 @@ docs/
 Copy `.env.example` into the relevant app or deployment provider and replace the placeholders. For frontend-only local work, copy `apps/web/.env.local.example` to `apps/web/.env.local`; it contains only public `NEXT_PUBLIC_*` values.
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+NEXT_PUBLIC_API_BASE_URL=https://arkscore-api-production.up.railway.app
 NEXT_PUBLIC_AVALANCHE_FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
-NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=
+NEXT_PUBLIC_CREDIT_SCORE_REGISTRY_ADDRESS=0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46
 NEXT_PUBLIC_EERC20_DEMO_ADDRESS=
 NEXT_PUBLIC_ENABLE_DEMO_FALLBACK=false
 
@@ -142,7 +142,7 @@ Strict live verification and `pnpm record:fuji` both require the Railway score `
 
 - Live demo: `https://arkscore-seven.vercel.app`
 - Vercel frontend: `https://arkscore-seven.vercel.app`
-- Railway backend: `TBD`
+- Railway backend: `https://arkscore-api-production.up.railway.app`
 - Fuji `CreditScoreRegistry`: [`0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`](https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code) (Snowtrace API verified)
 - Optional eERC20 demo contract: `TBD`
 
