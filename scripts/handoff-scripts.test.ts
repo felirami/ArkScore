@@ -168,7 +168,7 @@ test("Railway live dry run overrides stale local mock mode", () => {
   assert.match(result.output, /pnpm probe:wavy/);
 });
 
-test("Railway deploy refuses non-Fuji Wavy chain IDs", () => {
+test("Railway deploy refuses unsupported Wavy chain IDs", () => {
   const result = runScript("scripts/deploy-railway.ts", [], {
     WAVY_NODE_API_KEY: "ApiKey super-secret-key",
     WAVY_NODE_PROJECT_ID: "project-secret-id",
@@ -177,7 +177,10 @@ test("Railway deploy refuses non-Fuji Wavy chain IDs", () => {
   });
 
   assert.equal(result.status, 1, result.output);
-  assert.match(result.output, /WAVY_NODE_CHAIN_ID must be Avalanche Fuji/);
+  assert.match(
+    result.output,
+    /WAVY_NODE_CHAIN_ID must be Wavy-supported Avalanche/,
+  );
   assert.doesNotMatch(result.output, /@railway\/cli variable set/);
   assert.doesNotMatch(result.output, /@railway\/cli up/);
 });
@@ -301,7 +304,7 @@ if (args[0] === "verify:railway:live") {
   }
 });
 
-test("Wavy probe refuses non-Fuji chain IDs before live calls", () => {
+test("Wavy probe refuses unsupported Wavy chain IDs before live calls", () => {
   const result = runScript("scripts/probe-wavy.ts", [], {
     WAVY_NODE_API_KEY: "ApiKey super-secret-key",
     WAVY_NODE_PROJECT_ID: "project-secret-id",
@@ -310,7 +313,10 @@ test("Wavy probe refuses non-Fuji chain IDs before live calls", () => {
   });
 
   assert.equal(result.status, 1, result.output);
-  assert.match(result.output, /WAVY_NODE_CHAIN_ID must be Avalanche Fuji/);
+  assert.match(
+    result.output,
+    /WAVY_NODE_CHAIN_ID must be Wavy-supported Avalanche/,
+  );
   assert.doesNotMatch(result.output, /Wavy credentials accepted/);
 });
 
@@ -690,7 +696,7 @@ test("readiness strict record rejects mock score record proof even with override
         "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       institution: "bankaool",
       source: "mock",
-      chainId: 43113,
+      chainId: 43114,
       transactionHash:
         "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       blockNumber: 12345,
@@ -801,24 +807,24 @@ test("readiness reports the default public Fuji RPC URL", () => {
   );
 });
 
-test("readiness reports the default Wavy Node Fuji chain ID", () => {
+test("readiness reports the default Wavy Node Avalanche chain ID", () => {
   const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
     WAVY_NODE_CHAIN_ID: "",
   });
 
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /\[pass\] Wavy Node chain ID:/);
-  assert.match(result.output, /using default 43113/);
+  assert.match(result.output, /using default 43114/);
 });
 
-test("readiness warns when Wavy Node chain ID is not Fuji", () => {
+test("readiness warns when Wavy Node chain ID is not Avalanche", () => {
   const result = runScript("scripts/readiness-check.ts", ["--skip-external"], {
     WAVY_NODE_CHAIN_ID: "1",
   });
 
   assert.equal(result.status, 0, result.output);
   assert.match(result.output, /\[warn\] Wavy Node chain ID:/);
-  assert.match(result.output, /WAVY_NODE_CHAIN_ID must be 43113/);
+  assert.match(result.output, /WAVY_NODE_CHAIN_ID must be 43114/);
 });
 
 test("readiness warns when the frontend Fuji RPC URL is local-only", () => {
@@ -2117,7 +2123,7 @@ test("live verifier preflight skips Vercel and proves API plus registry", async 
   assert.match(result.output, /Railway API health: .*returned ok/);
   assert.match(
     result.output,
-    /Railway Wavy chain: Wavy Node scoring is pinned to Avalanche Fuji 43113/,
+    /Railway Wavy chain: Wavy Node scoring is pinned to Avalanche 43114/,
   );
   assert.match(
     result.output,
@@ -2138,7 +2144,7 @@ test("live verifier preflight ignores empty primary aliases", async () => {
   assert.match(result.output, /Railway API health: .*returned ok/);
   assert.match(
     result.output,
-    /Railway Wavy chain: Wavy Node scoring is pinned to Avalanche Fuji 43113/,
+    /Railway Wavy chain: Wavy Node scoring is pinned to Avalanche 43114/,
   );
   assert.match(
     result.output,
@@ -2154,7 +2160,7 @@ test("live verifier preflight ignores empty primary aliases", async () => {
   );
 });
 
-test("live verifier fails when Railway health reports a non-Fuji Wavy chain", async () => {
+test("live verifier fails when Railway health reports an unsupported Wavy chain", async () => {
   const result = await runLivePreflightVerifierWithMocks({
     healthWavyChainId: 1,
   });
@@ -2162,7 +2168,7 @@ test("live verifier fails when Railway health reports a non-Fuji Wavy chain", as
   assert.equal(result.status, 1, result.output);
   assert.match(
     result.output,
-    /Railway Wavy chain: expected wavyChainId 43113, received 1/,
+    /Railway Wavy chain: expected wavyChainId 43114, received 1/,
   );
 });
 
@@ -2598,7 +2604,7 @@ async function runLiveVerifierWithMockScoreRecord(
     requestedWallet,
     institution: "bankaool",
     source,
-    chainId: 43113,
+    chainId: 43114,
     score,
     transactionHash:
       "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
@@ -2764,7 +2770,8 @@ async function runLivePreflightVerifierWithMocks(
           ok: true,
           service: "arkscore-api",
           wavyCredentialsConfigured: true,
-          wavyChainId: options.healthWavyChainId ?? 43113,
+          wavyChainId: options.healthWavyChainId ?? 43114,
+          registryChainId: 43113,
           subjectHashSaltConfigured: true,
           mockMode: false,
         }),
@@ -2921,7 +2928,7 @@ function createLiveScoreFixture(
   const score = {
     address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
     subjectHash: `0x${"a".repeat(64)}`,
-    chainId: 43113,
+    chainId: 43114,
     institution: "bankaool",
     source: "wavy",
     generatedAt: options.generatedAt ?? new Date().toISOString(),
@@ -2985,12 +2992,14 @@ function createOpenApiFixture(serverUrl: string) {
           required: [
             "wavyCredentialsConfigured",
             "wavyChainId",
+            "registryChainId",
             "subjectHashSaltConfigured",
             "mockMode",
           ],
           properties: {
             wavyCredentialsConfigured: {},
             wavyChainId: {},
+            registryChainId: {},
             subjectHashSaltConfigured: {},
             mockMode: {},
           },
@@ -3072,7 +3081,7 @@ function validScoreRecordProof(
     requestedWallet,
     institution: "bankaool",
     source,
-    chainId: 43113,
+    chainId: 43114,
     score,
     transactionHash:
       "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -3104,17 +3113,17 @@ function createScoreSnapshot(input: {
   const wavy = {
     analysisId: "wavy-live-123",
     address: input.address,
-    chainId: 43113,
+    chainId: 43114,
     riskScore: 18,
     riskLevel: "minimal",
-    riskReason: "Low-risk Fuji wallet activity.",
+    riskReason: "Low-risk Avalanche wallet activity.",
     suspiciousActivity: false,
     patternsDetected: [],
     transactionsAnalyzed: 128,
     completedAt: "2026-05-16T00:00:00.000Z",
     traceability: {
       provider: "Wavy Node",
-      network: "Avalanche Fuji",
+      network: "Avalanche",
       scanType: "wallet-risk",
       riskScoreScale: "0-100",
       addressRegistration: "auto-registered-or-reused",
@@ -3133,7 +3142,7 @@ function createScoreSnapshot(input: {
   const score = {
     address: input.address,
     subjectHash: input.subjectHash,
-    chainId: 43113,
+    chainId: 43114,
     institution: "bankaool",
     source: input.source,
     generatedAt: "2026-05-16T00:00:00.000Z",

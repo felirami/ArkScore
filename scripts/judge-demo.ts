@@ -51,6 +51,7 @@ type ScoreRecordEvidence = {
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const wavyAvalancheChainId = 43114;
 const scoreRecordSnapshotMaxAgeMs = 15 * 60 * 1000;
 const scoreRecordSnapshotFutureSkewMs = 60 * 1000;
 const env = {
@@ -310,8 +311,8 @@ function validateScoreRecordProof(
     return `source is ${proof.source ?? "unknown"}, expected wavy`;
   }
 
-  if (proof.chainId !== 43113) {
-    return `chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  if (proof.chainId !== wavyAvalancheChainId) {
+    return `chainId is ${proof.chainId ?? "unknown"}, expected Wavy Avalanche ${wavyAvalancheChainId}`;
   }
 
   const scoreSnapshotError = validateScoreRecordSnapshot(proof);

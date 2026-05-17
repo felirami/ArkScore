@@ -28,10 +28,10 @@ test("fetchWavySupportedChains requests the Wavy chains endpoint", async () => {
       success: true,
       data: [
         {
-          id: 43113,
-          name: "Avalanche Fuji",
+          id: 43114,
+          name: "Avalanche",
           active: true,
-          explorer_url: "https://testnet.snowtrace.io",
+          explorer_url: "https://snowscan.xyz",
           currency_symbol: "AVAX",
         },
       ],
@@ -49,10 +49,10 @@ test("fetchWavySupportedChains requests the Wavy chains endpoint", async () => {
   assert.equal(getHeader(request.init, "accept"), "application/json");
   assert.deepEqual(chains, [
     {
-      id: 43113,
-      name: "Avalanche Fuji",
+      id: 43114,
+      name: "Avalanche",
       active: true,
-      explorerUrl: "https://testnet.snowtrace.io",
+      explorerUrl: "https://snowscan.xyz",
       currencySymbol: "AVAX",
     },
   ]);
@@ -78,7 +78,7 @@ test("fetchWavyRiskResult registers then scans the wallet", async () => {
           {
             analysisId: "analysis-001",
             address: demoWallet,
-            chainId: "43113",
+            chainId: "43114",
             riskScore: 6,
             riskLevel: "minimal",
             riskReason: "Normal activity, no suspicious patterns detected.",
@@ -94,7 +94,7 @@ test("fetchWavyRiskResult registers then scans the wallet", async () => {
 
   const result = await fetchWavyRiskResult({
     address: demoWallet,
-    chainId: 43113,
+    chainId: 43114,
   });
 
   const [registerRequest, scanRequest] = requests;
@@ -125,7 +125,7 @@ test("fetchWavyRiskResult registers then scans the wallet", async () => {
     "https://api.wavynode.com/v1/projects/project_test/addresses/scan-risk",
   );
   assert.equal(scanRequest.url.searchParams.get("addresses"), demoWallet);
-  assert.equal(scanRequest.url.searchParams.get("chainId"), "43113");
+  assert.equal(scanRequest.url.searchParams.get("chainId"), "43114");
   assert.equal(
     getHeader(scanRequest.init, "x-api-key"),
     "ApiKey wavy_test_key",
@@ -134,13 +134,13 @@ test("fetchWavyRiskResult registers then scans the wallet", async () => {
 
   assert.equal(result.analysisId, "analysis-001");
   assert.equal(result.address, demoWallet);
-  assert.equal(result.chainId, 43113);
+  assert.equal(result.chainId, 43114);
   assert.equal(result.riskScore, 6);
   assert.equal(result.riskLevel, "minimal");
   assert.equal(result.suspiciousActivity, false);
   assert.equal(result.transactionsAnalyzed, 150);
   assert.equal(result.traceability.provider, "Wavy Node");
-  assert.equal(result.traceability.network, "Avalanche Fuji");
+  assert.equal(result.traceability.network, "Avalanche");
   assert.equal(result.traceability.riskScoreScale, "0-100");
   assert.equal(
     result.traceability.addressRegistration,
@@ -176,7 +176,7 @@ test("fetchWavyRiskResult treats duplicate address registration as reusable", as
           {
             analysisId: "analysis-reused",
             address: demoWallet,
-            chainId: "43113",
+            chainId: "43114",
             riskScore: 22,
             suspiciousActivity: false,
           },
@@ -187,7 +187,7 @@ test("fetchWavyRiskResult treats duplicate address registration as reusable", as
 
   const result = await fetchWavyRiskResult({
     address: demoWallet,
-    chainId: 43113,
+    chainId: 43114,
   });
 
   assert.equal(requests.length, 2);
@@ -196,6 +196,140 @@ test("fetchWavyRiskResult treats duplicate address registration as reusable", as
   assert.equal(
     result.traceability.addressRegistration,
     "auto-registered-or-reused",
+  );
+});
+
+test("fetchWavyRiskResult creates an investigation when no scan result exists yet", async () => {
+  const requests: CapturedRequest[] = [];
+  let scanAttempts = 0;
+
+  globalThis.fetch = (async (input, init) => {
+    const url = new URL(getFetchUrl(input));
+    requests.push({ url, init });
+
+    if (url.pathname.endsWith("/addresses") && init?.method === "POST") {
+      return jsonResponse({ success: true });
+    }
+
+    if (url.pathname.endsWith("/investigations") && init?.method === "POST") {
+      return jsonResponse({
+        success: true,
+        data: {
+          id: "investigation-001",
+          analysis_id: "analysis-created",
+          analysis_status: "running",
+          wallet: demoWallet,
+        },
+      });
+    }
+
+    scanAttempts += 1;
+    if (scanAttempts === 1) {
+      return jsonResponse({
+        success: true,
+        data: {
+          total: 0,
+          missing: 1,
+          results: [],
+          missingAddresses: [demoWallet],
+        },
+      });
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        total: 1,
+        missing: 0,
+        results: [
+          {
+            analysisId: "analysis-created",
+            address: demoWallet,
+            chainId: "43114",
+            riskScore: 44,
+            suspiciousActivity: false,
+            patternsDetected: 2,
+            patterns: ["rapid fund movement", "counterparty concentration"],
+            transactionsAnalyzed: 80,
+            completedAt: "2026-05-16T10:31:00.000Z",
+          },
+        ],
+      },
+    });
+  }) as typeof fetch;
+
+  const result = await fetchWavyRiskResult({
+    address: demoWallet,
+    chainId: 43114,
+  });
+  const investigationRequest = requests.find((request) =>
+    request.url.pathname.endsWith("/investigations"),
+  );
+
+  assert.ok(investigationRequest);
+  assert.equal(investigationRequest.init?.method, "POST");
+  assert.deepEqual(parseBody(investigationRequest.init), {
+    name: "ArkScore wallet risk 0xd8dA...6045",
+    wallet: demoWallet,
+    chainId: "43114",
+  });
+  assert.equal(result.analysisId, "analysis-created");
+  assert.equal(result.riskScore, 44);
+  assert.equal(result.patternsDetected.length, 2);
+  assert.equal(result.traceability.patternsCount, 2);
+});
+
+test("fetchWavyRiskResult reports failed Wavy investigations", async () => {
+  globalThis.fetch = (async (input, init) => {
+    const url = new URL(getFetchUrl(input));
+
+    if (url.pathname.endsWith("/addresses") && init?.method === "POST") {
+      return jsonResponse({ success: true });
+    }
+
+    if (url.pathname.endsWith("/investigations") && init?.method === "POST") {
+      return jsonResponse({
+        success: true,
+        data: {
+          id: "investigation-failed",
+          analysis_status: "pending",
+        },
+      });
+    }
+
+    if (url.pathname.endsWith("/investigations/investigation-failed")) {
+      return jsonResponse({
+        success: true,
+        data: {
+          id: "investigation-failed",
+          analysis_id: "analysis-failed",
+          analysis_status: "failed",
+        },
+      });
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        total: 0,
+        missing: 1,
+        results: [],
+      },
+    });
+  }) as typeof fetch;
+
+  await assert.rejects(
+    fetchWavyRiskResult({
+      address: demoWallet,
+      chainId: 43114,
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof HttpError);
+      assert.equal(error.statusCode, 502);
+      assert.match(error.message, /Wavy Node investigation failed/);
+      assert.match(error.message, /analysis-failed/);
+      return true;
+    },
   );
 });
 
@@ -224,12 +358,12 @@ test("fetchWavyRiskResult rejects upstream chain mismatches", async () => {
   await assert.rejects(
     fetchWavyRiskResult({
       address: demoWallet,
-      chainId: 43113,
+      chainId: 43114,
     }),
     (error: unknown) => {
       assert.ok(error instanceof HttpError);
       assert.equal(error.statusCode, 502);
-      assert.match(error.message, /returned chainId 1, expected 43113/);
+      assert.match(error.message, /returned chainId 1, expected 43114/);
       return true;
     },
   );
@@ -248,7 +382,7 @@ test("fetchWavyRiskResult rejects upstream address mismatches", async () => {
           {
             analysisId: "analysis-wrong-wallet",
             address: "0x1111111111111111111111111111111111111111",
-            chainId: "43113",
+            chainId: "43114",
             riskScore: 12,
             suspiciousActivity: false,
           },
@@ -260,7 +394,7 @@ test("fetchWavyRiskResult rejects upstream address mismatches", async () => {
   await assert.rejects(
     fetchWavyRiskResult({
       address: demoWallet,
-      chainId: 43113,
+      chainId: 43114,
     }),
     (error: unknown) => {
       assert.ok(error instanceof HttpError);
@@ -289,7 +423,7 @@ test("fetchWavyRiskResult preserves upstream Wavy Node errors", async () => {
   await assert.rejects(
     fetchWavyRiskResult({
       address: demoWallet,
-      chainId: 43113,
+      chainId: 43114,
     }),
     (error: unknown) => {
       assert.ok(error instanceof HttpError);
@@ -310,7 +444,7 @@ test("fetchWavyRiskResult converts Wavy timeouts into a gateway timeout", async 
   await assert.rejects(
     fetchWavyRiskResult({
       address: demoWallet,
-      chainId: 43113,
+      chainId: 43114,
     }),
     (error: unknown) => {
       assert.ok(error instanceof HttpError);

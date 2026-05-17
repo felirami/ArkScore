@@ -36,6 +36,7 @@ test("health reports mock scoring mode when credentials are absent", async () =>
       mockMode: boolean;
       wavyIntegrationConfigured: boolean;
       wavyChainId: number;
+      registryChainId: number;
       subjectHashSaltConfigured: boolean;
     };
 
@@ -44,7 +45,8 @@ test("health reports mock scoring mode when credentials are absent", async () =>
     assert.equal(payload.service, "arkscore-api");
     assert.equal(payload.mockMode, true);
     assert.equal(payload.wavyIntegrationConfigured, true);
-    assert.equal(payload.wavyChainId, 43113);
+    assert.equal(payload.wavyChainId, 43114);
+    assert.equal(payload.registryChainId, 43113);
     assert.equal(payload.subjectHashSaltConfigured, false);
   });
 });
@@ -103,9 +105,11 @@ test("openapi document describes the public scoring contract", async () => {
     assert.ok(webhookSchema);
     assert.ok(healthSchema.required?.includes("subjectHashSaltConfigured"));
     assert.ok(healthSchema.required?.includes("wavyChainId"));
+    assert.ok(healthSchema.required?.includes("registryChainId"));
     assert.ok(healthSchema.required?.includes("wavyIntegrationConfigured"));
     assert.ok(healthSchema.properties?.subjectHashSaltConfigured);
     assert.ok(healthSchema.properties?.wavyChainId);
+    assert.ok(healthSchema.properties?.registryChainId);
     assert.ok(healthSchema.properties?.wavyIntegrationConfigured);
     assert.ok(integrationUserSchema.required?.includes("foreign_user_id"));
     assert.ok(webhookSchema.required?.includes("type"));
@@ -170,7 +174,7 @@ test("Wavy integration receives signed webhook alerts", async () => {
       type: "notification",
       data: {
         id: 1,
-        chainId: 43113,
+        chainId: 43114,
         txHash: "0xwavy-test-transaction",
         address: {
           userId: createForeignUserId(demoWallet),
@@ -232,7 +236,7 @@ test("score endpoint returns a Bankaool-ready mock Wavy response", async () => {
     assert.match(response.headers.get("pragma") ?? "", /no-cache/);
     assert.equal(payload.address, demoWallet);
     assert.match(payload.subjectHash, /^0x[a-f0-9]{64}$/);
-    assert.equal(payload.chainId, 43113);
+    assert.equal(payload.chainId, 43114);
     assert.equal(payload.institution, "bankaool");
     assert.equal(payload.source, "mock");
     assert.ok(Date.now() - Date.parse(payload.generatedAt) < 5000);

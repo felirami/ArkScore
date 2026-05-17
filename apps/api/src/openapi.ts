@@ -6,7 +6,7 @@ export const openApiDocument = {
     summary:
       "Wavy Node-backed wallet risk scoring for Arkangeles and Bankaool demos.",
     description:
-      "ArkScore exposes a Railway-ready API that traces Avalanche Fuji wallet risk through Wavy Node, computes a composite institutional credit score, and returns the evidence hash used by the on-chain registry.",
+      "ArkScore exposes a Railway-ready API that traces Avalanche wallet risk through Wavy Node, computes a composite institutional credit score, and returns the evidence hash stored by the Avalanche Fuji on-chain registry.",
   },
   servers: [
     {
@@ -66,7 +66,8 @@ export const openApiDocument = {
             name: "address",
             in: "path",
             required: true,
-            description: "EVM wallet address to score on Avalanche Fuji.",
+            description:
+              "EVM wallet address to score through Wavy Node on Avalanche.",
             schema: {
               type: "string",
               pattern: "^0x[a-fA-F0-9]{40}$",
@@ -376,6 +377,7 @@ export const openApiDocument = {
           "wavyCredentialsConfigured",
           "wavyIntegrationConfigured",
           "wavyChainId",
+          "registryChainId",
           "subjectHashSaltConfigured",
           "mockMode",
         ],
@@ -400,9 +402,16 @@ export const openApiDocument = {
           },
           wavyChainId: {
             type: "integer",
+            enum: [43114],
+            description:
+              "Avalanche mainnet chain id used for Wavy Node wallet-risk analysis.",
+            example: 43114,
+          },
+          registryChainId: {
+            type: "integer",
             enum: [43113],
             description:
-              "Avalanche Fuji chain id used for Wavy Node scoring and Fuji registry evidence.",
+              "Avalanche Fuji chain id used by the on-chain score registry.",
             example: 43113,
           },
           subjectHashSaltConfigured: {
@@ -587,7 +596,7 @@ export const openApiDocument = {
           },
           chainId: {
             type: "integer",
-            example: 43113,
+            example: 43114,
           },
           riskScore: {
             type: "integer",
@@ -685,7 +694,7 @@ export const openApiDocument = {
           },
           chainId: {
             type: "integer",
-            example: 43113,
+            example: 43114,
           },
           institution: {
             $ref: "#/components/schemas/Institution",

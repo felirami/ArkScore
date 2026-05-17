@@ -60,6 +60,7 @@ const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
 const defaultFujiRpcUrl = "https://api.avax-test.network/ext/bc/C/rpc";
 const fujiChainId = 43113;
+const wavyAvalancheChainId = 43114;
 const rootEnv = readEnvFile(".env");
 const contractEnv = readEnvFile("packages/contracts/.env");
 const webEnv = readEnvFile("apps/web/.env.local");
@@ -323,17 +324,20 @@ function checkWavyChainId(): Check {
   const key = "WAVY_NODE_CHAIN_ID";
   const value = combinedEnv[key]?.trim();
   const detail =
-    "required so Wavy Node scores the same Avalanche Fuji network stored by the oracle";
+    "required so Wavy Node scores Avalanche mainnet while the oracle stores proof on Avalanche Fuji";
 
   if (!value) {
     return {
       label: "Wavy Node chain ID",
       status: "pass",
-      detail: `${detail}; using default ${fujiChainId}`,
+      detail: `${detail}; using default ${wavyAvalancheChainId}`,
     };
   }
 
-  if (Number(value) === fujiChainId && Number.isInteger(Number(value))) {
+  if (
+    Number(value) === wavyAvalancheChainId &&
+    Number.isInteger(Number(value))
+  ) {
     return {
       label: "Wavy Node chain ID",
       status: "pass",
@@ -344,7 +348,7 @@ function checkWavyChainId(): Check {
   return {
     label: "Wavy Node chain ID",
     status: "warn",
-    detail: `${detail}; ${key} must be ${fujiChainId}`,
+    detail: `${detail}; ${key} must be ${wavyAvalancheChainId}`,
   };
 }
 
@@ -699,8 +703,8 @@ function validateScoreRecordProof(
     return `${scoreRecordArtifactPath} source is ${proof.source ?? "unknown"}, expected wavy`;
   }
 
-  if (proof.chainId !== 43113) {
-    return `${scoreRecordArtifactPath} chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  if (proof.chainId !== wavyAvalancheChainId) {
+    return `${scoreRecordArtifactPath} chainId is ${proof.chainId ?? "unknown"}, expected Wavy Avalanche ${wavyAvalancheChainId}`;
   }
 
   const scoreSnapshotError = validateScoreRecordSnapshot(proof);

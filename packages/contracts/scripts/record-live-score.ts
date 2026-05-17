@@ -27,6 +27,7 @@ type ScoreRecordArtifact = {
   institution: Institution;
   source: ScoreSource;
   chainId: number;
+  registryChainId: number;
   score: ScoreApiResponse;
   transactionHash: string;
   blockNumber: number | null;
@@ -120,6 +121,8 @@ const repoDir = join(packageDir, "..", "..", "..");
 const defaultWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const fujiChainId = 43113;
+const wavyAvalancheChainId = 43114;
 const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 const bytes32Regex = /^0x[a-fA-F0-9]{64}$/;
 const privateKeyRegex = /^0x[a-fA-F0-9]{64}$/;
@@ -194,8 +197,10 @@ async function main() {
   const providerNetwork = await ethers.provider.getNetwork();
   const chainId = Number(providerNetwork.chainId);
 
-  if (chainId !== 43113) {
-    fail(`Expected Avalanche Fuji chain id 43113, received ${chainId}.`);
+  if (chainId !== fujiChainId) {
+    fail(
+      `Expected Avalanche Fuji chain id ${fujiChainId}, received ${chainId}.`,
+    );
   }
 
   const score = await fetchScore({
@@ -310,8 +315,10 @@ async function fetchScore(input: {
     fail("Score API response institution did not match the request.");
   }
 
-  if (score.chainId !== 43113) {
-    fail(`Expected score chainId 43113, received ${score.chainId}.`);
+  if (score.chainId !== wavyAvalancheChainId) {
+    fail(
+      `Expected Wavy score chainId ${wavyAvalancheChainId}, received ${score.chainId}.`,
+    );
   }
 
   if (score.source !== "wavy" && !input.allowMockRecord) {
@@ -511,6 +518,7 @@ function writeScoreRecordArtifact(input: {
     institution: input.score.institution,
     source: input.score.source,
     chainId: input.score.chainId,
+    registryChainId: fujiChainId,
     score: input.score,
     transactionHash: input.transactionHash,
     blockNumber: input.blockNumber,

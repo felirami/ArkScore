@@ -30,6 +30,7 @@ const subjectHashSalt = env.ARKSCORE_SUBJECT_HASH_SALT;
 const allowMock = env.RAILWAY_ALLOW_MOCK === "true";
 const wavyMockMode = allowMock ? "true" : "false";
 const fujiChainId = 43113;
+const wavyAvalancheChainId = 43114;
 const wavyChainId = parseWavyChainId(env.WAVY_NODE_CHAIN_ID);
 const configuredApiUrl = normalizeBaseUrl(
   firstConfiguredValue([env.ARKSCORE_API_URL, env.NEXT_PUBLIC_API_BASE_URL]),
@@ -72,9 +73,9 @@ function main() {
     );
   }
 
-  if (wavyChainId !== fujiChainId) {
+  if (wavyChainId !== wavyAvalancheChainId) {
     fail(
-      `WAVY_NODE_CHAIN_ID must be Avalanche Fuji chain id ${fujiChainId} for ArkScore deployment.`,
+      `WAVY_NODE_CHAIN_ID must be Wavy-supported Avalanche chain id ${wavyAvalancheChainId}. ArkScore stores proof on Avalanche Fuji chain id ${fujiChainId}.`,
     );
   }
 
@@ -201,6 +202,10 @@ function buildCommands(): CommandPlan[] {
     WAVY_NODE_BASE_URL: env.WAVY_NODE_BASE_URL ?? "https://api.wavynode.com/v1",
     WAVY_NODE_CHAIN_ID: String(wavyChainId),
     WAVY_NODE_TIMEOUT_MS: env.WAVY_NODE_TIMEOUT_MS ?? "15000",
+    WAVY_NODE_ANALYSIS_POLL_INTERVAL_MS:
+      env.WAVY_NODE_ANALYSIS_POLL_INTERVAL_MS ?? "2000",
+    WAVY_NODE_ANALYSIS_POLL_TIMEOUT_MS:
+      env.WAVY_NODE_ANALYSIS_POLL_TIMEOUT_MS ?? "90000",
     WAVY_NODE_AUTO_REGISTER: env.WAVY_NODE_AUTO_REGISTER ?? "true",
     WAVY_NODE_FOREIGN_USER_PREFIX:
       env.WAVY_NODE_FOREIGN_USER_PREFIX ?? "arkscore-wallet",
@@ -443,7 +448,7 @@ function hasUsableValue(value: string | undefined): value is string {
 }
 
 function parseWavyChainId(value: string | undefined): number {
-  const chainId = Number(value ?? String(fujiChainId));
+  const chainId = Number(value ?? String(wavyAvalancheChainId));
 
   if (!Number.isInteger(chainId) || chainId <= 0) {
     fail("WAVY_NODE_CHAIN_ID must be a positive integer.");

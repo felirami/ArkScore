@@ -6,6 +6,7 @@ loadEnv({ quiet: true });
 const demoSubjectHashSalt = "arkscore-demo-subject-hash-salt";
 const integrationUserDataHealthSchema = z.record(z.string(), z.unknown());
 export const avalancheFujiChainId = 43113;
+export const wavyAvalancheChainId = 43114;
 
 export const envSchema = z.object({
   NODE_ENV: z.string().default("development"),
@@ -18,11 +19,21 @@ export const envSchema = z.object({
     .number()
     .int()
     .positive()
-    .default(avalancheFujiChainId)
-    .refine((chainId) => chainId === avalancheFujiChainId, {
-      message: `WAVY_NODE_CHAIN_ID must be Avalanche Fuji chain id ${avalancheFujiChainId}.`,
+    .default(wavyAvalancheChainId)
+    .refine((chainId) => chainId === wavyAvalancheChainId, {
+      message: `WAVY_NODE_CHAIN_ID must be Wavy-supported Avalanche chain id ${wavyAvalancheChainId}. ArkScore stores the resulting proof on Avalanche Fuji chain id ${avalancheFujiChainId}.`,
     }),
   WAVY_NODE_TIMEOUT_MS: z.coerce.number().int().positive().default(15000),
+  WAVY_NODE_ANALYSIS_POLL_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(2000),
+  WAVY_NODE_ANALYSIS_POLL_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(90000),
   WAVY_NODE_AUTO_REGISTER: z.enum(["true", "false"]).default("true"),
   WAVY_NODE_FOREIGN_USER_PREFIX: z.string().default("arkscore-wallet"),
   WAVY_NODE_MOCK_MODE: z.enum(["auto", "true", "false"]).default("auto"),

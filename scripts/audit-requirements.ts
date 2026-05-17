@@ -57,6 +57,7 @@ type ScoreRecordProof = {
 const strict = process.argv.includes("--strict");
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const wavyAvalancheChainId = 43114;
 const env = {
   ...readEnvFile(".env"),
   ...readEnvFile("packages/contracts/.env"),
@@ -302,11 +303,15 @@ function checkWavyIntegration(): Check {
   const hasWavyFlow =
     Boolean(adapter?.includes("/chains")) &&
     Boolean(adapter?.includes("/projects/")) &&
+    Boolean(adapter?.includes("investigations")) &&
     Boolean(adapter?.includes("scan-risk")) &&
     Boolean(adapter?.includes("x-api-key"));
-  const hasFujiRuntimePin =
+  const hasAvalancheWavyRuntimePin =
     Boolean(apiEnv?.includes("avalancheFujiChainId = 43113")) &&
-    Boolean(apiEnv?.includes("WAVY_NODE_CHAIN_ID must be Avalanche Fuji")) &&
+    Boolean(apiEnv?.includes("wavyAvalancheChainId = 43114")) &&
+    Boolean(
+      apiEnv?.includes("WAVY_NODE_CHAIN_ID must be Wavy-supported Avalanche"),
+    ) &&
     Boolean(apiPackage?.scripts?.test?.includes("src/config/env.test.ts"));
   const hasUpstreamResultGuard =
     Boolean(adapter?.includes("requireMatchingChainId")) &&
@@ -318,7 +323,7 @@ function checkWavyIntegration(): Check {
 
   if (
     hasWavyFlow &&
-    hasFujiRuntimePin &&
+    hasAvalancheWavyRuntimePin &&
     hasUpstreamResultGuard &&
     hasTraceability
   ) {
@@ -326,7 +331,7 @@ function checkWavyIntegration(): Check {
       label: "Wavy Node traceability and AI risk score",
       status: "pass",
       detail:
-        "adapter includes chains/register/scan-risk flow, Fuji-only runtime config, upstream result matching, and 0-100 traceability fields",
+        "adapter includes chains/register/investigation/scan-risk flow, Wavy Avalanche scoring config, Fuji registry separation, upstream result matching, and 0-100 traceability fields",
     };
   }
 
@@ -334,7 +339,7 @@ function checkWavyIntegration(): Check {
     label: "Wavy Node traceability and AI risk score",
     status: "fail",
     detail:
-      "missing Wavy API flow, Fuji-only runtime config, upstream result matching, or explicit traceability fields",
+      "missing Wavy API flow, Wavy Avalanche scoring config, Fuji registry separation, upstream result matching, or explicit traceability fields",
   };
 }
 
@@ -712,8 +717,8 @@ function validateScoreRecordProof(proof: ScoreRecordProof): string | undefined {
   if (proof.source !== "wavy") {
     return `source is ${proof.source ?? "unknown"}, expected wavy`;
   }
-  if (proof.chainId !== 43113) {
-    return `chainId is ${proof.chainId ?? "unknown"}, expected Fuji 43113`;
+  if (proof.chainId !== wavyAvalancheChainId) {
+    return `chainId is ${proof.chainId ?? "unknown"}, expected Wavy Avalanche ${wavyAvalancheChainId}`;
   }
   const scoreSnapshotError = validateScoreRecordSnapshot(proof);
   if (scoreSnapshotError) {

@@ -87,6 +87,7 @@ type ReportInput = {
 
 const defaultScoreRecordArtifactPath =
   "packages/contracts/deployments/fuji/LatestScoreRecord.json";
+const wavyAvalancheChainId = 43114;
 const scoreRecordSnapshotMaxAgeMs = 15 * 60 * 1000;
 const scoreRecordSnapshotFutureSkewMs = 60 * 1000;
 const args = new Set(process.argv.slice(2));
@@ -528,7 +529,7 @@ function renderScoreRecordProof(evidence: ScoreRecordEvidence) {
     `  - Wavy analysis id: \`${proof.wavy?.analysisId ?? "unknown"}\``,
     `  - Scores: Wavy \`${proof.wavy?.riskScore ?? "unknown"}/100\`, composite \`${proof.composite?.creditScore ?? "unknown"}/100\``,
     `  - Decision: \`${proof.composite?.decision ?? "unknown"}\` for \`${proof.institution ?? "unknown"}\``,
-    `  - Source: \`${proof.source ?? "unknown"}\` on chain \`${proof.chainId ?? "unknown"}\``,
+    `  - Source: \`${proof.source ?? "unknown"}\` on Wavy chain \`${proof.chainId ?? "unknown"}\``,
   ].join("\n");
 }
 
@@ -537,8 +538,8 @@ function validateScoreRecordProof(proof: ScoreRecordProof): string | undefined {
     return `source is ${proof.source ?? "unknown"}, expected wavy`;
   }
 
-  if (proof.chainId !== 43113) {
-    return `chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  if (proof.chainId !== wavyAvalancheChainId) {
+    return `chainId is ${proof.chainId ?? "unknown"}, expected Wavy Avalanche ${wavyAvalancheChainId}`;
   }
 
   const scoreSnapshotError = validateScoreRecordSnapshot(proof);

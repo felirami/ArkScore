@@ -227,7 +227,11 @@ export function createWavyTraceability(input: {
   return {
     provider: "Wavy Node",
     network:
-      input.chainId === 43113 ? "Avalanche Fuji" : `EVM ${input.chainId}`,
+      input.chainId === 43114
+        ? "Avalanche"
+        : input.chainId === 43113
+          ? "Avalanche Fuji"
+          : `EVM ${input.chainId}`,
     scanType: "wallet-risk",
     riskScoreScale: "0-100",
     addressRegistration: input.addressRegistration,

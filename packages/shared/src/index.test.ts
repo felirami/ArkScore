@@ -14,7 +14,7 @@ const subjectHash =
 const evidenceHash =
   "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-test("scoreApiResponseSchema accepts a Fuji Wavy score payload", () => {
+test("scoreApiResponseSchema accepts an Avalanche Wavy score payload", () => {
   const payload = createScorePayload();
   const parsed = scoreApiResponseSchema.safeParse(payload);
 
@@ -22,7 +22,7 @@ test("scoreApiResponseSchema accepts a Fuji Wavy score payload", () => {
   if (!parsed.success) return;
 
   assert.equal(parsed.data.source, "wavy");
-  assert.equal(parsed.data.chainId, 43113);
+  assert.equal(parsed.data.chainId, 43114);
   assert.equal(parsed.data.subjectHash, subjectHash);
 });
 
@@ -47,16 +47,16 @@ function createScorePayload(
   const wavy: ScoreApiResponse["wavy"] = {
     analysisId: "wavy-live-123",
     address: demoWallet,
-    chainId: 43113,
+    chainId: 43114,
     riskScore: 18,
     riskLevel: "minimal",
-    riskReason: "Low-risk Fuji wallet activity.",
+    riskReason: "Low-risk Avalanche wallet activity.",
     suspiciousActivity: false,
     patternsDetected: [],
     transactionsAnalyzed: 128,
     completedAt: generatedAt,
     traceability: createWavyTraceability({
-      chainId: 43113,
+      chainId: 43114,
       addressRegistration: "auto-registered-or-reused",
       transactionsAnalyzed: 128,
       patternsDetected: [],
@@ -67,7 +67,7 @@ function createScorePayload(
   return {
     address: demoWallet,
     subjectHash,
-    chainId: 43113,
+    chainId: 43114,
     institution: "bankaool",
     source: "wavy",
     generatedAt,

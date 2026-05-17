@@ -173,6 +173,8 @@ const scoreRecordArtifactPath =
 const scoreMaxAgeMs = 10 * 60 * 1000;
 const scoreFutureSkewMs = 60 * 1000;
 const scoreRecordSnapshotMaxAgeMs = 15 * 60 * 1000;
+const fujiChainId = 43113;
+const wavyAvalancheChainId = 43114;
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
@@ -423,6 +425,7 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       service?: string;
       wavyCredentialsConfigured?: boolean;
       wavyChainId?: number;
+      registryChainId?: number;
       subjectHashSaltConfigured?: boolean;
       mockMode?: boolean;
     } | null;
@@ -447,16 +450,30 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
 
     if (healthValid) {
       checks.push(
-        health.wavyChainId === 43113
+        health.wavyChainId === wavyAvalancheChainId
           ? {
               label: "Railway Wavy chain",
               status: "pass",
-              detail: "Wavy Node scoring is pinned to Avalanche Fuji 43113",
+              detail: `Wavy Node scoring is pinned to Avalanche ${wavyAvalancheChainId}`,
             }
           : {
               label: "Railway Wavy chain",
               status: "fail",
-              detail: `expected wavyChainId 43113, received ${health.wavyChainId ?? "missing"}`,
+              detail: `expected wavyChainId ${wavyAvalancheChainId}, received ${health.wavyChainId ?? "missing"}`,
+            },
+      );
+
+      checks.push(
+        health.registryChainId === fujiChainId
+          ? {
+              label: "Railway registry chain",
+              status: "pass",
+              detail: `Fuji registry proof chain is ${fujiChainId}`,
+            }
+          : {
+              label: "Railway registry chain",
+              status: "fail",
+              detail: `expected registryChainId ${fujiChainId}, received ${health.registryChainId ?? "missing"}`,
             },
       );
 
@@ -531,6 +548,8 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
       schemaHasProperty(healthSchema, "wavyCredentialsConfigured") &&
       schemaRequires(healthSchema, "wavyChainId") &&
       schemaHasProperty(healthSchema, "wavyChainId") &&
+      schemaRequires(healthSchema, "registryChainId") &&
+      schemaHasProperty(healthSchema, "registryChainId") &&
       schemaRequires(healthSchema, "subjectHashSaltConfigured") &&
       schemaHasProperty(healthSchema, "subjectHashSaltConfigured") &&
       schemaRequires(healthSchema, "mockMode") &&
@@ -577,7 +596,7 @@ async function verifyApi(url: string | undefined): Promise<Check[]> {
     const scoreShapeValid =
       scoreResponse.ok &&
       score?.institution === "bankaool" &&
-      score.chainId === 43113 &&
+      score.chainId === wavyAvalancheChainId &&
       Boolean(score.subjectHash?.match(/^0x[a-f0-9]{64}$/)) &&
       isScore(score.wavy?.riskScore) &&
       score.wavy?.traceability?.provider === "Wavy Node" &&
@@ -1080,8 +1099,8 @@ function validateScoreRecordProof(
     return `${scoreRecordArtifactPath} source is ${proof.source ?? "unknown"}, expected wavy`;
   }
 
-  if (proof.chainId !== 43113) {
-    return `${scoreRecordArtifactPath} chainId is ${proof.chainId ?? "unknown"}, expected 43113`;
+  if (proof.chainId !== wavyAvalancheChainId) {
+    return `${scoreRecordArtifactPath} chainId is ${proof.chainId ?? "unknown"}, expected Wavy Avalanche ${wavyAvalancheChainId}`;
   }
 
   const scoreSnapshotError = validateScoreRecordSnapshot(proof);

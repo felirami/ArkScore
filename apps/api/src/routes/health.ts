@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  avalancheFujiChainId,
   env,
   hasProductionSubjectHashSalt,
   hasWavyCredentials,
@@ -16,6 +17,7 @@ healthRouter.get("/health", (_request, response) => {
     wavyCredentialsConfigured: hasWavyCredentials(),
     wavyIntegrationConfigured: hasWavyIntegrationConfigured(),
     wavyChainId: env.WAVY_NODE_CHAIN_ID,
+    registryChainId: avalancheFujiChainId,
     subjectHashSaltConfigured: hasProductionSubjectHashSalt(),
     mockMode: shouldUseMockScores(),
   });
