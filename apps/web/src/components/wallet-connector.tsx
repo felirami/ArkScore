@@ -2,8 +2,8 @@
 
 import { LogOut, Wallet } from "lucide-react";
 import { useConnection, useConnect, useConnectors, useDisconnect } from "wagmi";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export function WalletConnector() {
   const { address, chainId, isConnected } = useConnection();
@@ -17,7 +17,7 @@ export function WalletConnector() {
         <Badge tone={chainId === 43113 ? "success" : "warning"}>
           {chainId === 43113 ? "Fuji connected" : `Chain ${chainId}`}
         </Badge>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] px-3 py-2 font-mono text-xs">
+        <div className="rounded-full border border-[var(--border)] bg-[var(--panel-raised)] px-3 py-2 font-mono text-xs text-[var(--foreground)]">
           {shortAddress(address)}
         </div>
         <Button variant="secondary" onClick={() => disconnect()}>
@@ -29,14 +29,16 @@ export function WalletConnector() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       {connectors.map((connector) => (
         <Button
           key={connector.uid}
           onClick={() => connect({ connector })}
           disabled={isPending}
+          className="h-12 px-5"
         >
           <Wallet size={16} aria-hidden="true" />
+          <span className="hidden sm:inline">Connect </span>
           {connector.name}
         </Button>
       ))}

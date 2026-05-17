@@ -9,13 +9,13 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "border-transparent bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[#115e59]",
+    "border-transparent bg-[var(--accent)] text-[var(--accent-foreground)] shadow-[0_0_24px_rgba(45,226,166,0.18)] hover:bg-[var(--accent-bright)]",
   secondary:
-    "border-[var(--border)] bg-[var(--panel)] text-[var(--foreground)] hover:bg-[#f1f5f9]",
+    "border-[var(--border)] bg-[var(--panel-raised)] text-[var(--foreground)] hover:border-[var(--border-strong)] hover:bg-[var(--panel-soft)]",
   ghost:
-    "border-transparent bg-transparent text-[var(--foreground)] hover:bg-[#e2e8f0]",
+    "border-transparent bg-transparent text-[var(--foreground)] hover:bg-[rgba(45,226,166,0.08)]",
   danger:
-    "border-transparent bg-[var(--danger)] text-white hover:bg-[#991b1b]"
+    "border-transparent bg-[var(--avalanche)] text-white hover:bg-[#c62834]",
 };
 
 export function Button({
@@ -28,9 +28,9 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex h-10 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] active:scale-[0.98]",
         variants[variant],
-        className
+        className,
       )}
       {...props}
     />

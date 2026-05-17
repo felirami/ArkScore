@@ -212,24 +212,31 @@ export function ScoreDashboard() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
-      <section className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4 md:p-5">
-        <div className="flex items-center gap-2">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)]">
+      <section className="panel-glow rounded-3xl border border-[var(--border)] bg-[rgba(13,27,24,0.82)] p-5 md:p-6">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+              Assessment setup
+            </p>
+            <h2 className="mt-1 text-xl font-bold tracking-[-0.03em]">
+              Institution identity
+            </h2>
+          </div>
           <Search
-            size={18}
+            size={20}
             aria-hidden="true"
-            className="text-[var(--accent)]"
+            className="text-[var(--muted-foreground)]"
           />
-          <h2 className="text-lg font-semibold">Wallet risk intake</h2>
         </div>
 
-        <div className="mt-5 grid gap-4">
+        <div className="mt-5 grid gap-5">
           <div>
             <label
               htmlFor="wallet-address"
-              className="text-sm font-medium text-[var(--muted-foreground)]"
+              className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]"
             >
-              Wallet address
+              Target wallet address
             </label>
             <Input
               id="wallet-address"
@@ -242,21 +249,21 @@ export function ScoreDashboard() {
           </div>
 
           <div>
-            <p className="text-sm font-medium text-[var(--muted-foreground)]">
-              Institution workflow
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+              Institutional context
             </p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel-raised)] p-1">
               <Button
-                variant={institution === "arkangeles" ? "primary" : "secondary"}
+                variant={institution === "arkangeles" ? "primary" : "ghost"}
                 onClick={() => setInstitution("arkangeles")}
-                className="h-12"
+                className="h-11 rounded-lg font-mono text-xs"
               >
                 Arkangeles
               </Button>
               <Button
-                variant={institution === "bankaool" ? "primary" : "secondary"}
+                variant={institution === "bankaool" ? "primary" : "ghost"}
                 onClick={() => setInstitution("bankaool")}
-                className="h-12"
+                className="h-11 rounded-lg font-mono text-xs"
               >
                 Bankaool
               </Button>
@@ -266,33 +273,39 @@ export function ScoreDashboard() {
           <Button
             onClick={handleScoreWallet}
             disabled={isScoring}
-            className="h-12"
+            className="h-14 text-base"
           >
             {isScoring ? (
-              <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+              <Loader2 size={18} aria-hidden="true" className="animate-spin" />
             ) : (
-              <ShieldAlert size={16} aria-hidden="true" />
+              <ShieldAlert size={18} aria-hidden="true" />
             )}
-            Fetch Wavy score
+            {isScoring ? "Generating score" : "Generate Credit Score"}
           </Button>
 
           {error ? (
-            <div className="flex gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              <AlertTriangle size={16} aria-hidden="true" className="mt-0.5" />
+            <div className="flex gap-2 rounded-2xl border border-[rgba(255,107,98,0.38)] bg-[rgba(165,28,36,0.18)] p-3 text-sm text-[#ffb3ae]">
+              <AlertTriangle
+                size={16}
+                aria-hidden="true"
+                className="mt-0.5 shrink-0"
+              />
               <p>{error}</p>
             </div>
           ) : null}
 
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-[var(--muted-foreground)]">
-            Connected wallet:{" "}
-            <span className="font-mono text-[var(--foreground)]">
-              {connectedAddress
-                ? shortAddress(connectedAddress)
-                : "Not connected"}
-            </span>
+          <div className="rounded-2xl border border-[var(--border)] bg-[rgba(17,36,31,0.72)] p-4 text-sm text-[var(--muted-foreground)]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span>Connected wallet</span>
+              <span className="font-mono text-[var(--foreground)]">
+                {connectedAddress
+                  ? shortAddress(connectedAddress)
+                  : "Not connected"}
+              </span>
+            </div>
             {creditScoreRegistryAddress ? (
-              <span className="mt-2 flex items-center gap-2">
-                <span>Scorer status:</span>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
+                <span>Scorer status</span>
                 <Badge tone={scorerTone(isAuthorizedScorer)}>
                   {scorerStatusLabel({
                     connectedAddress,
@@ -301,273 +314,318 @@ export function ScoreDashboard() {
                     isScorerCheckError,
                   })}
                 </Badge>
-              </span>
+              </div>
             ) : null}
           </div>
         </div>
       </section>
 
-      <section className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4 md:p-5">
+      <section className="panel-glow rounded-3xl border border-[var(--border-strong)] bg-[rgba(13,27,24,0.82)] p-5 md:p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <Database
-              size={18}
-              aria-hidden="true"
-              className="text-[var(--accent)]"
-            />
-            <h2 className="text-lg font-semibold">Institutional decision</h2>
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--accent-bright)]">
+              {score ? "Verified proof object" : "Live assessment"}
+            </p>
+            <h2 className="mt-1 text-xl font-bold tracking-[-0.03em]">
+              Institutional decision
+            </h2>
           </div>
           {score ? (
             <Badge tone={score.source === "wavy" ? "success" : "info"}>
-              {score.source === "wavy" ? "Live Wavy Node" : "Mock Wavy trace"}
+              {score.source === "wavy" ? "Verified via Wavy" : "Demo trace"}
             </Badge>
-          ) : null}
+          ) : (
+            <Badge tone="neutral">Awaiting wallet</Badge>
+          )}
         </div>
 
         {score ? (
-          <div className="mt-5 grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Metric label="Wavy risk" value={`${score.wavy.riskScore}/100`} />
-              <Metric
-                label="Credit score"
-                value={`${score.composite.creditScore}/100`}
-              />
-              <Metric
-                label="Trace volume"
-                value={String(score.wavy.transactionsAnalyzed)}
-              />
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={riskTone(score.wavy.riskScore)}>
-                  {score.wavy.riskLevel}
-                </Badge>
-                <Badge tone={decisionTone(score.composite.decision)}>
+          <div className="mt-5 grid gap-5">
+            <div className="rounded-2xl border border-[var(--border)] bg-[linear-gradient(rgba(54,94,82,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(54,94,82,0.18)_1px,transparent_1px)] bg-[length:40px_40px] p-6 text-center">
+              <p className="font-mono text-xs uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
+                Ark Score
+              </p>
+              <p className="text-glow mt-2 text-7xl font-black tracking-[-0.08em] text-[var(--foreground)] md:text-8xl">
+                {score.composite.creditScore}
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Badge
+                  tone={decisionTone(score.composite.decision)}
+                  className="px-4 py-2 text-sm"
+                >
                   {score.composite.decisionLabel}
                 </Badge>
+                <Badge
+                  tone={riskTone(score.wavy.riskScore)}
+                  className="px-4 py-2 text-sm"
+                >
+                  {score.wavy.riskLevel}
+                </Badge>
               </div>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
+              <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
                 {score.composite.recommendation}
               </p>
             </div>
 
-            <div className="grid gap-2 text-sm">
-              <Detail
-                label="Traceability"
-                value={`${score.wavy.traceability.provider} ${score.wavy.traceability.scanType}; ${score.wavy.traceability.transactionsAnalyzed} tx; ${score.wavy.traceability.patternsCount} patterns`}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Metric label="Wavy risk" value={`${score.wavy.riskScore}/100`} />
+              <Metric
+                label="Trace volume"
+                value={String(score.wavy.transactionsAnalyzed)}
               />
-              <Detail
-                label="AI risk scale"
-                value={`${score.wavy.traceability.riskScoreScale}; ${traceabilityRegistrationLabel(score.wavy.traceability.addressRegistration)}`}
-              />
-              <Detail label="Subject hash" value={score.subjectHash} />
-              <Detail label="Analysis ID" value={score.wavy.analysisId} />
-              <Detail label="Evidence hash" value={score.evidenceHash} />
-              <Detail label="Risk reason" value={score.wavy.riskReason} />
+              <Metric label="Chain" value="Fuji" />
             </div>
 
-            <div className="flex flex-col gap-2 rounded-lg border border-[var(--border)] p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-[var(--muted-foreground)]">
-                Registry:{" "}
-                <span className="font-mono text-[var(--foreground)]">
-                  {creditScoreRegistryAddress
-                    ? shortAddress(creditScoreRegistryAddress)
-                    : "Set contract address"}
-                </span>
-                {creditScoreRegistryAddress && connectedAddress ? (
-                  <span className="mt-1 block">
-                    Scorer:{" "}
-                    <span className="font-mono text-[var(--foreground)]">
-                      {shortAddress(connectedAddress)}
-                    </span>{" "}
-                    <span className="text-[var(--muted-foreground)]">
-                      {isAuthorizedScorer === true
-                        ? "authorized"
-                        : "not authorized"}
-                    </span>
-                  </span>
-                ) : null}
-                <span className="mt-2 flex flex-wrap items-center gap-2">
-                  <span>Subject status:</span>
-                  <Badge
-                    tone={storedScoreTone({
-                      hasRegistry: Boolean(creditScoreRegistryAddress),
-                      hasStoredScore,
-                    })}
-                  >
-                    {storedScoreStatusLabel({
-                      hasRegistry: Boolean(creditScoreRegistryAddress),
-                      hasStoredScore,
-                      isCheckingStoredScore,
-                      isStoredScoreCheckError,
-                    })}
-                  </Badge>
-                </span>
+            <div>
+              <h3 className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+                Cryptographic proofs
+              </h3>
+              <div className="mt-3 grid gap-3">
+                <Detail label="Subject hash" value={score.subjectHash} />
+                <Detail
+                  label="Evidence Merkle root"
+                  value={score.evidenceHash}
+                />
+                <Detail label="Analysis ID" value={score.wavy.analysisId} />
+                <Detail
+                  label="Traceability"
+                  value={`${score.wavy.traceability.provider} ${score.wavy.traceability.scanType}; ${score.wavy.traceability.transactionsAnalyzed} tx; ${score.wavy.traceability.patternsCount} patterns`}
+                />
+                <Detail
+                  label="AI risk scale"
+                  value={`${score.wavy.traceability.riskScoreScale}; ${traceabilityRegistrationLabel(score.wavy.traceability.addressRegistration)}`}
+                />
+                <Detail label="Risk reason" value={score.wavy.riskReason} />
               </div>
-              <Button
-                onClick={handleStoreOnChain}
-                disabled={
-                  !canSubmitToRegistry ||
-                  isWriting ||
-                  isConfirming ||
-                  isSwitching
-                }
-              >
-                {isWriting || isConfirming || isSwitching ? (
-                  <Loader2
+            </div>
+
+            <div
+              id="registry"
+              className="rounded-2xl border border-[var(--border)] bg-[rgba(17,36,31,0.72)] p-4"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-bold tracking-[-0.03em]">
+                    <Database
+                      size={18}
+                      aria-hidden="true"
+                      className="text-[var(--muted-foreground)]"
+                    />
+                    Registry Readback
+                  </h3>
+                  <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                    Contract:{" "}
+                    <span className="font-mono text-[var(--foreground)]">
+                      {creditScoreRegistryAddress
+                        ? shortAddress(creditScoreRegistryAddress)
+                        : "Set contract address"}
+                    </span>
+                    {connectedAddress ? (
+                      <span>
+                        {" "}
+                        · Scorer:{" "}
+                        <span className="font-mono text-[var(--foreground)]">
+                          {shortAddress(connectedAddress)}
+                        </span>
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+                <Badge
+                  tone={storedScoreTone({
+                    hasRegistry: Boolean(creditScoreRegistryAddress),
+                    hasStoredScore,
+                  })}
+                >
+                  {storedScoreStatusLabel({
+                    hasRegistry: Boolean(creditScoreRegistryAddress),
+                    hasStoredScore,
+                    isCheckingStoredScore,
+                    isStoredScoreCheckError,
+                  })}
+                </Badge>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <Button
+                  onClick={handleStoreOnChain}
+                  disabled={
+                    !canSubmitToRegistry ||
+                    isWriting ||
+                    isConfirming ||
+                    isSwitching
+                  }
+                >
+                  {isWriting || isConfirming || isSwitching ? (
+                    <Loader2
+                      size={16}
+                      aria-hidden="true"
+                      className="animate-spin"
+                    />
+                  ) : isConfirmed ? (
+                    <CheckCircle2 size={16} aria-hidden="true" />
+                  ) : (
+                    <UploadCloud size={16} aria-hidden="true" />
+                  )}
+                  {chainId !== avalancheFuji.id && isConnected
+                    ? "Switch to Fuji"
+                    : !isLiveWavyScore
+                      ? "Live Wavy required"
+                      : isCheckingScorer
+                        ? "Checking scorer"
+                        : hasStoredScore
+                          ? "Update Fuji record"
+                          : "Store on Fuji"}
+                </Button>
+                {transactionHash ? (
+                  <a
+                    href={`https://testnet.snowtrace.io/tx/${transactionHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent-bright)]"
+                  >
+                    View transaction
+                    <ArrowUpRight size={14} aria-hidden="true" />
+                  </a>
+                ) : null}
+              </div>
+
+              {!isLiveWavyScore ? (
+                <div className="mt-4 flex gap-2 rounded-2xl border border-[rgba(245,184,75,0.36)] bg-[rgba(245,184,75,0.10)] p-3 text-sm text-[var(--warning)]">
+                  <AlertTriangle
                     size={16}
                     aria-hidden="true"
-                    className="animate-spin"
+                    className="mt-0.5 shrink-0"
                   />
-                ) : isConfirmed ? (
-                  <CheckCircle2 size={16} aria-hidden="true" />
-                ) : (
-                  <UploadCloud size={16} aria-hidden="true" />
-                )}
-                {chainId !== avalancheFuji.id && isConnected
-                  ? "Switch to Fuji"
-                  : !isLiveWavyScore
-                    ? "Live Wavy required"
-                    : isCheckingScorer
-                      ? "Checking scorer"
-                      : hasStoredScore
-                        ? "Update Fuji record"
-                        : "Store on Fuji"}
-              </Button>
-            </div>
-
-            {!isLiveWavyScore ? (
-              <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                <AlertTriangle
-                  size={16}
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0"
-                />
-                <p>
-                  Mock scores are read-only. Connect the live Railway Wavy API
-                  before storing evidence on Fuji.
-                </p>
-              </div>
-            ) : null}
-
-            {transactionHash ? (
-              <a
-                href={`https://testnet.snowtrace.io/tx/${transactionHash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--accent)]"
-              >
-                View transaction
-                <ArrowUpRight size={14} aria-hidden="true" />
-              </a>
-            ) : null}
-
-            {hasStoredScore === true ? (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-[var(--foreground)]">
-                    On-chain readback
+                  <p>
+                    Demo scores are read-only. Connect the live Railway Wavy API
+                    before storing evidence on Fuji.
                   </p>
-                  <Badge
-                    tone={
-                      storedEvidenceMatches
-                        ? "success"
-                        : isStoredScoreRecordError
-                          ? "danger"
-                          : "info"
-                    }
-                  >
-                    {storedReadbackStatusLabel({
-                      isLoadingStoredScoreRecord,
-                      isStoredScoreRecordError,
-                      storedEvidenceMatches,
-                      storedScoreRecord,
-                    })}
-                  </Badge>
                 </div>
+              ) : null}
 
-                {storedScoreRecord ? (
-                  <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                    <CompactDetail
-                      label="Stored score"
-                      value={`${storedScoreRecord.wavyRiskScore}/100 risk; ${storedScoreRecord.compositeCreditScore}/100 credit`}
-                    />
-                    <CompactDetail
-                      label="Decision enum"
-                      value={String(storedScoreRecord.decision)}
-                    />
-                    <CompactDetail
-                      label="Submitter"
-                      value={shortAddress(storedScoreRecord.submitter)}
-                    />
-                    <CompactDetail
-                      label="Updated"
-                      value={formatUnixTimestamp(storedScoreRecord.updatedAt)}
-                    />
-                    <CompactDetail
-                      label="Analysis ID"
-                      value={storedScoreRecord.wavyAnalysisId}
-                    />
-                    <CompactDetail
-                      label="Institution"
-                      value={storedScoreRecord.institution}
-                    />
+              {hasStoredScore === true ? (
+                <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[rgba(13,27,24,0.76)] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-[var(--foreground)]">
+                      On-chain readback
+                    </p>
+                    <Badge
+                      tone={
+                        storedEvidenceMatches
+                          ? "success"
+                          : isStoredScoreRecordError
+                            ? "danger"
+                            : "info"
+                      }
+                    >
+                      {storedReadbackStatusLabel({
+                        isLoadingStoredScoreRecord,
+                        isStoredScoreRecordError,
+                        storedEvidenceMatches,
+                        storedScoreRecord,
+                      })}
+                    </Badge>
                   </div>
-                ) : (
-                  <p className="mt-3 text-sm text-[var(--muted-foreground)]">
-                    {isLoadingStoredScoreRecord
-                      ? "Reading registry record from Avalanche Fuji."
-                      : "Fuji reports a stored score, but the registry record is not available yet."}
-                  </p>
-                )}
-              </div>
-            ) : null}
 
-            {writeError ? (
-              <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                <AlertTriangle
-                  size={16}
-                  aria-hidden="true"
-                  className="mt-0.5"
-                />
-                <p>{writeError.message}</p>
-              </div>
-            ) : null}
+                  {storedScoreRecord ? (
+                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                      <CompactDetail
+                        label="Stored score"
+                        value={`${storedScoreRecord.wavyRiskScore}/100 risk; ${storedScoreRecord.compositeCreditScore}/100 credit`}
+                      />
+                      <CompactDetail
+                        label="Decision enum"
+                        value={String(storedScoreRecord.decision)}
+                      />
+                      <CompactDetail
+                        label="Submitter"
+                        value={shortAddress(storedScoreRecord.submitter)}
+                      />
+                      <CompactDetail
+                        label="Updated"
+                        value={formatUnixTimestamp(storedScoreRecord.updatedAt)}
+                      />
+                      <CompactDetail
+                        label="Analysis ID"
+                        value={storedScoreRecord.wavyAnalysisId}
+                      />
+                      <CompactDetail
+                        label="Institution"
+                        value={storedScoreRecord.institution}
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-[var(--muted-foreground)]">
+                      {isLoadingStoredScoreRecord
+                        ? "Reading registry record from Avalanche Fuji."
+                        : "Fuji reports a stored score, but the registry record is not available yet."}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              {writeError ? (
+                <div className="mt-4 flex gap-2 rounded-2xl border border-[rgba(245,184,75,0.36)] bg-[rgba(245,184,75,0.10)] p-3 text-sm text-[var(--warning)]">
+                  <AlertTriangle
+                    size={16}
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0"
+                  />
+                  <p>{writeError.message}</p>
+                </div>
+              ) : null}
+            </div>
           </div>
         ) : (
-          <div className="mt-5 flex min-h-[320px] items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-slate-50 p-6 text-center text-sm text-[var(--muted-foreground)]">
-            Wavy Node risk, composite score, and on-chain evidence will appear
-            here.
+          <div className="mt-5 grid min-h-[320px] place-items-center rounded-2xl border border-dashed border-[var(--border)] bg-[rgba(17,36,31,0.46)] p-8 text-center">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+                No proof generated
+              </p>
+              <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-foreground)]">
+                Wavy Node risk, composite score, cryptographic evidence, and
+                Fuji registry controls will appear here.
+              </p>
+            </div>
           </div>
         )}
       </section>
     </div>
   );
 }
-
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--border)] p-3">
-      <p className="text-xs text-[var(--muted-foreground)]">{label}</p>
-      <p className="mt-1 font-mono text-2xl font-semibold">{value}</p>
+    <div className="rounded-2xl border border-[var(--border)] bg-[rgba(17,36,31,0.72)] p-3">
+      <p className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+        {label}
+      </p>
+      <p className="mt-1 truncate font-mono text-2xl font-bold text-[var(--foreground)]">
+        {value}
+      </p>
     </div>
   );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid gap-1 rounded-lg border border-slate-200 p-3 md:grid-cols-[140px_1fr]">
-      <p className="text-[var(--muted-foreground)]">{label}</p>
-      <p className="break-all font-mono text-xs md:text-sm">{value}</p>
+    <div className="grid min-w-0 gap-1 rounded-2xl border border-[var(--border)] bg-[rgba(17,36,31,0.72)] p-3 md:grid-cols-[160px_1fr]">
+      <p className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+        {label}
+      </p>
+      <p className="min-w-0 break-all font-mono text-xs text-[var(--accent-bright)] md:text-sm">
+        {value}
+      </p>
     </div>
   );
 }
 
 function CompactDetail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-md border border-slate-200 bg-white p-2">
-      <p className="text-xs text-[var(--muted-foreground)]">{label}</p>
+    <div className="min-w-0 rounded-xl border border-[var(--border)] bg-[rgba(17,36,31,0.72)] p-2">
+      <p className="font-mono text-xs uppercase tracking-[0.1em] text-[var(--muted-foreground)]">
+        {label}
+      </p>
       <p className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">
         {value}
       </p>

@@ -8,20 +8,24 @@ type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
 };
 
 const tones: Record<BadgeTone, string> = {
-  neutral: "border-slate-300 bg-slate-100 text-slate-700",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  warning: "border-amber-200 bg-amber-50 text-amber-700",
-  danger: "border-red-200 bg-red-50 text-red-700",
-  info: "border-blue-200 bg-blue-50 text-blue-700"
+  neutral:
+    "border-[var(--border)] bg-[var(--panel-raised)] text-[var(--muted-foreground)]",
+  success:
+    "border-[rgba(45,226,166,0.35)] bg-[rgba(45,226,166,0.10)] text-[var(--accent-bright)]",
+  warning:
+    "border-[rgba(245,184,75,0.36)] bg-[rgba(245,184,75,0.10)] text-[var(--warning)]",
+  danger:
+    "border-[rgba(255,107,98,0.38)] bg-[rgba(165,28,36,0.22)] text-[#ffb3ae]",
+  info: "border-[rgba(96,165,250,0.35)] bg-[rgba(96,165,250,0.10)] text-[var(--bank-blue)]",
 };
 
 export function Badge({ className, tone = "neutral", ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em]",
         tones[tone],
-        className
+        className,
       )}
       {...props}
     />

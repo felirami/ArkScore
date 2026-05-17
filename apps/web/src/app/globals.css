@@ -6,20 +6,55 @@
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --panel: #ffffff;
-  --muted: #e2e8f0;
-  --muted-foreground: #475569;
-  --border: #cbd5e1;
-  --accent: #0f766e;
-  --accent-foreground: #f8fafc;
-  --warning: #b45309;
-  --danger: #b91c1c;
+  --background: #07110f;
+  --foreground: #f4fbf8;
+  --panel: #0d1b18;
+  --panel-raised: #11241f;
+  --panel-soft: #17221f;
+  --muted: #20342f;
+  --muted-foreground: #9ab0a7;
+  --border: #224239;
+  --border-strong: #365e52;
+  --accent: #2de2a6;
+  --accent-bright: #5affc1;
+  --accent-foreground: #003826;
+  --avalanche: #a51c24;
+  --wavy: #7c3aed;
+  --bank-blue: #60a5fa;
+  --warning: #f5b84b;
+  --danger: #ff6b62;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
-  background: var(--background);
+  margin: 0;
+  background:
+    radial-gradient(
+      circle at 80% 8%,
+      rgba(45, 226, 166, 0.14),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 10% 38%,
+      rgba(124, 58, 237, 0.1),
+      transparent 24rem
+    ),
+    linear-gradient(rgba(54, 94, 82, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(54, 94, 82, 0.14) 1px, transparent 1px),
+    var(--background);
+  background-size:
+    auto,
+    auto,
+    40px 40px,
+    40px 40px,
+    auto;
   color: var(--foreground);
 }
 
@@ -27,4 +62,19 @@ button,
 input,
 select {
   font: inherit;
+}
+
+::selection {
+  background: rgba(45, 226, 166, 0.28);
+  color: var(--foreground);
+}
+
+.text-glow {
+  text-shadow: 0 0 28px rgba(90, 255, 193, 0.38);
+}
+
+.panel-glow {
+  box-shadow:
+    0 24px 80px rgba(45, 226, 166, 0.08),
+    inset 0 1px 0 rgba(244, 251, 248, 0.03);
 }
