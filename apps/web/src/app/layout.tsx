@@ -4,7 +4,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "ArkScore",
-  description: "On-chain credit and investor risk scoring for Avalanche institutions."
+  description:
+    "Scoring crediticio y riesgo de inversionistas on-chain para instituciones en Avalanche."
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es-419">
       <body className="antialiased">
         <AppProviders>{children}</AppProviders>
       </body>

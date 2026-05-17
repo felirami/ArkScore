@@ -33,6 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { pick, useLanguage, type Language } from "@/lib/language";
 
 const demoWallet = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 
@@ -49,6 +50,7 @@ type StoredScoreRecord = {
 };
 
 export function ScoreDashboard() {
+  const { language } = useLanguage();
   const { address: connectedAddress, chainId, isConnected } = useConnection();
   const [institution, setInstitution] = useState<Institution>("arkangeles");
   const [walletAddress, setWalletAddress] = useState(demoWallet);
@@ -153,7 +155,7 @@ export function ScoreDashboard() {
     setScore(null);
 
     if (!isAddress(walletAddress)) {
-      setError("Enter a valid EVM wallet address.");
+      setError(pick(language, "Ingresa una dirección de wallet EVM válida.", "Enter a valid EVM wallet address."));
       return;
     }
 
@@ -169,7 +171,7 @@ export function ScoreDashboard() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Unable to fetch wallet score.",
+          : pick(language, "No se pudo obtener el score de la wallet.", "Unable to fetch wallet score."),
       );
     } finally {
       setIsScoring(false);
@@ -180,12 +182,12 @@ export function ScoreDashboard() {
     if (!score || !creditScoreRegistryAddress) return;
 
     if (score.source !== "wavy") {
-      setError("Only live Wavy Node scores can be stored on Fuji.");
+      setError(pick(language, "Solo los scores en vivo de Wavy Node se pueden guardar en Fuji.", "Only live Wavy Node scores can be stored on Fuji."));
       return;
     }
 
     if (isAuthorizedScorer !== true) {
-      setError("Connect an authorized scorer wallet before storing on Fuji.");
+      setError(pick(language, "Conecta una wallet scorer autorizada antes de guardar en Fuji.", "Connect an authorized scorer wallet before storing on Fuji."));
       return;
     }
 
@@ -217,10 +219,10 @@ export function ScoreDashboard() {
         <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-              Assessment setup
+              {pick(language, "Configuración de evaluación", "Assessment setup")}
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-[-0.03em]">
-              Institution identity
+              {pick(language, "Identidad institucional", "Institution identity")}
             </h2>
           </div>
           <Search
@@ -236,7 +238,7 @@ export function ScoreDashboard() {
               htmlFor="wallet-address"
               className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]"
             >
-              Target wallet address
+              {pick(language, "Dirección de wallet objetivo", "Target wallet address")}
             </label>
             <Input
               id="wallet-address"
@@ -250,7 +252,7 @@ export function ScoreDashboard() {
 
           <div>
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-              Institutional context
+              {pick(language, "Contexto institucional", "Institutional context")}
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel-raised)] p-1">
               <Button
@@ -280,7 +282,7 @@ export function ScoreDashboard() {
             ) : (
               <ShieldAlert size={18} aria-hidden="true" />
             )}
-            {isScoring ? "Generating score" : "Generate Credit Score"}
+            {isScoring ? pick(language, "Generando score", "Generating score") : pick(language, "Generar score crediticio", "Generate Credit Score")}
           </Button>
 
           {error ? (
@@ -296,18 +298,18 @@ export function ScoreDashboard() {
 
           <div className="rounded-2xl border border-[var(--border)] bg-[rgba(17,36,31,0.72)] p-4 text-sm text-[var(--muted-foreground)]">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span>Connected wallet</span>
+              <span>{pick(language, "Wallet conectada", "Connected wallet")}</span>
               <span className="font-mono text-[var(--foreground)]">
                 {connectedAddress
                   ? shortAddress(connectedAddress)
-                  : "Not connected"}
+                  : pick(language, "No conectada", "Not connected")}
               </span>
             </div>
             {creditScoreRegistryAddress ? (
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
-                <span>Scorer status</span>
+                <span>{pick(language, "Estado del scorer", "Scorer status")}</span>
                 <Badge tone={scorerTone(isAuthorizedScorer)}>
-                  {scorerStatusLabel({
+                  {scorerStatusLabel(language, {
                     connectedAddress,
                     isAuthorizedScorer,
                     isCheckingScorer,
@@ -324,18 +326,18 @@ export function ScoreDashboard() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--accent-bright)]">
-              {score ? "Verified proof object" : "Live assessment"}
+              {score ? pick(language, "Objeto de prueba verificado", "Verified proof object") : pick(language, "Evaluación en vivo", "Live assessment")}
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-[-0.03em]">
-              Institutional decision
+              {pick(language, "Decisión institucional", "Institutional decision")}
             </h2>
           </div>
           {score ? (
             <Badge tone={score.source === "wavy" ? "success" : "info"}>
-              {score.source === "wavy" ? "Verified via Wavy" : "Demo trace"}
+              {score.source === "wavy" ? pick(language, "Verificado vía Wavy", "Verified via Wavy") : pick(language, "Traza demo", "Demo trace")}
             </Badge>
           ) : (
-            <Badge tone="neutral">Awaiting wallet</Badge>
+            <Badge tone="neutral">{pick(language, "Esperando wallet", "Awaiting wallet")}</Badge>
           )}
         </div>
 
@@ -353,49 +355,49 @@ export function ScoreDashboard() {
                   tone={decisionTone(score.composite.decision)}
                   className="px-4 py-2 text-sm"
                 >
-                  {score.composite.decisionLabel}
+                  {translateDecision(language, score.composite.decision)}
                 </Badge>
                 <Badge
                   tone={riskTone(score.wavy.riskScore)}
                   className="px-4 py-2 text-sm"
                 >
-                  {score.wavy.riskLevel}
+                  {translateRiskLevel(language, score.wavy.riskLevel)}
                 </Badge>
               </div>
               <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
-                {score.composite.recommendation}
+                {translateRecommendation(language, score.institution, score.composite.decision)}
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <Metric label="Wavy risk" value={`${score.wavy.riskScore}/100`} />
+              <Metric label={pick(language, "Riesgo Wavy", "Wavy risk")} value={`${score.wavy.riskScore}/100`} />
               <Metric
-                label="Trace volume"
+                label={pick(language, "Volumen de trazas", "Trace volume")}
                 value={String(score.wavy.transactionsAnalyzed)}
               />
-              <Metric label="Chain" value="Fuji" />
+              <Metric label={pick(language, "Red", "Chain")} value="Fuji" />
             </div>
 
             <div>
               <h3 className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-                Cryptographic proofs
+                {pick(language, "Pruebas criptográficas", "Cryptographic proofs")}
               </h3>
               <div className="mt-3 grid gap-3">
-                <Detail label="Subject hash" value={score.subjectHash} />
+                <Detail label={pick(language, "Hash del sujeto", "Subject hash")} value={score.subjectHash} />
                 <Detail
-                  label="Evidence Merkle root"
+                  label={pick(language, "Raíz Merkle de evidencia", "Evidence Merkle root")}
                   value={score.evidenceHash}
                 />
-                <Detail label="Analysis ID" value={score.wavy.analysisId} />
+                <Detail label={pick(language, "ID de análisis", "Analysis ID")} value={score.wavy.analysisId} />
                 <Detail
-                  label="Traceability"
-                  value={`${score.wavy.traceability.provider} ${score.wavy.traceability.scanType}; ${score.wavy.traceability.transactionsAnalyzed} tx; ${score.wavy.traceability.patternsCount} patterns`}
+                  label={pick(language, "Trazabilidad", "Traceability")}
+                  value={`${score.wavy.traceability.provider} ${translateScanType(language, score.wavy.traceability.scanType)}; ${score.wavy.traceability.transactionsAnalyzed} tx; ${score.wavy.traceability.patternsCount} ${pick(language, "patrones", "patterns")}`}
                 />
                 <Detail
-                  label="AI risk scale"
-                  value={`${score.wavy.traceability.riskScoreScale}; ${traceabilityRegistrationLabel(score.wavy.traceability.addressRegistration)}`}
+                  label={pick(language, "Escala de riesgo IA", "AI risk scale")}
+                  value={`${score.wavy.traceability.riskScoreScale}; ${traceabilityRegistrationLabel(language, score.wavy.traceability.addressRegistration)}`}
                 />
-                <Detail label="Risk reason" value={score.wavy.riskReason} />
+                <Detail label={pick(language, "Razón de riesgo", "Risk reason")} value={translateRiskReason(language, score.wavy.riskReason)} />
               </div>
             </div>
 
@@ -411,19 +413,19 @@ export function ScoreDashboard() {
                       aria-hidden="true"
                       className="text-[var(--muted-foreground)]"
                     />
-                    Registry Readback
+                    {pick(language, "Lectura del registro", "Registry Readback")}
                   </h3>
                   <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                    Contract:{" "}
+                    {pick(language, "Contrato:", "Contract:")}{" "}
                     <span className="font-mono text-[var(--foreground)]">
                       {creditScoreRegistryAddress
                         ? shortAddress(creditScoreRegistryAddress)
-                        : "Set contract address"}
+                        : pick(language, "Configura dirección del contrato", "Set contract address")}
                     </span>
                     {connectedAddress ? (
                       <span>
                         {" "}
-                        · Scorer:{" "}
+                        · {pick(language, "Scorer:", "Scorer:")}{" "}
                         <span className="font-mono text-[var(--foreground)]">
                           {shortAddress(connectedAddress)}
                         </span>
@@ -437,7 +439,7 @@ export function ScoreDashboard() {
                     hasStoredScore,
                   })}
                 >
-                  {storedScoreStatusLabel({
+                  {storedScoreStatusLabel(language, {
                     hasRegistry: Boolean(creditScoreRegistryAddress),
                     hasStoredScore,
                     isCheckingStoredScore,
@@ -468,14 +470,14 @@ export function ScoreDashboard() {
                     <UploadCloud size={16} aria-hidden="true" />
                   )}
                   {chainId !== avalancheFuji.id && isConnected
-                    ? "Switch to Fuji"
+                    ? pick(language, "Cambiar a Fuji", "Switch to Fuji")
                     : !isLiveWavyScore
-                      ? "Live Wavy required"
+                      ? pick(language, "Requiere Wavy en vivo", "Live Wavy required")
                       : isCheckingScorer
-                        ? "Checking scorer"
+                        ? pick(language, "Verificando scorer", "Checking scorer")
                         : hasStoredScore
-                          ? "Update Fuji record"
-                          : "Store on Fuji"}
+                          ? pick(language, "Actualizar registro Fuji", "Update Fuji record")
+                          : pick(language, "Guardar en Fuji", "Store on Fuji")}
                 </Button>
                 {transactionHash ? (
                   <a
@@ -484,7 +486,7 @@ export function ScoreDashboard() {
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent-bright)]"
                   >
-                    View transaction
+                    {pick(language, "Ver transacción", "View transaction")}
                     <ArrowUpRight size={14} aria-hidden="true" />
                   </a>
                 ) : null}
@@ -498,8 +500,7 @@ export function ScoreDashboard() {
                     className="mt-0.5 shrink-0"
                   />
                   <p>
-                    Demo scores are read-only. Connect the live Railway Wavy API
-                    before storing evidence on Fuji.
+                    {pick(language, "Los scores demo son de solo lectura. Conecta la API Wavy en vivo de Railway antes de guardar evidencia en Fuji.", "Demo scores are read-only. Connect the live Railway Wavy API before storing evidence on Fuji.")}
                   </p>
                 </div>
               ) : null}
@@ -508,7 +509,7 @@ export function ScoreDashboard() {
                 <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[rgba(13,27,24,0.76)] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-[var(--foreground)]">
-                      On-chain readback
+                      {pick(language, "Lectura on-chain", "On-chain readback")}
                     </p>
                     <Badge
                       tone={
@@ -519,7 +520,7 @@ export function ScoreDashboard() {
                             : "info"
                       }
                     >
-                      {storedReadbackStatusLabel({
+                      {storedReadbackStatusLabel(language, {
                         isLoadingStoredScoreRecord,
                         isStoredScoreRecordError,
                         storedEvidenceMatches,
@@ -531,35 +532,35 @@ export function ScoreDashboard() {
                   {storedScoreRecord ? (
                     <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                       <CompactDetail
-                        label="Stored score"
-                        value={`${storedScoreRecord.wavyRiskScore}/100 risk; ${storedScoreRecord.compositeCreditScore}/100 credit`}
+                        label={pick(language, "Score guardado", "Stored score")}
+                        value={`${storedScoreRecord.wavyRiskScore}/100 ${pick(language, "riesgo", "risk")}; ${storedScoreRecord.compositeCreditScore}/100 ${pick(language, "crédito", "credit")}`}
                       />
                       <CompactDetail
-                        label="Decision enum"
+                        label={pick(language, "Enum de decisión", "Decision enum")}
                         value={String(storedScoreRecord.decision)}
                       />
                       <CompactDetail
-                        label="Submitter"
+                        label={pick(language, "Submitter", "Submitter")}
                         value={shortAddress(storedScoreRecord.submitter)}
                       />
                       <CompactDetail
-                        label="Updated"
-                        value={formatUnixTimestamp(storedScoreRecord.updatedAt)}
+                        label={pick(language, "Actualizado", "Updated")}
+                        value={formatUnixTimestamp(language, storedScoreRecord.updatedAt)}
                       />
                       <CompactDetail
-                        label="Analysis ID"
+                        label={pick(language, "ID de análisis", "Analysis ID")}
                         value={storedScoreRecord.wavyAnalysisId}
                       />
                       <CompactDetail
-                        label="Institution"
+                        label={pick(language, "Institución", "Institution")}
                         value={storedScoreRecord.institution}
                       />
                     </div>
                   ) : (
                     <p className="mt-3 text-sm text-[var(--muted-foreground)]">
                       {isLoadingStoredScoreRecord
-                        ? "Reading registry record from Avalanche Fuji."
-                        : "Fuji reports a stored score, but the registry record is not available yet."}
+                        ? pick(language, "Leyendo el registro desde Avalanche Fuji.", "Reading registry record from Avalanche Fuji.")
+                        : pick(language, "Fuji reporta un score guardado, pero el registro todavía no está disponible.", "Fuji reports a stored score, but the registry record is not available yet.")}
                     </p>
                   )}
                 </div>
@@ -581,11 +582,10 @@ export function ScoreDashboard() {
           <div className="mt-5 grid min-h-[320px] place-items-center rounded-2xl border border-dashed border-[var(--border)] bg-[rgba(17,36,31,0.46)] p-8 text-center">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-                No proof generated
+                {pick(language, "Sin prueba generada", "No proof generated")}
               </p>
               <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted-foreground)]">
-                Wavy Node risk, composite score, cryptographic evidence, and
-                Fuji registry controls will appear here.
+                {pick(language, "Aquí aparecerán el riesgo de Wavy Node, el score compuesto, la evidencia criptográfica y los controles del registro Fuji.", "Wavy Node risk, composite score, cryptographic evidence, and Fuji registry controls will appear here.")}
               </p>
             </div>
           </div>
@@ -662,53 +662,159 @@ function storedScoreTone(input: {
   return "info";
 }
 
-function scorerStatusLabel(input: {
+function scorerStatusLabel(language: Language, input: {
   connectedAddress: string | undefined;
   isAuthorizedScorer: boolean | undefined;
   isCheckingScorer: boolean;
   isScorerCheckError: boolean;
 }) {
-  if (!input.connectedAddress) return "Connect wallet";
-  if (input.isCheckingScorer) return "Checking Fuji";
-  if (input.isScorerCheckError) return "Check failed";
-  if (input.isAuthorizedScorer === true) return "Authorized";
-  if (input.isAuthorizedScorer === false) return "Not authorized";
-  return "Unknown";
+  if (!input.connectedAddress) return pick(language, "Conecta wallet", "Connect wallet");
+  if (input.isCheckingScorer) return pick(language, "Verificando Fuji", "Checking Fuji");
+  if (input.isScorerCheckError) return pick(language, "Falló verificación", "Check failed");
+  if (input.isAuthorizedScorer === true) return pick(language, "Autorizado", "Authorized");
+  if (input.isAuthorizedScorer === false) return pick(language, "No autorizado", "Not authorized");
+  return pick(language, "Desconocido", "Unknown");
 }
 
-function storedScoreStatusLabel(input: {
+function storedScoreStatusLabel(language: Language, input: {
   hasRegistry: boolean;
   hasStoredScore: boolean | undefined;
   isCheckingStoredScore: boolean;
   isStoredScoreCheckError: boolean;
 }) {
-  if (!input.hasRegistry) return "Set registry";
-  if (input.isCheckingStoredScore) return "Checking Fuji";
-  if (input.isStoredScoreCheckError) return "Check failed";
-  if (input.hasStoredScore === true) return "Stored on Fuji";
-  if (input.hasStoredScore === false) return "Not stored";
-  return "Awaiting score";
+  if (!input.hasRegistry) return pick(language, "Configura registro", "Set registry");
+  if (input.isCheckingStoredScore) return pick(language, "Verificando Fuji", "Checking Fuji");
+  if (input.isStoredScoreCheckError) return pick(language, "Falló verificación", "Check failed");
+  if (input.hasStoredScore === true) return pick(language, "Guardado en Fuji", "Stored on Fuji");
+  if (input.hasStoredScore === false) return pick(language, "No guardado", "Not stored");
+  return pick(language, "Esperando score", "Awaiting score");
 }
 
-function storedReadbackStatusLabel(input: {
+function storedReadbackStatusLabel(language: Language, input: {
   isLoadingStoredScoreRecord: boolean;
   isStoredScoreRecordError: boolean;
   storedEvidenceMatches: boolean;
   storedScoreRecord: StoredScoreRecord | null;
 }) {
-  if (input.isLoadingStoredScoreRecord) return "Reading Fuji";
-  if (input.isStoredScoreRecordError) return "Read failed";
-  if (!input.storedScoreRecord) return "Awaiting record";
-  if (input.storedEvidenceMatches) return "Evidence match";
-  return "Different evidence";
+  if (input.isLoadingStoredScoreRecord) return pick(language, "Leyendo Fuji", "Reading Fuji");
+  if (input.isStoredScoreRecordError) return pick(language, "Falló lectura", "Read failed");
+  if (!input.storedScoreRecord) return pick(language, "Esperando registro", "Awaiting record");
+  if (input.storedEvidenceMatches) return pick(language, "Evidencia coincide", "Evidence match");
+  return pick(language, "Evidencia distinta", "Different evidence");
 }
 
 function traceabilityRegistrationLabel(
+  language: Language,
   value: ScoreApiResponse["wavy"]["traceability"]["addressRegistration"],
 ) {
-  if (value === "auto-registered-or-reused") return "Auto registered/reused";
-  if (value === "preconfigured") return "Preconfigured project address";
-  return "Demo trace";
+  if (value === "auto-registered-or-reused") return pick(language, "Auto registrada/reutilizada", "Auto registered/reused");
+  if (value === "preconfigured") return pick(language, "Dirección preconfigurada del proyecto", "Preconfigured project address");
+  return pick(language, "Traza demo", "Demo trace");
+}
+
+function translateDecision(
+  language: Language,
+  decision: ScoreApiResponse["composite"]["decision"],
+) {
+  const labels = {
+    APPROVE_IFC_EQUITY_ISSUANCE: pick(
+      language,
+      "Aprobar emisión de equity IFC",
+      "Approve IFC equity issuance",
+    ),
+    APPROVE_BANKAOOL_LOAN: pick(
+      language,
+      "Aprobar crédito Bankaool",
+      "Approve Bankaool loan",
+    ),
+    REVIEW_REQUIRED: pick(
+      language,
+      "Enviar a revisión institucional",
+      "Route to institutional review",
+    ),
+    DECLINE: pick(
+      language,
+      "Rechazar hasta remediar riesgo",
+      "Decline until risk is remediated",
+    ),
+  } satisfies Record<ScoreApiResponse["composite"]["decision"], string>;
+
+  return labels[decision];
+}
+
+function translateRecommendation(
+  language: Language,
+  institution: Institution,
+  decision: ScoreApiResponse["composite"]["decision"],
+) {
+  if (decision === "APPROVE_IFC_EQUITY_ISSUANCE") {
+    return pick(
+      language,
+      "Arkangeles puede continuar el flujo de emisión de equity IFC con monitoreo estándar de compliance.",
+      "Arkangeles can continue the IFC equity issuance flow with standard compliance monitoring.",
+    );
+  }
+
+  if (decision === "APPROVE_BANKAOOL_LOAN") {
+    return pick(
+      language,
+      "Bankaool puede avanzar a términos de crédito conservando el registro on-chain para auditoría.",
+      "Bankaool can proceed to loan terms while retaining the on-chain score record for audit.",
+    );
+  }
+
+  if (decision === "DECLINE") {
+    return pick(
+      language,
+      "No aprobar hasta que el dueño de la wallet resuelva actividad de alto riesgo o entregue evidencia adicional.",
+      "Do not approve until the wallet owner resolves high-risk activity or supplies additional evidence.",
+    );
+  }
+
+  if (institution === "arkangeles") {
+    return pick(
+      language,
+      "Enviar esta wallet a revisión de riesgo de Arkangeles antes de aprobar la emisión de equity.",
+      "Send this wallet to Arkangeles risk review before equity issuance approval.",
+    );
+  }
+
+  return pick(
+    language,
+    "Enviar este solicitante a revisión de originación de Bankaool antes de aprobar el crédito.",
+    "Send this applicant to Bankaool underwriting review before loan approval.",
+  );
+}
+
+function translateRiskLevel(language: Language, riskLevel: ScoreApiResponse["wavy"]["riskLevel"]) {
+  const labels = {
+    verified: pick(language, "verificado", "verified"),
+    minimal: pick(language, "mínimo", "minimal"),
+    low: pick(language, "bajo", "low"),
+    medium: pick(language, "medio", "medium"),
+    high: pick(language, "alto", "high"),
+    critical: pick(language, "crítico", "critical"),
+  } satisfies Record<ScoreApiResponse["wavy"]["riskLevel"], string>;
+
+  return labels[riskLevel];
+}
+
+function translateScanType(language: Language, scanType: string) {
+  if (scanType === "wallet-risk") {
+    return pick(language, "riesgo-wallet", "wallet-risk");
+  }
+  return scanType;
+}
+
+function translateRiskReason(language: Language, riskReason: string) {
+  const normalized = riskReason.toLowerCase();
+  if (normalized.includes("low-risk")) {
+    return pick(language, "Actividad de wallet Avalanche de bajo riesgo.", riskReason);
+  }
+  if (normalized.includes("mock") || normalized.includes("demo")) {
+    return pick(language, "Traza demo usada cuando Wavy no está disponible.", riskReason);
+  }
+  return riskReason;
 }
 
 function parseStoredScoreRecord(value: unknown): StoredScoreRecord | null {
@@ -785,13 +891,13 @@ function sameHex(left: string, right: string) {
   return left.toLowerCase() === right.toLowerCase();
 }
 
-function formatUnixTimestamp(value: bigint) {
+function formatUnixTimestamp(language: Language, value: bigint) {
   const timestampMs = Number(value) * 1000;
   if (!Number.isFinite(timestampMs) || timestampMs <= 0) {
-    return "Pending timestamp";
+    return pick(language, "Timestamp pendiente", "Pending timestamp");
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(language === "es" ? "es-419" : "en", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(timestampMs));

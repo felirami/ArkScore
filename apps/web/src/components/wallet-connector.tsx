@@ -4,8 +4,10 @@ import { LogOut, Wallet } from "lucide-react";
 import { useConnection, useConnect, useConnectors, useDisconnect } from "wagmi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { pick, useLanguage } from "@/lib/language";
 
 export function WalletConnector() {
+  const { language } = useLanguage();
   const { address, chainId, isConnected } = useConnection();
   const { connect, isPending } = useConnect();
   const connectors = useConnectors();
@@ -15,14 +17,16 @@ export function WalletConnector() {
     return (
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={chainId === 43113 ? "success" : "warning"}>
-          {chainId === 43113 ? "Fuji connected" : `Chain ${chainId}`}
+          {chainId === 43113
+            ? pick(language, "Fuji conectado", "Fuji connected")
+            : pick(language, `Red ${chainId}`, `Chain ${chainId}`)}
         </Badge>
         <div className="rounded-full border border-[var(--border)] bg-[var(--panel-raised)] px-3 py-2 font-mono text-xs text-[var(--foreground)]">
           {shortAddress(address)}
         </div>
         <Button variant="secondary" onClick={() => disconnect()}>
           <LogOut size={16} aria-hidden="true" />
-          Disconnect
+          {pick(language, "Desconectar", "Disconnect")}
         </Button>
       </div>
     );
@@ -38,8 +42,9 @@ export function WalletConnector() {
           className="h-12 px-5"
         >
           <Wallet size={16} aria-hidden="true" />
-          <span className="hidden sm:inline">Connect </span>
-          {connector.name}
+          <span className="hidden sm:inline">
+            {pick(language, "Conectar wallet", "Connect wallet")}
+          </span>
         </Button>
       ))}
     </div>

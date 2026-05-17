@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import {
   Building2,
@@ -10,10 +12,14 @@ import {
 } from "lucide-react";
 import { ScoreDashboard } from "@/components/score-dashboard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { WalletConnector } from "@/components/wallet-connector";
 import { eerc20DemoAddress } from "@/lib/contracts";
+import { pick, useLanguage } from "@/lib/language";
 
 export default function Home() {
+  const { language, setLanguage } = useLanguage();
+
   return (
     <main className="min-h-screen overflow-hidden text-[var(--foreground)]">
       <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[rgba(7,17,15,0.86)] backdrop-blur-xl">
@@ -30,25 +36,32 @@ export default function Home() {
                 className="border-b-2 border-[var(--accent)] py-2 text-[var(--accent-bright)]"
                 href="#dashboard"
               >
-                Dashboard
+                {pick(language, "Dashboard", "Dashboard")}
               </a>
               <a
                 className="py-2 transition-colors hover:text-[var(--foreground)]"
                 href="#registry"
               >
-                Registry
+                {pick(language, "Registro", "Registry")}
               </a>
               <a
                 className="py-2 transition-colors hover:text-[var(--foreground)]"
                 href="#evidence"
               >
-                Evidence
+                {pick(language, "Evidencia", "Evidence")}
               </a>
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setLanguage(language === "es" ? "en" : "es")}
+              className="h-10 px-3 font-mono text-xs"
+            >
+              {language === "es" ? "English" : "Español LATAM"}
+            </Button>
             <Badge tone="danger" className="hidden sm:inline-flex">
-              Fuji Testnet
+              {pick(language, "Fuji Testnet", "Fuji Testnet")}
             </Badge>
             <WalletConnector />
           </div>
@@ -62,18 +75,24 @@ export default function Home() {
         <div className="flex min-w-0 flex-col justify-between gap-8">
           <div>
             <Badge tone="danger" className="mb-5 sm:hidden">
-              Fuji Testnet
+              {pick(language, "Fuji Testnet", "Fuji Testnet")}
             </Badge>
             <h1 className="max-w-4xl text-5xl font-black leading-[0.94] tracking-[-0.075em] text-[var(--foreground)] sm:text-6xl lg:text-7xl">
-              Institutional Credit Decisions,{" "}
+              {pick(
+                language,
+                "Decisiones de crédito institucional, ",
+                "Institutional Credit Decisions, ",
+              )}
               <span className="text-glow text-[var(--accent-bright)]">
-                On-Chain.
+                {pick(language, "On-Chain.", "On-Chain.")}
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-[var(--muted-foreground)] md:text-lg">
-              Evaluate counterparty risk using verifiable cryptographic
-              evidence. ArkScore aggregates liquidity proofs, Wavy traceability,
-              and institutional policy into auditable Avalanche decisions.
+              {pick(
+                language,
+                "Evalúa riesgo de contraparte con evidencia criptográfica verificable. ArkScore combina pruebas de liquidez, trazabilidad de Wavy y política institucional para generar decisiones auditables en Avalanche.",
+                "Evaluate counterparty risk using verifiable cryptographic evidence. ArkScore aggregates liquidity proofs, Wavy traceability, and institutional policy into auditable Avalanche decisions.",
+              )}
             </p>
           </div>
 
@@ -81,19 +100,19 @@ export default function Home() {
             <SignalCard
               icon={<Building2 size={18} aria-hidden="true" />}
               label="Arkangeles"
-              value="Investor + borrower scoring"
+              value={pick(language, "Scoring de inversionistas y acreditados", "Investor + borrower scoring")}
               tone="mint"
             />
             <SignalCard
               icon={<Landmark size={18} aria-hidden="true" />}
               label="Bankaool"
-              value="Credit underwriting workflow"
+              value={pick(language, "Flujo de originación crediticia", "Credit underwriting workflow")}
               tone="blue"
             />
             <SignalCard
               icon={<ShieldCheck size={18} aria-hidden="true" />}
               label="Wavy Node"
-              value="Traceability + AI risk"
+              value={pick(language, "Trazabilidad + riesgo con IA", "Traceability + AI risk")}
               tone="purple"
             />
             <SignalCard
@@ -101,8 +120,8 @@ export default function Home() {
               label="eERC20"
               value={
                 eerc20DemoAddress
-                  ? "Private token configured"
-                  : "Private token demo slot"
+                  ? pick(language, "Token privado configurado", "Private token configured")
+                  : pick(language, "Espacio demo para token privado", "Private token demo slot")
               }
               tone="red"
               link={
@@ -119,7 +138,7 @@ export default function Home() {
             <div>
               <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[rgba(45,226,166,0.35)] bg-[rgba(45,226,166,0.08)] px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-[var(--accent-bright)]">
                 <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-                Live assessment
+                {pick(language, "Evaluación en vivo", "Live assessment")}
               </div>
               <p className="font-mono text-sm uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
                 Ark Score
@@ -129,18 +148,18 @@ export default function Home() {
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Badge tone="success" className="px-4 py-2 text-sm">
-                  Approve
+                  {pick(language, "Aprobar", "Approve")}
                 </Badge>
                 <Badge
                   tone="neutral"
                   className="px-4 py-2 text-sm normal-case tracking-normal"
                 >
-                  Low Risk
+                  {pick(language, "Riesgo bajo", "Low Risk")}
                 </Badge>
               </div>
               <div className="mt-8 grid gap-3 text-left sm:grid-cols-2">
-                <ProofMini label="Subject Hash" value="0x8f...4c2a" />
-                <ProofMini label="Evidence Merkle Root" value="0x3b...9d1e" />
+                <ProofMini label={pick(language, "Hash del sujeto", "Subject Hash")} value="0x8f...4c2a" />
+                <ProofMini label={pick(language, "Raíz Merkle de evidencia", "Evidence Merkle Root")} value="0x3b...9d1e" />
               </div>
             </div>
           </div>
@@ -162,36 +181,37 @@ export default function Home() {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-                Hackathon submission evidence
+                {pick(language, "Evidencia para la entrega del hackathon", "Hackathon submission evidence")}
               </p>
               <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em]">
-                On-chain credit oracle for LatAm institutions
+                {pick(language, "Oráculo de crédito on-chain para instituciones de LatAm", "On-chain credit oracle for LatAm institutions")}
               </h2>
               <p className="mt-3 max-w-4xl text-sm leading-6 text-[var(--muted-foreground)]">
-                ArkScore turns wallet risk into an auditable lending or equity
-                issuance decision: Wavy Node analyzes the wallet, ArkScore
-                computes the institutional score, and Avalanche Fuji stores the
-                decision proof without exposing the raw wallet on-chain.
+                {pick(
+                  language,
+                  "ArkScore convierte el riesgo de una wallet en una decisión auditable de crédito o emisión de equity: Wavy Node analiza la wallet, ArkScore calcula el score institucional y Avalanche Fuji guarda la prueba sin exponer la wallet original on-chain.",
+                  "ArkScore turns wallet risk into an auditable lending or equity issuance decision: Wavy Node analyzes the wallet, ArkScore computes the institutional score, and Avalanche Fuji stores the decision proof without exposing the raw wallet on-chain.",
+                )}
               </p>
             </div>
-            <Badge tone="success">Built during hackathon</Badge>
+            <Badge tone="success">{pick(language, "Construido durante el hackathon", "Built during hackathon")}</Badge>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <CriteriaCard
               icon={<CheckCircle2 size={18} aria-hidden="true" />}
-              title="Value proposition"
-              body="Compliance-ready credit scoring for Arkangeles and Bankaool: wallet intake, explainable risk, reusable institutional decisions."
+              title={pick(language, "Propuesta de valor", "Value proposition")}
+              body={pick(language, "Scoring crediticio listo para compliance para Arkangeles y Bankaool: intake de wallets, riesgo explicable y decisiones institucionales reutilizables.", "Compliance-ready credit scoring for Arkangeles and Bankaool: wallet intake, explainable risk, reusable institutional decisions.")}
             />
             <CriteriaCard
               icon={<Network size={18} aria-hidden="true" />}
-              title="Avalanche component"
-              body="Fuji CreditScoreRegistry stores subject hashes, Wavy evidence hashes, analysis IDs, decisions, scorer permissions, and readback verification."
+              title={pick(language, "Componente Avalanche", "Avalanche component")}
+              body={pick(language, "Fuji CreditScoreRegistry guarda hashes de sujeto, hashes de evidencia Wavy, IDs de análisis, decisiones, permisos de scorer y verificación de lectura.", "Fuji CreditScoreRegistry stores subject hashes, Wavy evidence hashes, analysis IDs, decisions, scorer permissions, and readback verification.")}
             />
             <CriteriaCard
               icon={<GitBranch size={18} aria-hidden="true" />}
-              title="Execution proof"
-              body="Live frontend, Railway API, Wavy-backed scoring with fallback, Fuji contract, tests, probes, and evidence scripts."
+              title={pick(language, "Prueba de ejecución", "Execution proof")}
+              body={pick(language, "Frontend en vivo, API en Railway, scoring con Wavy y fallback, contrato en Fuji, tests, probes y scripts de evidencia.", "Live frontend, Railway API, Wavy-backed scoring with fallback, Fuji contract, tests, probes, and evidence scripts.")}
             />
           </div>
         </div>
