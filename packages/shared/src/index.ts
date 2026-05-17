@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export const ethereumAddressSchema = z
   .string()
-  .regex(/^0x[a-fA-F0-9]{40}$/, "Expected a valid EVM wallet address.");
+  .regex(
+    /^0x[a-fA-F0-9]{40}$/,
+    "Expected a valid EVM wallet address.",
+  ) as z.ZodType<`0x${string}`>;
 
 export const institutionSchema = z.enum(["arkangeles", "bankaool"]);
 
@@ -24,6 +27,13 @@ export const riskLevelSchema = z.enum([
 
 export const scoreSourceSchema = z.enum(["wavy", "mock"]);
 
+export const bytes32Schema = z
+  .string()
+  .regex(
+    /^0x[a-fA-F0-9]{64}$/,
+    "Expected a 32-byte hex string.",
+  ) as z.ZodType<`0x${string}`>;
+
 export type Institution = z.infer<typeof institutionSchema>;
 export type InstitutionDecision = z.infer<typeof institutionDecisionSchema>;
 export type RiskLevel = z.infer<typeof riskLevelSchema>;
@@ -32,7 +42,7 @@ export type ScoreSource = z.infer<typeof scoreSourceSchema>;
 export type PatternDetected = {
   name: string;
   severity: "low" | "medium" | "high" | "critical" | string;
-  confidence?: number;
+  confidence?: number | undefined;
 };
 
 export type WavyAddressRegistration =
@@ -83,6 +93,62 @@ export type ScoreApiResponse = {
   wavy: WavyRiskResult;
   composite: CompositeScore;
 };
+
+export const patternDetectedSchema = z.object({
+  name: z.string(),
+  severity: z.string(),
+  confidence: z.number().optional(),
+}) satisfies z.ZodType<PatternDetected>;
+
+export const wavyTraceabilitySchema = z.object({
+  provider: z.literal("Wavy Node"),
+  network: z.string(),
+  scanType: z.literal("wallet-risk"),
+  riskScoreScale: z.literal("0-100"),
+  addressRegistration: z.enum([
+    "auto-registered-or-reused",
+    "preconfigured",
+    "demo",
+  ]),
+  transactionsAnalyzed: z.number().int().nonnegative(),
+  patternsCount: z.number().int().nonnegative(),
+  completedAt: z.string().min(1),
+}) satisfies z.ZodType<WavyTraceability>;
+
+const scoreValueSchema = z.number().int().min(0).max(100);
+
+export const wavyRiskResultSchema = z.object({
+  analysisId: z.string().min(1),
+  address: ethereumAddressSchema,
+  chainId: z.number().int().positive(),
+  riskScore: scoreValueSchema,
+  riskLevel: riskLevelSchema,
+  riskReason: z.string().min(1),
+  suspiciousActivity: z.boolean(),
+  patternsDetected: z.array(patternDetectedSchema),
+  transactionsAnalyzed: z.number().int().nonnegative(),
+  completedAt: z.string().min(1),
+  traceability: wavyTraceabilitySchema,
+}) satisfies z.ZodType<WavyRiskResult>;
+
+export const compositeScoreSchema = z.object({
+  creditScore: scoreValueSchema,
+  decision: institutionDecisionSchema,
+  decisionLabel: z.string().min(1),
+  recommendation: z.string().min(1),
+}) satisfies z.ZodType<CompositeScore>;
+
+export const scoreApiResponseSchema = z.object({
+  address: ethereumAddressSchema,
+  subjectHash: bytes32Schema,
+  chainId: z.number().int().positive(),
+  institution: institutionSchema,
+  source: scoreSourceSchema,
+  generatedAt: z.string().min(1),
+  evidenceHash: bytes32Schema,
+  wavy: wavyRiskResultSchema,
+  composite: compositeScoreSchema,
+}) satisfies z.ZodType<ScoreApiResponse>;
 
 export const decisionLabels: Record<InstitutionDecision, string> = {
   APPROVE_IFC_EQUITY_ISSUANCE: "Approve IFC equity issuance",

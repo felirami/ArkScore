@@ -14,7 +14,7 @@
     "build": "tsup src/index.ts --format esm --dts --clean",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "tsc --noEmit"
+    "test": "tsx --test src/*.test.ts && tsc --noEmit"
   },
   "dependencies": {
     "zod": "4.4.3"
