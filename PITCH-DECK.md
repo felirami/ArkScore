@@ -1,77 +1,75 @@
 # ArkScore Pitch Deck
 
-## Slide 1: The Pain (Arkangeles + Bankaool real challenges)
+## Slide 1: El dolor (retos reales de Arkangeles + Bankaool)
 
-Arkangeles and Bankaool both need faster risk decisions without losing compliance evidence.
+Arkangeles y Bankaool necesitan tomar decisiones de riesgo más rápido sin perder evidencia de compliance.
 
-- Arkangeles needs investor and borrower screening before IFC-aligned equity issuance workflows.
-- Bankaool needs alternative-data credit signals for thin-file and crypto-native customers.
-- Today, wallet risk, compliance traceability, and underwriting decisions live in separate systems.
-- Institutions need proof they can show: what was scored, what risk was found, who submitted it, and where the decision is stored.
+- Arkangeles necesita evaluar inversionistas y acreditados antes de flujos de emisión de equity alineados con IFC.
+- Bankaool necesita señales crediticias alternativas para clientes thin-file y crypto-native.
+- Hoy el riesgo de wallet, la trazabilidad compliance y la decisión de underwriting viven en sistemas separados.
+- Las instituciones necesitan evidencia demostrable: qué se evaluó, qué riesgo apareció, quién lo envió y dónde quedó guardada la decisión.
 
-## Slide 2: Solution (ArkScore one-liner)
+## Slide 2: Solución (one-liner de ArkScore)
 
-ArkScore turns Wavy Node wallet risk into an explainable institutional credit score and stores the evidence on Avalanche Fuji.
+ArkScore convierte el riesgo de wallets de Wavy Node en un score crediticio institucional explicable y guarda la evidencia en Avalanche Fuji.
 
-- Input: an EVM wallet and institution context.
-- Output: Wavy risk score, ArkScore composite score, decision bucket, subject hash, evidence hash, and on-chain registry proof.
-- Built for two first workflows: Arkangeles IFC equity screening and Bankaool credit underwriting.
+- Input: una wallet EVM y contexto institucional.
+- Output: score de riesgo Wavy, score compuesto ArkScore, bucket de decisión, subject hash, evidence hash y prueba en registro on-chain.
+- Diseñado para dos primeros flujos: screening IFC de Arkangeles y underwriting crediticio de Bankaool.
 
-## Slide 3: Live Demo (include live links + screenshot of proof)
+## Slide 3: Demo live (links + evidencia)
 
-![ArkScore live demo proof screenshot](docs/assets/live-demo-proof-mock.svg)
-
-- Live frontend: [https://arkscore-seven.vercel.app](https://arkscore-seven.vercel.app)
-- Live backend: [https://arkscore-api-production.up.railway.app](https://arkscore-api-production.up.railway.app)
+- Frontend en vivo: [https://arkscore-seven.vercel.app](https://arkscore-seven.vercel.app)
+- Backend en vivo: [https://arkscore-api-production.up.railway.app](https://arkscore-api-production.up.railway.app)
 - OpenAPI: [https://arkscore-api-production.up.railway.app/openapi.json](https://arkscore-api-production.up.railway.app/openapi.json)
 - Fuji registry: [0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46](https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code)
-- Fuji proof transaction: [0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2](https://testnet.snowscan.xyz/tx/0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2)
-- Proof artifact: `packages/contracts/deployments/fuji/LatestScoreRecord.json`
+- Transacción Fuji de prueba: [0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2](https://testnet.snowscan.xyz/tx/0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2)
+- Artefacto de prueba: `packages/contracts/deployments/fuji/LatestScoreRecord.json`
 
-Demo result: wallet `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` received mock Wavy risk `2/100`, composite score `100/100`, and decision `APPROVE_BANKAOOL_LOAN`; the score was written to Fuji block `55449102` and verified by readback.
+Resultado demo: la wallet `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` recibió riesgo Wavy mock `2/100`, score compuesto `100/100` y decisión `APPROVE_BANKAOOL_LOAN`; el score se escribió en el bloque Fuji `55449102` y fue verificado por readback.
 
-## Slide 4: Why Avalanche + eERC20 privacy
+## Slide 4: Por qué Avalanche + privacidad eERC20
 
-Avalanche gives ArkScore the settlement layer for institutional proof, while eERC20 is the privacy path for future credit assets.
+Avalanche da a ArkScore la capa de settlement para prueba institucional, mientras eERC20 es la ruta de privacidad para futuros activos crediticios.
 
-- Fuji registry provides a public, auditable proof of scoring decisions without exposing the raw scored wallet on-chain.
-- ArkScore stores a backend-derived `subjectHash`, Wavy analysis id, evidence hash, risk score, composite score, decision, institution, timestamp, and submitter.
-- Avalanche is fast and low-cost enough for per-query institutional scoring proofs.
-- eERC20 / EncryptedERC is the next layer: confidential credit notes or eligibility tokens tied to a score without revealing sensitive borrower details.
+- Fuji registry entrega prueba pública y auditable de decisiones de scoring sin exponer la wallet original on-chain.
+- ArkScore guarda `subjectHash`, Wavy analysis id, evidence hash, risk score, composite score, decisión, institución, timestamp y submitter.
+- Avalanche es rápida y de bajo costo para pruebas institucionales por consulta.
+- eERC20 / EncryptedERC es la siguiente capa: notas crediticias confidenciales o eligibility tokens ligados a un score sin revelar detalles sensibles del acreditado.
 
-## Slide 5: Wavy Node Integration (mention mock mode due to temporary upstream issue)
+## Slide 5: Integración Wavy Node
 
-ArkScore integrates Wavy Node as the risk and traceability source.
+ArkScore integra Wavy Node como fuente de riesgo y trazabilidad.
 
-- Backend supports Wavy address registration, investigation creation, and `scan-risk` retrieval for Avalanche chain `43114`.
-- API response preserves Wavy traceability as first-class data: provider, network, scan type, risk score scale, transaction count, patterns count, and analysis id.
-- The Fuji proof stores the Wavy evidence hash and analysis id alongside the institutional decision.
-- Current submission proof is clearly labeled mock mode because Wavy Node's upstream tracker returned `tracker-service::analyze: fetch failed`.
-- Mock mode is deterministic and evidence-hashed, proving the API-to-contract path while Wavy upstream recovers.
+- El backend soporta registro de direcciones Wavy, creación de investigaciones y `scan-risk` para Avalanche chain `43114`.
+- La respuesta de la API preserva trazabilidad Wavy como dato de primera clase: provider, network, scan type, escala de riesgo, número de transacciones, patrones e analysis id.
+- La prueba en Fuji guarda Wavy evidence hash y analysis id junto a la decisión institucional.
+- La prueba actual de entrega está claramente marcada como modo mock porque el tracker upstream de Wavy Node respondió `tracker-service::analyze: fetch failed`.
+- El modo mock es determinístico y evidence-hashed, probando el flujo API-a-contrato mientras Wavy upstream se recupera.
 
-## Slide 6: Market & Business Model (per-query SaaS)
+## Slide 6: Mercado y modelo de negocio (SaaS por consulta)
 
-ArkScore is a per-query risk and credit scoring SaaS for regulated fintech workflows.
+ArkScore es un SaaS de riesgo y scoring crediticio por consulta para flujos fintech regulados.
 
-- Target buyers: crowdfunding platforms, digital banks, lending desks, tokenized asset issuers, and compliance teams.
-- Pricing: per wallet score, per on-chain proof, and enterprise plan for custom thresholds and reporting.
-- Expansion: institution-specific decision rules, recurring monitoring, webhook alerts, batch scoring, and private eERC20 eligibility tokens.
-- Why now: LatAm fintechs need crypto-aware underwriting, but they also need compliance-grade audit trails.
+- Compradores objetivo: plataformas de crowdfunding, bancos digitales, lending desks, emisores de activos tokenizados y equipos de compliance.
+- Pricing: por wallet score, por prueba on-chain y plan enterprise para thresholds/reportes personalizados.
+- Expansión: reglas de decisión por institución, monitoreo recurrente, alertas webhook, batch scoring y eligibility tokens privados eERC20.
+- Por qué ahora: las fintechs de LatAm necesitan underwriting crypto-aware, pero también audit trails de grado compliance.
 
-## Slide 7: Traction-ready / next steps
+## Slide 7: Estado y próximos pasos
 
-The MVP is live and ready for pilot conversations.
+El MVP está live y listo para conversaciones piloto.
 
-- Shipped: Vercel frontend, Railway API, Fuji contract, verified contract source, on-chain proof artifact, readiness scripts, and judge-facing README.
-- Next: switch Railway back to live Wavy mode once tracker-service recovers, run a live Wavy-backed `record:fuji`, and redeploy Vercel with final public env values.
-- Next: deploy optional EncryptedERC / eERC20 demo contract and connect the dashboard privacy card.
-- Next: add institution admin settings for score thresholds, authorized scorers, and report exports.
+- Shipped: frontend Vercel, API Railway, contrato Fuji, source verificado, artefacto on-chain, scripts de readiness y README para jueces en español.
+- Siguiente: volver a modo Wavy live cuando tracker-service se recupere, correr un `record:fuji` respaldado por Wavy live y redeployar Vercel con env pública final.
+- Siguiente: desplegar contrato demo EncryptedERC / eERC20 y conectar la tarjeta de privacidad del dashboard.
+- Siguiente: agregar settings admin por institución para thresholds, scorers autorizados y exportes de reportes.
 
-## Slide 8: Team
+## Slide 8: Equipo
 
-ArkScore was built as a focused hackathon product: institution-first UX, working infrastructure, and verifiable evidence.
+ArkScore fue construido como producto hackathon enfocado: UX institucional, infraestructura funcionando y evidencia verificable.
 
-- Product: institutional scoring for Arkangeles and Bankaool use cases.
-- Engineering: Next.js, Railway Express API, Wavy Node adapter, Hardhat, Solidity, Avalanche Fuji, wagmi, viem, and evidence-hash verification.
-- Security posture: no secrets in artifacts, backend-derived subject hashes, authorized scorer writes, and generatedAt-bound proof validation.
-- Submission stance: transparent about Wavy upstream status, with the full API-to-Fuji proof live and reproducible.
+- Producto: scoring institucional para casos de uso de Arkangeles y Bankaool.
+- Ingeniería: Next.js, Railway Express API, Wavy Node adapter, Hardhat, Solidity, Avalanche Fuji, wagmi, viem y verificación de evidence-hash.
+- Seguridad: sin secretos en artefactos, subject hashes derivados por backend, escrituras autorizadas por scorer y proof validation con `generatedAt`.
+- Postura de entrega: transparencia sobre el estado upstream de Wavy, con flujo API-a-Fuji live y reproducible.
