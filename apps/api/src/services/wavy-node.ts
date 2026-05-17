@@ -71,6 +71,24 @@ type WavyApiResponse = {
   error?: string;
 };
 
+type WavyAddressListResponse = {
+  success?: boolean;
+  data?: Array<{
+    address?: string;
+    risk_score?: number | null;
+    last_analysis?: string | null;
+  }>;
+  message?: string;
+  error?: string;
+};
+
+type WavyWalletReportResponse = {
+  success?: boolean;
+  data?: string;
+  message?: string;
+  error?: string;
+};
+
 export type WavySupportedChain = {
   id: number;
   name: string;
@@ -151,6 +169,14 @@ export async function fetchWavyRiskResult(input: {
     });
   }
 
+  const addressSnapshot = await fetchWavyAddressRiskSnapshot({
+    ...input,
+    projectId,
+    authHeader,
+    addressRegistration,
+  });
+  if (addressSnapshot) return addressSnapshot;
+
   const investigation = await createWavyInvestigation({
     ...input,
     projectId,
@@ -161,7 +187,18 @@ export async function fetchWavyRiskResult(input: {
     projectId,
     authHeader,
     investigation,
+  }).catch(async (error: unknown) => {
+    const fallback = await fetchWavyWalletReportRiskResult({
+      ...input,
+      authHeader,
+      investigation,
+      addressRegistration,
+    });
+    if (fallback) return fallback;
+    throw error;
   });
+
+  if ("traceability" in completedResult) return completedResult;
 
   return normalizeWavyRiskResult({
     result: completedResult,
@@ -212,6 +249,91 @@ async function fetchCompletedWavyScanRiskResult(input: {
   const firstResult = payload?.data?.results?.[0];
 
   return firstResult;
+}
+
+async function fetchWavyAddressRiskSnapshot(input: {
+  address: `0x${string}`;
+  chainId: number;
+  projectId: string;
+  authHeader: string;
+  addressRegistration: "auto-registered-or-reused" | "preconfigured";
+}): Promise<WavyRiskResult | undefined> {
+  const url = new URL(
+    `${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/projects/${input.projectId}/addresses`,
+  );
+  const { response, payload } = await fetchWavyJson<WavyAddressListResponse>(
+    url,
+    {
+      headers: {
+        "x-api-key": input.authHeader,
+        accept: "application/json",
+      },
+    },
+  );
+
+  if (!response.ok || payload?.success === false) return undefined;
+
+  const records = Array.isArray(payload?.data) ? payload.data : [];
+  const addressRecord = records.find(
+    (record) => record.address?.toLowerCase() === input.address.toLowerCase(),
+  );
+  const riskScore = addressRecord?.risk_score;
+
+  if (typeof riskScore !== "number" || !Number.isFinite(riskScore)) {
+    return undefined;
+  }
+
+  const completedAt = addressRecord?.last_analysis ?? new Date().toISOString();
+  return createWavyRiskResultFromSummary({
+    analysisId: `wavy-address-${input.projectId}-${input.address.toLowerCase()}`,
+    address: input.address,
+    chainId: input.chainId,
+    riskScore,
+    riskReason: "Wavy Node project address risk snapshot.",
+    completedAt,
+    addressRegistration: input.addressRegistration,
+  });
+}
+
+async function fetchWavyWalletReportRiskResult(input: {
+  address: `0x${string}`;
+  chainId: number;
+  authHeader: string;
+  investigation: WavyInvestigation;
+  addressRegistration: "auto-registered-or-reused" | "preconfigured";
+}): Promise<WavyRiskResult | undefined> {
+  const url = new URL(
+    `${env.WAVY_NODE_BASE_URL.replace(/\/$/, "")}/wallets/${input.address}/report`,
+  );
+  const { response, payload } = await fetchWavyJson<WavyWalletReportResponse>(
+    url,
+    {
+      headers: {
+        "x-api-key": input.authHeader,
+        accept: "application/json",
+      },
+    },
+  );
+
+  if (!response.ok || payload?.success === false || typeof payload?.data !== "string") {
+    return undefined;
+  }
+
+  const riskScore = inferRiskScoreFromWalletReport(payload.data);
+  if (riskScore === undefined) return undefined;
+
+  return createWavyRiskResultFromSummary({
+    analysisId:
+      input.investigation.analysisId ??
+      input.investigation.id ??
+      `wavy-wallet-report-${input.address.toLowerCase()}`,
+    address: input.address,
+    chainId: input.chainId,
+    riskScore,
+    riskReason: payload.data,
+    completedAt: new Date().toISOString(),
+    addressRegistration: input.addressRegistration,
+  });
 }
 
 async function createWavyInvestigation(input: {
@@ -351,6 +473,39 @@ async function fetchWavyInvestigation(input: {
   };
 }
 
+function createWavyRiskResultFromSummary(input: {
+  analysisId: string;
+  address: `0x${string}`;
+  chainId: number;
+  riskScore: number;
+  riskReason: string;
+  completedAt: string;
+  addressRegistration: "auto-registered-or-reused" | "preconfigured";
+}): WavyRiskResult {
+  const riskScore = clampWavyScore(input.riskScore);
+  const patternsDetected: PatternDetected[] = [];
+
+  return {
+    analysisId: input.analysisId,
+    address: input.address,
+    chainId: input.chainId,
+    riskScore,
+    riskLevel: getRiskLevel(riskScore),
+    riskReason: input.riskReason,
+    suspiciousActivity: riskScore >= 60,
+    patternsDetected,
+    transactionsAnalyzed: 0,
+    completedAt: input.completedAt,
+    traceability: createWavyTraceability({
+      chainId: input.chainId,
+      addressRegistration: input.addressRegistration,
+      transactionsAnalyzed: 0,
+      patternsDetected,
+      completedAt: input.completedAt,
+    }),
+  };
+}
+
 function normalizeWavyRiskResult(input: {
   result: WavyScanRiskResult;
   address: `0x${string}`;
@@ -421,6 +576,24 @@ async function registerWavyAddress(input: {
   }
 
   throw new HttpError(response.status, message);
+}
+
+function inferRiskScoreFromWalletReport(report: string): number | undefined {
+  const normalized = report.toLowerCase();
+
+  if (/bajo|low|limpia|clean|no se detect|no suspicious|sin actividad sospechosa/.test(normalized)) {
+    return 0;
+  }
+
+  if (/cr[ií]tic|critical|alto riesgo|high risk|sospechos|suspicious|dirty|sancion|sanction|blacklist/.test(normalized)) {
+    return 75;
+  }
+
+  if (/medio|medium|moderad|review|revis/i.test(report)) {
+    return 45;
+  }
+
+  return undefined;
 }
 
 function clampWavyScore(score: number | undefined): number {

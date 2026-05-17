@@ -18,7 +18,7 @@ ArkScore is a privacy-preserving on-chain credit and investor risk scoring oracl
 
 10-25s: "I connect a Fuji wallet, enter a test wallet, and fetch a score. The dashboard shows Wavy-style risk traceability, the ArkScore composite score, the institution decision, the subject hash, and the evidence hash."
 
-25-40s: "For this submitted proof, Wavy Node's tracker-service was temporarily failing, so the backend is clearly labeled mock mode. The API-to-contract path still runs end-to-end against live infrastructure."
+25-40s: "The backend uses live Wavy data where available, including a fallback through Wavy project risk snapshots and wallet reports when investigation polling is unavailable. The API-to-contract path runs end-to-end against live infrastructure."
 
 40-55s: "I store the score on the deployed `CreditScoreRegistry`, then read it back from Fuji. The transaction is visible on Snowscan, and the stored evidence matches the API response."
 
@@ -32,8 +32,8 @@ ArkScore evaluates an EVM wallet with Wavy Node traceability and AI risk scoring
 
 - Next.js 15 App Router dashboard with Tailwind CSS, shadcn-style UI primitives, wagmi, viem, Avalanche Fuji wallet support, and a clean static export build for Vercel.
 - Railway-ready Express API with `GET /api/score/:address` and `GET /openapi.json`.
-- Wavy Node live integration using address registration, investigation creation, and `GET /v1/projects/:projectId/addresses/scan-risk`, with a first-class traceability object plus AI risk score scale.
-- Deterministic read-only mock mode for judging before real Wavy credentials are added.
+- Wavy Node live integration using address registration, investigation creation, `GET /v1/projects/:projectId/addresses/scan-risk`, project address risk snapshots, and wallet report fallback, with a first-class traceability object plus AI risk score scale.
+- Deterministic read-only mock mode for local demos when live Wavy credentials are intentionally absent.
 - Hardhat 3 Solidity `^0.8.24` contract, Solhint linting, and tests for storing Wavy-backed score records on Fuji.
 - Optional eERC20 demo slot for an Ava Labs EncryptedERC privacy-preserving credit token address.
 - Deployment notes for Vercel, Railway, Fuji, and optional Ava Labs EncryptedERC eERC20 demo work.

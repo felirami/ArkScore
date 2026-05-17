@@ -1,8 +1,12 @@
+import type { ReactNode } from "react";
 import {
   ArrowUpRight,
   Building2,
+  CheckCircle2,
+  GitBranch,
   Landmark,
   LockKeyhole,
+  Network,
   ShieldCheck,
 } from "lucide-react";
 import { ScoreDashboard } from "@/components/score-dashboard";
@@ -93,9 +97,69 @@ export default function Home() {
           </div>
         </div>
 
+        <section className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4 md:p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="font-mono text-xs uppercase text-[var(--muted-foreground)]">
+                Hackathon submission
+              </p>
+              <h2 className="mt-1 text-xl font-semibold">
+                On-chain credit decisions for LatAm institutions
+              </h2>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-[var(--muted-foreground)]">
+                ArkScore turns wallet risk into an auditable lending or equity
+                issuance decision: Wavy Node analyzes the wallet, ArkScore
+                computes the institutional score, and Avalanche Fuji stores the
+                decision proof without exposing the raw wallet on-chain.
+              </p>
+            </div>
+            <Badge tone="success">Built during hackathon</Badge>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <CriteriaCard
+              icon={<CheckCircle2 size={18} aria-hidden="true" />}
+              title="Value proposition"
+              body="A compliance-ready credit oracle for Arkangeles and Bankaool: fast wallet intake, explainable risk, and reusable institutional decisions."
+            />
+            <CriteriaCard
+              icon={<Network size={18} aria-hidden="true" />}
+              title="Avalanche component"
+              body="Fuji CreditScoreRegistry stores subject hashes, Wavy evidence hashes, analysis ids, decisions, scorer permissions, and readback verification."
+            />
+            <CriteriaCard
+              icon={<GitBranch size={18} aria-hidden="true" />}
+              title="Execution proof"
+              body="Live Vercel frontend, Railway API, Wavy-backed scores with fallback, Fuji contract, tests, probes, and submission evidence scripts."
+            />
+          </div>
+        </section>
+
         <ScoreDashboard />
       </section>
     </main>
+  );
+}
+
+function CriteriaCard({
+  icon,
+  title,
+  body,
+}: {
+  icon: ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-center gap-2 text-[var(--accent)]">
+        {icon}
+        <h3 className="font-medium text-[var(--foreground)]">{title}</h3>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
+        {body}
+      </p>
+    </div>
   );
 }
 

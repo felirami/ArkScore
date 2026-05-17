@@ -2,52 +2,84 @@
 
 ## One-liner
 
-ArkScore turns Wavy Node wallet traceability and AI risk into an auditable Avalanche Fuji credit score oracle for Arkangeles and Bankaool.
+ArkScore converts Wavy Node wallet traceability into an auditable Avalanche credit decision oracle for Arkangeles and Bankaool.
+
+## Core pitch
+
+ArkScore lets an institution enter an EVM wallet, fetch live Wavy Node risk/traceability, compute a 0-100 ArkScore credit score, and anchor the result on Avalanche Fuji. The on-chain record stores a privacy-preserving subject hash, Wavy risk score, composite credit score, decision enum, evidence hash, Wavy analysis id, institution, submitter, and timestamp — not the raw wallet address.
 
 ## Demo Script
 
-1. Connect an Avalanche Fuji wallet.
-2. Enter a wallet address to score.
-3. Fetch Wavy Node risk and traceability data.
-4. Compute an ArkScore composite credit score.
-5. Store the decision on-chain with `CreditScoreRegistry`.
-6. Read the stored registry record back and show the evidence match badge.
-7. Show an institutional decision:
-   - Arkangeles: approve or review IFC equity issuance participation.
-   - Bankaool: approve, review, or decline a credit underwriting request.
+1. Open the live demo: `https://arkscore-seven.vercel.app`.
+2. Connect an Avalanche Fuji wallet.
+3. Enter a wallet address or use the default wallet.
+4. Select Arkangeles or Bankaool.
+5. Fetch the Wavy-backed ArkScore decision.
+6. Show Wavy risk, ArkScore credit score, recommendation, subject hash, analysis id, evidence hash, and risk reason.
+7. Store the score on Fuji or show an existing on-chain readback from `CreditScoreRegistry`.
+8. Open Snowscan to show the deployed contract or proof transaction.
+
+## Evaluation criteria alignment
+
+### Propuesta de valor
+
+ArkScore gives LatAm institutions a practical underwriting primitive: wallet risk becomes an explainable credit/equity-issuance decision with a verifiable audit trail. Arkangeles can screen investor/borrower participation in IFC equity issuance workflows; Bankaool can reuse the same risk record for credit underwriting.
+
+### Complejidad técnica
+
+- Next.js dashboard with wallet connection, Wavy score intake, institution-specific decisions, Fuji writes, and contract readback.
+- Railway Express API with Wavy Node integration, OpenAPI, rate limiting, privacy-preserving subject hashes, evidence hashes, and live fallback handling.
+- Shared TypeScript score schemas and deterministic composite scoring.
+- Solidity `CreditScoreRegistry` with scorer authorization, score storage, and readback verification.
+- Hardhat, tests, probes, readiness checks, live verifiers, and submission evidence scripts.
+
+### Uso de componentes específicos de Avalanche
+
+- Avalanche Fuji `CreditScoreRegistry` deployed at `0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`.
+- Fuji wallet/contract flow through wagmi and viem.
+- On-chain storage of Wavy-backed evidence hashes, analysis ids, institutional decisions, timestamps, and scorer authorization.
+- Avalanche wallet risk evaluation through Wavy-supported Avalanche chain data, with the proof anchored on Fuji.
+- Optional eERC20/EncryptedERC extension path documented for privacy-preserving credit tokens.
+
+### Factibilidad
+
+The architecture is feasible as a SaaS/API product: per-wallet scoring, institution-specific thresholds, privacy-preserving identity, provider traceability, production frontend/backend, and independently verifiable on-chain audit records.
+
+### Ejecución
+
+Built during this hackathon:
+
+- Live Vercel frontend.
+- Live Railway scoring API.
+- Wavy Node address registration, scan-risk path, project risk snapshot fallback, and wallet report fallback.
+- Avalanche Fuji score registry contract and proof transaction.
+- Score/evidence hash model.
+- Contract readback and evidence-match UI.
+- Readiness/probe/submission evidence scripts and docs.
 
 ## Technical Differentiators
 
-- Wavy Node risk is preserved as a first-class field, not hidden inside the composite score.
-- A deterministic evidence hash is stored on-chain with the Wavy analysis id.
-- The scored wallet is represented on-chain by a backend-derived `subjectHash`, keeping the raw wallet address out of registry calldata and events.
-- The same score engine supports Arkangeles and Bankaool with different approval thresholds.
-- Mock mode keeps the demo reliable before the final Wavy project id and API key are available, but the dashboard treats mock scores as read-only and only enables Fuji writes for live Wavy-backed scores.
-- `pnpm probe:wavy` gives the team a pre-deployment proof that live Wavy credentials can reach Wavy `/chains`, the configured scoring chain is Avalanche `43114` and active, and Wavy returns an analysis id, risk score, traceability fields, subject hash, and evidence hash without exposing the API key.
-- `pnpm deploy:railway:apply -- --create-domain` now extracts the generated Railway API URL and retries `pnpm verify:railway:live`; that post-deployment proof shows the Railway API itself is serving live Wavy-backed health, OpenAPI, fresh/generatedAt-bound evidence-hashed score, no-store cache, and rate-limit responses before Fuji/Vercel finalization.
-- `pnpm probe:fuji` gives the team a pre-deployment proof that the Fuji deployer key is valid, funded, and pointed at chain id 43113 without exposing the private key.
-- `pnpm record:fuji` gives judges a CLI-verifiable proof that a fresh live Wavy-backed Railway score had its generatedAt-bound evidence hash recomputed, was written by the configured authorized scorer, read back through `CreditScoreRegistry`, and captured with the exact score snapshot as a non-secret `LatestScoreRecord.json` artifact for the submission evidence packet.
-- `pnpm readiness:strict:record` makes that `LatestScoreRecord.json` proof a required final-readiness gate before the Vercel handoff is sealed, including offline recomputation of the embedded score snapshot hash and freshness relative to the artifact timestamp.
-- `pnpm verify:live:preflight:record` rechecks Railway, Fuji registry/scorer, and the latest score-record artifact immediately before Vercel env mutation.
-- `pnpm finalize:live:apply` publishes the live Railway/Fuji public values to Vercel, redeploys the submitted frontend, and retries strict record verification until the production deployment proves those values are present.
-- The dashboard also reads `getScore(subjectHash)` after storage and shows the stored score, submitter, update time, analysis id, institution, and evidence match status.
-- The dashboard has an optional eERC20 card for the EncryptedERC privacy-preserving credit token demo; `pnpm plan:eerc20`, `pnpm probe:eerc20:strict`, and `pnpm verify:live:strict:eerc20:record` plan and prove deployed Fuji bytecode when that address is part of the final pitch.
-- Authorized scorer permissions keep the registry closer to an institutional oracle model.
-- `pnpm audit:requirements` gives judges a non-secret requirement-by-requirement map of ready components and remaining live proofs.
-- `pnpm judge:demo` prints a current environment-aware walkthrough for fallback demos and final live proof mode.
-- `pnpm submission:evidence:write` generates `docs/SUBMISSION_EVIDENCE.md`, a non-secret evidence packet with the current commit, hosted demo smoke, live verifier, requirements audit, readiness output, and final handoff commands; `pnpm submission:evidence:write:full` also embeds the full `pnpm verify` output for the final all-gates packet.
+- Wavy risk is preserved as a first-class field instead of being hidden inside a composite score.
+- The scored wallet is keyed by backend-derived `subjectHash`, keeping raw wallets out of registry calldata/events.
+- Evidence hashes bind the generated score response to the stored on-chain record.
+- Same score engine supports Arkangeles and Bankaool with different approval thresholds.
+- Live Wavy fallback path keeps the demo reliable when Wavy investigation polling fails: ArkScore can use Wavy project address risk snapshots or Wavy wallet reports before falling back to errors.
+- `pnpm probe:wavy`, `pnpm probe:fuji`, `pnpm verify:railway:live`, `pnpm readiness`, and `pnpm submission:evidence:write` provide repeatable, secret-safe judge evidence.
 
 ## Links
 
 - Live demo: `https://arkscore-seven.vercel.app`
 - Railway API: `https://arkscore-api-production.up.railway.app`
+- Backend OpenAPI: `https://arkscore-api-production.up.railway.app/openapi.json`
 - GitHub repo: `https://github.com/felirami/ArkScore`
 - Submission evidence: `docs/SUBMISSION_EVIDENCE.md`
+- Builder Hub submission draft: `docs/BUILDER_HUB_SUBMISSION.md`
 - Hackathon readiness checklist: `docs/HACKATHON_READINESS_CHECKLIST.md`
 - Judge demo runbook: `docs/JUDGE_DEMO.md`
-- Frontend repository path: `apps/web`
-- Backend repository path: `apps/api`
-- Contracts repository path: `packages/contracts`
-- Fuji contract address: `0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`
-- Fuji explorer: `https://testnet.snowtrace.io/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`
+- Frontend path: `apps/web`
+- Backend path: `apps/api`
+- Contracts path: `packages/contracts`
+- Fuji contract: `0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46`
+- Fuji explorer: `https://testnet.snowscan.xyz/address/0x0e5cbfCc8AB482C1e3995079f866654941b0Fd46#code`
+- Demo proof tx: `https://testnet.snowscan.xyz/tx/0xed2122d8b7f2845e50e4009f3decb6cab4a0701048acedb87dadb046e91608c2`
 - Optional eERC20 address: `TBD`
